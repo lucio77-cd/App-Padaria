@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Login - Padaria da Cris</title>
+</head>
+<body>
+
+    <div class="card-auth">
+        <div style="text-align: center; margin-bottom: 20px;">
+            <h1 style="font-size: 2.5rem;">🍞</h1>
+            <h2 style="color: var(--dark);">Sistema Cris</h2>
+        </div>
+
+        <button id="btn-google" class="btn-principal" style="background: white; color: #444; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 20px;">
+            <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" width="20" alt="G">
+            ENTRAR COM GOOGLE
+        </button>
+
+        <div style="text-align: center; margin-bottom: 20px; color: #999; font-size: 0.7rem; letter-spacing: 1px;">OU E-MAIL E SENHA</div>
+
+        <input type="email" id="email" placeholder="E-mail" class="input-padrao">
+        <input type="password" id="senha" placeholder="Senha" class="input-padrao">
+        
+        <button id="btn-entrar" class="btn-principal">ENTRAR</button>
+        <button id="btn-cadastro" class="btn-principal" style="background: transparent; color: var(--dark); border: 1.5px solid var(--dark); margin-top: 10px;">CRIAR CONTA</button>
+
+        <p id="msg-erro" style="color: #e74c3c; text-align: center; margin-top: 15px; font-size: 0.85rem; min-height: 20px;"></p>
+    </div>
+
+    <script type="module">
+        import { auth } from './firebase.js';
+        import { 
+            signInWithEmailAndPassword, 
+            createUserWithEmailAndPassword,
+            onAuthStateChanged,
+            GoogleAuthProvider,
+            signInWithPopup
+        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+        const msgErro = document.getElementById('msg-erro');
+        const campoEmail = document.getElementById('email');
+        const campoSenha = document.getElementById('senha');
+
+        // Função para validar campos antes de chamar o Firebase
+        function camposValidos() {
+            if (campoEmail.value.trim() === "" || campoSenha.value === "") {
+                msgErro.innerText = "⚠️ Digite e-mail e senha primeiro!";
+                return false;
+            }
+            return true;
+        }
+
+        // Login Google
+        document.getElementById('btn-google').onclick = () => {
+            const provider = new GoogleAuthProvider();
+            signInWithPopup(auth, provider)
+                .catch((error) => msgErro.innerText = "Erro Google: " + error.message);
+        };
+
+        // Login E-mail
+        document.getElementById('btn-entrar').onclick = () => {
+            if (!camposValidos()) return;
+            signInWithEmailAndPassword(auth, campoEmail.value.trim(), campoSenha.value)
+                .catch(() => msgErro.innerText = "E-mail ou senha incorretos.");
+        };
+
+        // Criar Conta
+        document.getElementById('btn-cadastro').onclick = () => {
+            if (!camposValidos()) return;
+            if (campoSenha.value.length < 6) {
+                msgErro.innerText = "A senha deve ter 6 ou mais dígitos.";
+                return;
+            }
+            createUserWithEmailAndPassword(auth, campoEmail.value.trim(), campoSenha.value)
+                .catch((error) => {
+                    if(error.code === 'auth/invalid-email') msgErro.innerText = "E-mail inválido!";
+                    else msgErro.innerText = "Erro: " + error.message;
+                });
+        };
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) window.location.href = 'index.html';
+        });
+    </script>
+</body>
+</html>
+

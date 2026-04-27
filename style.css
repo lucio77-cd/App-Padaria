@@ -1,0 +1,32 @@
+:root {
+    --verde-livre: #a8e6cf;
+    --vermelho-ocupada: #ff8b94;
+    --dark: #2c3e50;
+    --azul: #3498db;
+    --bg: #f4f7f6;
+    --branco: #ffffff;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+body { background: var(--bg); padding-bottom: 80px; }
+
+header { display: flex; justify-content: space-between; padding: 15px 20px; background: var(--branco); border-bottom: 1px solid #ddd; align-items: center; }
+
+.nav-tabs { display: flex; gap: 10px; padding: 12px; background: #fff; border-bottom: 1px solid #eee; overflow-x: auto; }
+.nav-tabs button { flex: 1; padding: 12px; border: 1px solid #ddd; background: white; border-radius: 8px; cursor: pointer; font-weight: bold; min-width: 100px; }
+.nav-tabs button.active { background: var(--dark); color: white; }
+
+.main-container { padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+
+/* Formulários e Botões */
+.card-auth { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 400px; margin: 50px auto; }
+.input-padrao { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; }
+.btn-principal { width: 100%; padding: 15px; background: var(--dark); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+
+/* Grid de Mesas */
+.grid-mesas { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+.mesa { aspect-ratio: 1/1; border: 2.5px solid #333; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; box-shadow: 0 4px 0 #333; }
+.livre { background: var(--verde-livre); }
+.ocupada { background: var(--vermelho-ocupada); }
+
+footer { position: fixed; bottom: 0; width: 100%; background: var(--dark); color: white; padding: 15px; text-align: center; font-weight: bold; z-index: 100; border-top: 3px solid var(--azul); }

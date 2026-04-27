@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="style.css">
+    <title>Meus Produtos</title>
+</head>
+<body>
+    <header>
+        <button onclick="location.href='index.html'">⬅ Voltar</button>
+        <strong>MINHA EMENTA</strong>
+    </header>
+
+    <div class="main-container">
+        <div class="card-auth" style="margin: 0; max-width: 100%;">
+            <h4>Novo Produto</h4>
+            <input type="text" id="nomeP" placeholder="Nome (Ex: Pão de Queijo)" class="input-padrao">
+            <input type="number" id="precoP" placeholder="Preço (Ex: 2.50)" class="input-padrao">
+            <button id="btn-salvar" class="btn-principal" style="background: var(--azul);">ADICIONAR</button>
+        </div>
+
+        <div id="lista-produtos"></div>
+    </div>
+
+    <script type="module">
+        import { db, auth } from './firebase.js';
+        import { collection, addDoc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+        onAuthStateChanged(auth, user => {
+            if (!user) location.href = 'login.html';
+
+            const q = query(collection(db, "produtos"), where("userId", "==", user.uid));
+
+            document.getElementById('btn-salvar').onclick = async () => {
+                await addDoc(collection(db, "produtos"), {
+                    nome: nomeP.value,
+                    preco: parseFloat(precoP.value),
+                    userId: user.uid
+                });
+                nomeP.value = ""; precoP.value = "";
+            };
+
+            onSnapshot(q, snap => {
+                const lista = document.getElementById('lista-produtos');
+                lista.innerHTML = "<h3>Produtos Cadastrados</h3>";
+                snap.forEach(doc => {
+                    const p = doc.data();
+                    lista.innerHTML += `<div class="input-padrao" style="background:white"><b>${p.nome}</b> - R$ ${p.preco.toFixed(2)}</div>`;
+                });
+            });
+        });
+    </script>
+</body>
+</html>

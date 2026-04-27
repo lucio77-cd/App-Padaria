@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="style.css">
+    <title>Salão - Padaria SaaS</title>
+</head>
+<body>
+    <header>
+        <div id="user-info">A carregar...</div>
+        <button onclick="import('./firebase.js').then(f => f.auth.signOut().then(()=>location.href='login.html'))">Sair</button>
+    </header>
+
+    <nav class="nav-tabs">
+        <button class="active" onclick="location.href='index.html'">SALÃO</button>
+        <button onclick="location.href='produtos.html'">PRODUTOS</button>
+        <button onclick="location.href='caixa.html'">CAIXA</button>
+    </nav>
+
+    <div class="main-container">
+        <div class="grid-mesas" id="grid-mesas"></div>
+    </div>
+
+    <footer id="footer-status">Carregando dados...</footer>
+
+    <script type="module">
+        import { db, auth } from './firebase.js';
+        import { collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+        onAuthStateChanged(auth, user => {
+            if (!user) location.href = 'login.html';
+            document.getElementById('user-info').innerText = "📍 " + user.email;
+
+            const grid = document.getElementById('grid-mesas');
+            const q = query(collection(db, "mesas_ativas"), where("userId", "==", user.uid));
+
+            onSnapshot(q, snap => {
+                grid.innerHTML = "";
+                const ocupadas = {};
+                snap.forEach(doc => ocupadas[doc.data().mesa] = true);
+
+                for (let i = 1; i <= 10; i++) {
+                    const div = document.createElement('div');
+                    div.className = `mesa ${ocupadas[i] ? 'ocupada' : 'livre'}`;
+                    div.innerHTML = `MESA ${i}<br><small>${ocupadas[i] ? 'OCUPADA' : 'LIVRE'}</small>`;
+                    div.onclick = () => location.href = `pedido.html?mesa=${i}`;
+                    grid.appendChild(div);
+                }
+                
+                const countOcupadas = Object.keys(ocupadas).length;
+                document.getElementById('footer-status').innerText = `Ocupadas: ${countOcupadas} | Livres: ${10 - countOcupadas}`;
+            });
+        });
+    </script>
+</body>
+</html>
