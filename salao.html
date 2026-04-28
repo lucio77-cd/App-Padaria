@@ -8,7 +8,7 @@
         body { font-family: sans-serif; background: #f4f7f6; margin: 0; padding: 0; }
         header { background: #2c3e50; color: white; padding: 40px 20px; text-align: center; font-size: 1.8rem; font-weight: bold; text-transform: uppercase; }
         
-        /* Ajuste para 3 colunas para caber as 11 mesas melhor */
+        /* Grid ajustado para 3 colunas para caber as 11 mesas no celular */
         .grid-mesas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 15px; margin-bottom: 70px; }
         
         .mesa { aspect-ratio: 1/1; border-radius: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; font-weight: bold; cursor: pointer; border: 3px solid transparent; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
@@ -19,21 +19,22 @@
 
         .footer-status { background: #2c3e50; color: white; padding: 15px; position: fixed; bottom: 0; width: 100%; text-align: center; font-size: 1rem; }
         
-        .nav-buttons { display: flex; justify-content: space-around; padding: 10px; gap: 10px; background: #ecf0f1; }
-        .nav-buttons button { flex: 1; padding: 12px; border-radius: 8px; border: none; background: #34495e; color: white; font-weight: bold; cursor: pointer; font-size: 0.7rem; }
+        .nav-menu { display: flex; justify-content: space-around; margin-top: 10px; padding: 0 20px; gap: 10px; }
+        .nav-menu button { flex: 1; padding: 15px; border-radius: 10px; border: none; background: #34495e; color: white; font-weight: bold; cursor: pointer; font-size: 0.7rem; }
     </style>
 </head>
 <body>
 
 <header>SISTEMA CRIS</header>
 
-<div class="nav-buttons">
+<div class="nav-menu">
     <button onclick="location.href='produtos.html'">PRODUTO</button>
     <button onclick="location.href='caixa.html'">CAIXA</button>
     <button onclick="location.href='dashboard.html'">DASHBOARD</button>
 </div>
 
-<div class="grid-mesas" id="container-mesas"></div>
+<div class="grid-mesas" id="container-mesas">
+    </div>
 
 <div class="footer-status" id="barra-status">Ocupadas: 0 | Livres: 0</div>
 
@@ -48,11 +49,13 @@
         onSnapshot(mesasRef, (snapshot) => {
             const container = document.getElementById('container-mesas');
             container.innerHTML = '';
-            let ocupadas = 0; let livres = 0;
+            let ocupadas = 0; 
+            let livres = 0;
 
-            // MUDANÇA PARA 11 MESAS AQUI
+            // Lógica para 11 mesas conforme configurado no Firebase
             for (let i = 1; i <= 11; i++) {
                 let mesaDoc = { ocupada: false, total: 0 };
+                
                 snapshot.forEach(doc => {
                     if (doc.id === `mesa_${i}`) mesaDoc = doc.data();
                 });
@@ -61,17 +64,27 @@
 
                 const btn = document.createElement('div');
                 btn.className = `mesa ${mesaDoc.ocupada ? 'ocupada' : 'livre'}`;
+                
                 btn.innerHTML = `
                     <div class="mesa-titulo">MESA ${i}</div>
-                    <div class="mesa-status">${mesaDoc.ocupada ? 'R$ ' + (mesaDoc.total || 0).toFixed(2) : 'LIVRE'}</div>
+                    <div class="mesa-status">
+                        ${mesaDoc.ocupada ? 'R$ ' + (mesaDoc.total || 0).toFixed(2) : 'LIVRE'}
+                    </div>
                 `;
                 
-                btn.onclick = () => { window.location.href = `pedido.html?mesa=${i}`; };
+                // Clique dinâmico: envia o número da mesa para a página de pedidos
+                btn.onclick = () => {
+                    window.location.href = `pedido.html?mesa=${i}`;
+                };
+
                 container.appendChild(btn);
             }
+
+            // Atualiza a barra inferior com os totais reais
             document.getElementById('barra-status').innerText = `Ocupadas: ${ocupadas} | Livres: ${livres}`;
         });
     });
 </script>
+
 </body>
 </html>
