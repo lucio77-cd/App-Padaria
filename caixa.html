@@ -6,18 +6,16 @@
     <title>Caixa - Sistema Cris</title>
     <style>
         body { font-family: sans-serif; background: #f4f7f6; text-align: center; padding: 20px; }
-        .display-caixa { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); margin-top: 30px; }
-        .valor { font-size: 4rem; color: #27ae60; font-weight: bold; margin: 20px 0; }
-        .btn-pagar { background: #27ae60; color: white; border: none; padding: 20px; width: 100%; border-radius: 12px; font-size: 1.3rem; font-weight: bold; cursor: pointer; }
+        .caixa-card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-top: 20px; }
+        .valor-final { font-size: 3.5rem; color: #27ae60; font-weight: bold; margin: 20px 0; }
+        .btn-ok { background: #27ae60; color: white; border: none; padding: 20px; width: 100%; border-radius: 12px; font-size: 1.2rem; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
-    <button onclick="location.href='salao.html'">⬅ VOLTAR SALÃO</button>
+    <button onclick="location.href='salao.html'">⬅ VOLTAR AO SALÃO</button>
 
-    <div id="conteudo-caixa">
-        <div class="display-caixa">
-            <p>Selecione uma mesa no salão.</p>
-        </div>
+    <div id="caixa-container">
+        <p>Aguardando seleção de mesa...</p>
     </div>
 
 <script type="module">
@@ -32,27 +30,29 @@
             onSnapshot(mesaRef, s => {
                 if (s.exists() && s.data().ocupada) {
                     const total = s.data().total || 0;
-                    document.getElementById('conteudo-caixa').innerHTML = `
-                        <div class="display-caixa">
-                            <h3>MESA ${mesaId}</h3>
-                            <div class="valor">R$ ${total.toFixed(2)}</div>
-                            <button class="btn-pagar" id="btn-finalizar">FINALIZAR PAGAMENTO</button>
+                    document.getElementById('caixa-container').innerHTML = `
+                        <div class="caixa-card">
+                            <h3>PAGAMENTO MESA ${mesaId}</h3>
+                            <div class="valor-final">R$ ${total.toFixed(2)}</div>
+                            <button class="btn-ok" id="btn-fim">FINALIZAR E LIBERAR MESA</button>
                         </div>`;
                     
-                    document.getElementById('btn-finalizar').onclick = async () => {
-                        if (confirm("Confirmar recebimento?")) {
+                    document.getElementById('btn-fim').onclick = async () => {
+                        if (confirm("Confirmar pagamento recebido?")) {
+                            // Salva a venda no histórico
                             await addDoc(collection(db, `vendas_${user.uid}`), {
                                 valor: total,
                                 mesa: mesaId,
                                 data: serverTimestamp()
                             });
+                            // Limpa a mesa
                             await updateDoc(mesaRef, { ocupada: false, total: 0, itens: [] });
-                            alert("Venda registrada!");
+                            alert("Venda finalizada!");
                             location.href = 'salao.html';
                         }
                     };
                 } else {
-                    document.getElementById('conteudo-caixa').innerHTML = "Mesa já está livre.";
+                    document.getElementById('caixa-container').innerHTML = "<h3>Esta mesa já está livre.</h3>";
                 }
             });
         }
