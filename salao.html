@@ -9,14 +9,14 @@
         body { font-family: sans-serif; background: #f4f7f6; margin: 0; padding: 0; }
         header { background: #2c3e50; color: white; padding: 15px; text-align: center; }
         
-        /* Menu de Navegação Superior */
-        .nav-buttons { display: flex; gap: 10px; padding: 10px; background: #ecf0f1; position: sticky; top: 0; z-index: 100; }
-        .nav-buttons button { flex: 1; padding: 15px; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; color: white; }
-        .btn-produtos { background: #e67e22; } /* Laranja */
-        .btn-caixa { background: #27ae60; }    /* Verde */
-        .btn-dash { background: #9b59b6; }     /* Roxo */
+        /* Menu Superior */
+        .nav-buttons { display: flex; gap: 8px; padding: 10px; background: #ecf0f1; position: sticky; top: 0; z-index: 100; }
+        .nav-buttons button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; color: white; font-size: 0.9rem; }
+        .btn-produtos { background: #e67e22; }
+        .btn-caixa { background: #27ae60; }
+        .btn-dash { background: #9b59b6; }
 
-        /* Grid das Mesas */
+        /* Grid das Mesas Otimizado para Celular */
         .grid-mesas { 
             display: grid; 
             grid-template-columns: repeat(2, 1fr); 
@@ -34,25 +34,23 @@
             font-size: 1.2rem;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             border: none;
-            transition: transform 0.1s;
+            cursor: pointer;
         }
-        .mesa:active { transform: scale(0.95); }
         .livre { background-color: #a2e4c9; color: #1e4d3a; border: 2px solid #2ecc71; }
         .ocupada { background-color: #f1948a; color: #7b241c; border: 2px solid #e74c3c; }
-        
         .status-txt { font-size: 0.8rem; opacity: 0.8; margin-top: 5px; }
     </style>
 </head>
 <body>
 
 <header>
-    <h1 style="margin:0;">SALÃO</h1>
+    <h1 style="margin:0; font-size: 1.5rem;">SALÃO</h1>
 </header>
 
 <div class="nav-buttons">
-    <button class="btn-produtos" onclick="location.href='produtos.html'">🍞 Produtos</button>
-    <button class="btn-caixa" onclick="location.href='caixa.html'">💰 Caixa</button>
-    <button class="btn-dash" onclick="location.href='dashboard.html'">📊 Dash</button>
+    <button class="btn-produtos" onclick="location.href='produtos.html'">🍞 PRODUTOS</button>
+    <button class="btn-caixa" onclick="location.href='caixa.html'">💰 CAIXA</button>
+    <button class="btn-dash" onclick="location.href='dashboard.html'">📊 DASH</button>
 </div>
 
 <div class="grid-mesas" id="salao-container">
@@ -60,7 +58,7 @@
 
 <script type="module">
     import { db, auth } from './firebase.js';
-    import { collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { collection, onSnapshot, query, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     onAuthStateChanged(auth, user => {
@@ -72,39 +70,41 @@
     });
 
     function carregarMesas(uid) {
+        // Escuta a coleção de mesas do usuário em tempo real
         const q = query(collection(db, `mesas_${uid}`));
         
         onSnapshot(q, (snapshot) => {
             const container = document.getElementById('salao-container');
             container.innerHTML = '';
 
-            // Criamos 10 mesas fixas
+            // Geramos 10 mesas fixas para manter o padrão visual
             for (let i = 1; i <= 10; i++) {
                 let dadosMesa = { ocupada: false };
                 
-                // Verifica se a mesa já tem dados no Firebase
+                // Busca se a mesa i existe no banco
                 snapshot.forEach(doc => {
                     if (doc.id === `mesa_${i}`) dadosMesa = doc.data();
                 });
 
-                const div = document.createElement('button');
-                div.className = `mesa ${dadosMesa.ocupada ? 'ocupada' : 'livre'}`;
-                div.innerHTML = `
+                const btn = document.createElement('button');
+                btn.className = `mesa ${dadosMesa.ocupada ? 'ocupada' : 'livre'}`;
+                btn.innerHTML = `
                     <span>MESA ${i}</span>
                     <span class="status-txt">${dadosMesa.ocupada ? 'OCUPADA' : 'LIVRE'}</span>
                 `;
 
-                div.onclick = () => {
+                // A LÓGICA CRUCIAL: Enviar o parâmetro ?mesa=ID
+                btn.onclick = () => {
                     if (dadosMesa.ocupada) {
-                        // Se estiver ocupada, vai para o CAIXA fechar
-                        location.href = `caixa.html?mesa=${i}`;
+                        // Se estiver vermelha, vai fechar no caixa
+                        window.location.href = `caixa.html?mesa=${i}`;
                     } else {
-                        // Se estiver livre, vai para ADICIONAR ITENS (ou página de pedido)
-                        location.href = `pedido.html?mesa=${i}`;
+                        // Se estiver verde, vai abrir novo pedido
+                        window.location.href = `pedido.html?mesa=${i}`;
                     }
                 };
 
-                container.appendChild(div);
+                container.appendChild(btn);
             }
         });
     }
