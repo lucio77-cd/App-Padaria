@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lançar Pedido - Sistema Cris</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { font-family: sans-serif; background: #f4f7f6; margin: 0; padding: 15px; }
+        .header-pedido { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .btn-voltar { background: #95a5a6; color: white; border: none; padding: 10px 15px; border-radius: 8px; }
+        .card-item { background: white; padding: 15px; margin-bottom: 10px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .btn-add { background: #27ae60; color: white; border: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; }
+        .resumo-mesa { background: #2c3e50; color: white; padding: 15px; border-radius: 10px; margin-top: 20px; position: sticky; bottom: 15px; }
+    </style>
+</head>
+<body>
+
+<div class="header-pedido">
+    <button class="btn-voltar" onclick="location.href='salao.html'">⬅ Voltar</button>
+    <h2 id="titulo-mesa">Mesa</h2>
+</div>
+
+<div id="lista-produtos">
+    <p>Carregando produtos...</p>
+</div>
+
+<div class="resumo-mesa">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span>Total: <b id="total-acumulado">R$ 0,00</b></span>
+        <button id="btnSalvar" style="background: #f1c40f; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; color: #2c3e50;">ABRIR/ATUALIZAR MESA</button>
+    </div>
+</div>
+
+<script type="module">
+    import { db, auth } from './firebase.js';
+    import { doc, setDoc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const params = new URLSearchParams(window.location.search);
+    const mesaId = params.get('mesa');
+    document.getElementById('titulo-mesa').innerText = `Mesa ${mesaId}`;
+
+    let itensNaMesa = [];
+    let totalMesa = 0;
+
+    // 1. Carregar Produtos para o menu
+    async function carregarMenu() {
+        const querySnapshot = await getDocs(collection(db, "produtos"));
+        let html = '';
+        querySnapshot.forEach((doc) => {
+            const p = doc.data();
+            html += `
+                <div class="card-item">
+                    <div><b>${p.nome}</b><br><small>R$ ${p.preco.toFixed(2)}</small></div>
+                    <button class="btn-add" onclick="adicionarItem('${p.nome}', ${p.preco})">+</button>
+                </div>`;
+        });
+        document.getElementById('lista-produtos').innerHTML = html;
+    }
+
+    window.adicionarItem = (nome, preco) => {
+        itensNaMesa.push({ nome, preco });
+        totalMesa += preco;
+        document.getElementById('total-acumulado').innerText = `R$ ${totalMesa.toFixed(2)}`;
+    };
+
+    document.getElementById('btnSalvar').onclick = async () => {
+        const user = auth.currentUser;
+        if (itensNaMesa.length === 0) return alert("Adicione algum item!");
+
+        await setDoc(doc(db, `mesas_${user.uid}`, `mesa_${mesaId}`), {
+            ocupada: true,
+            itens: itensNaMesa,
+            total: totalMesa
+        });
+
+        alert("Pedido enviado!");
+        location.href = 'salao.html';
+    };
+
+    carregarMenu();
+</script>
+</body>
+</html>
