@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caixa - Sistema Cris</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .venda-card { background: white; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 5px solid #2ecc71; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .total-dia { font-size: 1.5rem; font-weight: bold; color: #2c3e50; text-align: center; padding: 20px; background: #ecf0f1; border-radius: 8px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <header style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #2c3e50; color: white;">
+        <button onclick="location.href='salao.html'" style="background: #95a5a6; color: white; border: none; padding: 8px 15px; border-radius: 5px;">Voltar</button>
+        <h2 style="margin: 0;">Fluxo de Caixa</h2>
+        <div style="width: 70px;"></div>
+    </header>
+
+    <main style="padding: 15px;">
+        <div class="total-dia">
+            Total Hoje: <span id="valor-total-dia">R$ 0,00</span>
+        </div>
+
+        <h3>Vendas Recentes</h3>
+        <div id="lista-vendas">
+            </div>
+    </main>
+
+    <script type="module">
+        import { db, auth } from './firebase.js';
+        import { collection, query, where, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+        onAuthStateChanged(auth, user => {
+            if (!user) { location.href = 'index.html'; return; }
+
+            const vendasRef = collection(db, "vendas");
+            const q = query(vendasRef, where("userId", "==", user.uid), orderBy("data", "desc"));
+
+            onSnapshot(q, (snapshot) => {
+                let totalGeral = 0;
+                let html = '';
+                
+                snapshot.forEach(doc => {
+                    const venda = doc.data();
+                    totalGeral += venda.total;
+                    const dataFormatada = venda.data ? new Date(venda.data.seconds * 1000).toLocaleTimeString() : '';
+                    
+                    html += `
+                        <div class="venda-card">
+                            <strong>Mesa ${venda.mesa}</strong> - ${dataFormatada}<br>
+                            <span style="color: #7f8c8d;">${venda.itens.map(i => i.nome).join(', ')}</span><br>
+                            <span style="color: #27ae60; font-weight: bold;">R$ ${venda.total.toFixed(2)}</span>
+                        </div>
+                    `;
+                });
+
+                document.getElementById('valor-total-dia').innerText = `R$ ${totalGeral.toFixed(2)}`;
+                document.getElementById('lista-vendas').innerHTML = html || '<p>Nenhuma venda hoje.</p>';
+            });
+        });
+    </script>
+</body>
+</html>
