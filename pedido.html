@@ -10,18 +10,15 @@
         .btn-voltar { background: #7f8c8d; color: white; border: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; }
         .container { padding: 15px; }
         .resumo { background: #34495e; color: white; padding: 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .lista-consumo { background: white; padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 20px; }
+        .lista-consumo { background: white; padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 20px; min-height: 50px; }
         .item-linha { border-bottom: 1px solid #eee; padding: 10px 0; display: flex; justify-content: space-between; }
-        
-        /* Estilo dos botões de produto */
         .grid-produtos { display: grid; grid-template-columns: 1fr; gap: 10px; }
         .btn-produto { 
             background: white; border: 1px solid #dcdde1; padding: 20px; border-radius: 12px; 
             display: flex; justify-content: space-between; align-items: center;
             font-weight: bold; font-size: 1.1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            cursor: pointer; active: transform: scale(0.98);
+            cursor: pointer;
         }
-        .btn-produto span { color: #2c3e50; }
         .btn-produto b { color: #27ae60; }
     </style>
 </head>
@@ -34,16 +31,16 @@
 
 <div class="container">
     <div class="resumo">
-        <span>TOTAL ACUMULADO:</span>
+        <span>TOTAL:</span>
         <h2 id="total-val" style="margin:0">R$ 0,00</h2>
     </div>
 
     <h4>Itens na Mesa:</h4>
-    <div class="lista-consumo" id="lista-itens">Nenhum item lançado.</div>
+    <div class="lista-consumo" id="lista-itens">Carregando consumo...</div>
 
     <hr>
     <h4>Toque para Adicionar:</h4>
-    <div class="grid-produtos" id="cardapio-render">Carregando produtos...</div>
+    <div class="grid-produtos" id="cardapio-render">Buscando seus produtos...</div>
 </div>
 
 <script type="module">
@@ -51,54 +48,69 @@
     import { doc, onSnapshot, updateDoc, arrayUnion, collection, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const params = new URLSearchParams(window.location.search);
-    const mesaId = params.get('mesa');
+    const mesaId = params.get('mesa') || "1";
     document.getElementById('mesa-num').innerText = mesaId;
 
     auth.onAuthStateChanged(async user => {
-        if (!user) return;
+        if (!user) {
+            console.log("Usuário não logado");
+            return;
+        }
+
         const mesaRef = doc(db, `mesas_${user.uid}`, `mesa_${mesaId}`);
 
-        // 1. Monitora a mesa em tempo real (Total e Itens já pedidos)
+        // 1. ESCUTA A MESA
         onSnapshot(mesaRef, (snap) => {
             if (snap.exists()) {
                 const dados = snap.data();
-                document.getElementById('total-val').innerText = `R$ ${dados.total.toFixed(2)}`;
+                document.getElementById('total-val').innerText = `R$ ${(dados.total || 0).toFixed(2)}`;
                 document.getElementById('lista-itens').innerHTML = (dados.itens && dados.itens.length) ? 
                     dados.itens.map(i => `<div class="item-linha"><span>${i.nome}</span> <b>R$ ${i.preco.toFixed(2)}</b></div>`).join('') : "Mesa vazia";
+            } else {
+                document.getElementById('lista-itens').innerText = "Mesa vazia (não iniciada)";
             }
         });
 
-        // 2. Busca todos os produtos cadastrados na sua coleção 'produtos'
-        try {
-            const prodSnap = await getDocs(collection(db, `produtos_${user.uid}`));
+        // 2. FUNÇÃO PARA RENDERIZAR
+        const renderizarProdutos = (querySnapshot) => {
             const container = document.getElementById('cardapio-render');
             container.innerHTML = '';
-
-            if (prodSnap.empty) {
-                container.innerHTML = "<p>Nenhum produto cadastrado. Vá em 'Produtos' e adicione itens.</p>";
-            }
-
-            prodSnap.forEach(docProd => {
+            querySnapshot.forEach(docProd => {
                 const item = docProd.data();
                 const botao = document.createElement('div');
                 botao.className = 'btn-produto';
-                botao.innerHTML = `<span>${item.nome}</span> <b>R$ ${item.preco.toFixed(2)}</b>`;
-                
-                // Ação de adicionar ao clicar
+                botao.innerHTML = `<span>${item.nome}</span> <b>R$ ${parseFloat(item.preco).toFixed(2)}</b>`;
                 botao.onclick = async () => {
                     const mesaAtual = await getDoc(mesaRef);
                     const totalVelho = mesaAtual.exists() ? (mesaAtual.data().total || 0) : 0;
-                    
                     await updateDoc(mesaRef, {
                         ocupada: true,
-                        itens: arrayUnion({ nome: item.nome, preco: item.preco }),
-                        total: totalVelho + item.preco
+                        itens: arrayUnion({ nome: item.nome, preco: parseFloat(item.preco) }),
+                        total: totalVelho + parseFloat(item.preco)
                     });
                 };
                 container.appendChild(botao);
             });
+        };
+
+        // 3. TENTA BUSCAR PRODUTOS (EM DUAS COLEÇÕES POSSÍVEIS)
+        try {
+            // Tenta primeiro na coleção personalizada
+            let pSnap = await getDocs(collection(db, `produtos_${user.uid}`));
+            
+            // Se estiver vazia, tenta na coleção geral 'produtos'
+            if (pSnap.empty) {
+                console.log("Tentando coleção geral...");
+                pSnap = await getDocs(collection(db, "produtos"));
+            }
+
+            if (pSnap.empty) {
+                document.getElementById('cardapio-render').innerHTML = "Nenhum produto achado no banco. Verifique o cadastro.";
+            } else {
+                renderizarProdutos(pSnap);
+            }
         } catch (e) {
-            console.error("Erro ao carregar cardápio:", e);
+            document.getElementById('cardapio-render').innerText = "Erro ao ler banco: " + e.message;
         }
     });
 </script>
