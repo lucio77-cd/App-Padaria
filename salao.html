@@ -1,59 +1,114 @@
 <!DOCTYPE html>
-<html lang="pt-pt">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="style.css">
-    <title>Salão - Padaria SaaS</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salão - Sistema Cris</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { font-family: sans-serif; background: #f4f7f6; margin: 0; padding: 0; }
+        header { background: #2c3e50; color: white; padding: 15px; text-align: center; }
+        
+        /* Menu de Navegação Superior */
+        .nav-buttons { display: flex; gap: 10px; padding: 10px; background: #ecf0f1; position: sticky; top: 0; z-index: 100; }
+        .nav-buttons button { flex: 1; padding: 15px; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; color: white; }
+        .btn-produtos { background: #e67e22; } /* Laranja */
+        .btn-caixa { background: #27ae60; }    /* Verde */
+        .btn-dash { background: #9b59b6; }     /* Roxo */
 
+        /* Grid das Mesas */
+        .grid-mesas { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 15px; 
+            padding: 15px; 
+        }
+        .mesa { 
+            aspect-ratio: 1 / 1; 
+            border-radius: 15px; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            font-weight: bold; 
+            font-size: 1.2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border: none;
+            transition: transform 0.1s;
+        }
+        .mesa:active { transform: scale(0.95); }
+        .livre { background-color: #a2e4c9; color: #1e4d3a; border: 2px solid #2ecc71; }
+        .ocupada { background-color: #f1948a; color: #7b241c; border: 2px solid #e74c3c; }
+        
+        .status-txt { font-size: 0.8rem; opacity: 0.8; margin-top: 5px; }
+    </style>
 </head>
 <body>
-    <header>
-        <div id="user-info">A carregar...</div>
-        <button onclick="import('./firebase.js').then(f => f.auth.signOut().then(()=>location.href='login.html'))">Sair</button>
-    </header>
 
-    <nav class="nav-tabs">
-        <button class="active" onclick="location.href='index.html'">SALÃO</button>
-        <button onclick="location.href='produtos.html'">PRODUTOS</button>
-        <button onclick="location.href='caixa.html'">CAIXA</button>
-    </nav>
+<header>
+    <h1 style="margin:0;">SALÃO</h1>
+</header>
 
-    <div class="main-container">
-        <div class="grid-mesas" id="grid-mesas"></div>
+<div class="nav-buttons">
+    <button class="btn-produtos" onclick="location.href='produtos.html'">🍞 Produtos</button>
+    <button class="btn-caixa" onclick="location.href='caixa.html'">💰 Caixa</button>
+    <button class="btn-dash" onclick="location.href='dashboard.html'">📊 Dash</button>
+</div>
+
+<div class="grid-mesas" id="salao-container">
     </div>
 
-    <footer id="footer-status">Carregando dados...</footer>
+<script type="module">
+    import { db, auth } from './firebase.js';
+    import { collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-    <script type="module">
-        import { db, auth } from './firebase.js';
-        import { collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    onAuthStateChanged(auth, user => {
+        if (!user) {
+            location.href = 'index.html';
+            return;
+        }
+        carregarMesas(user.uid);
+    });
 
-        onAuthStateChanged(auth, user => {
-            if (!user) location.href = 'login.html';
-            document.getElementById('user-info').innerText = "📍 " + user.email;
+    function carregarMesas(uid) {
+        const q = query(collection(db, `mesas_${uid}`));
+        
+        onSnapshot(q, (snapshot) => {
+            const container = document.getElementById('salao-container');
+            container.innerHTML = '';
 
-            const grid = document.getElementById('grid-mesas');
-            const q = query(collection(db, "mesas_ativas"), where("userId", "==", user.uid));
-
-            onSnapshot(q, snap => {
-                grid.innerHTML = "";
-                const ocupadas = {};
-                snap.forEach(doc => ocupadas[doc.data().mesa] = true);
-
-                for (let i = 1; i <= 10; i++) {
-                    const div = document.createElement('div');
-                    div.className = `mesa ${ocupadas[i] ? 'ocupada' : 'livre'}`;
-                    div.innerHTML = `MESA ${i}<br><small>${ocupadas[i] ? 'OCUPADA' : 'LIVRE'}</small>`;
-                    div.onclick = () => location.href = `pedido.html?mesa=${i}`;
-                    grid.appendChild(div);
-                }
+            // Criamos 10 mesas fixas
+            for (let i = 1; i <= 10; i++) {
+                let dadosMesa = { ocupada: false };
                 
-                const countOcupadas = Object.keys(ocupadas).length;
-                document.getElementById('footer-status').innerText = `Ocupadas: ${countOcupadas} | Livres: ${10 - countOcupadas}`;
-            });
+                // Verifica se a mesa já tem dados no Firebase
+                snapshot.forEach(doc => {
+                    if (doc.id === `mesa_${i}`) dadosMesa = doc.data();
+                });
+
+                const div = document.createElement('button');
+                div.className = `mesa ${dadosMesa.ocupada ? 'ocupada' : 'livre'}`;
+                div.innerHTML = `
+                    <span>MESA ${i}</span>
+                    <span class="status-txt">${dadosMesa.ocupada ? 'OCUPADA' : 'LIVRE'}</span>
+                `;
+
+                div.onclick = () => {
+                    if (dadosMesa.ocupada) {
+                        // Se estiver ocupada, vai para o CAIXA fechar
+                        location.href = `caixa.html?mesa=${i}`;
+                    } else {
+                        // Se estiver livre, vai para ADICIONAR ITENS (ou página de pedido)
+                        location.href = `pedido.html?mesa=${i}`;
+                    }
+                };
+
+                container.appendChild(div);
+            }
         });
-    </script>
+    }
+</script>
+
 </body>
 </html>
