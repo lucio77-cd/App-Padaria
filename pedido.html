@@ -7,13 +7,22 @@
     <style>
         body { font-family: sans-serif; background: #f4f7f6; margin: 0; padding: 0; }
         .nav-back { background: #2c3e50; padding: 15px; color: white; display: flex; align-items: center; gap: 10px; }
-        .btn-voltar { background: #7f8c8d; color: white; border: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; }
+        .btn-voltar { background: #7f8c8d; color: white; border: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; }
         .container { padding: 15px; }
         .resumo { background: #34495e; color: white; padding: 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .lista { background: white; padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 20px; }
-        .item-p { border-bottom: 1px solid #eee; padding: 10px 0; display: flex; justify-content: space-between; }
-        .cardapio-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
-        .prod-btn { background: white; border: 1px solid #ddd; padding: 18px; border-radius: 12px; display: flex; justify-content: space-between; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .lista-consumo { background: white; padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 20px; }
+        .item-linha { border-bottom: 1px solid #eee; padding: 10px 0; display: flex; justify-content: space-between; }
+        
+        /* Estilo dos botões de produto */
+        .grid-produtos { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        .btn-produto { 
+            background: white; border: 1px solid #dcdde1; padding: 20px; border-radius: 12px; 
+            display: flex; justify-content: space-between; align-items: center;
+            font-weight: bold; font-size: 1.1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            cursor: pointer; active: transform: scale(0.98);
+        }
+        .btn-produto span { color: #2c3e50; }
+        .btn-produto b { color: #27ae60; }
     </style>
 </head>
 <body>
@@ -25,59 +34,72 @@
 
 <div class="container">
     <div class="resumo">
-        <span>TOTAL:</span>
+        <span>TOTAL ACUMULADO:</span>
         <h2 id="total-val" style="margin:0">R$ 0,00</h2>
     </div>
 
-    <h4>Consumo Atual:</h4>
-    <div class="lista" id="lista-itens">Nenhum item lançado.</div>
+    <h4>Itens na Mesa:</h4>
+    <div class="lista-consumo" id="lista-itens">Nenhum item lançado.</div>
 
-    <h4>Adicionar Produtos:</h4>
-    <div class="cardapio-grid" id="cardapio-btn">Carregando cardápio...</div>
+    <hr>
+    <h4>Toque para Adicionar:</h4>
+    <div class="grid-produtos" id="cardapio-render">Carregando produtos...</div>
 </div>
 
 <script type="module">
     import { db, auth } from './firebase.js';
     import { doc, onSnapshot, updateDoc, arrayUnion, collection, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    const id = new URLSearchParams(window.location.search).get('mesa');
-    document.getElementById('mesa-num').innerText = id;
+    const params = new URLSearchParams(window.location.search);
+    const mesaId = params.get('mesa');
+    document.getElementById('mesa-num').innerText = mesaId;
 
     auth.onAuthStateChanged(async user => {
         if (!user) return;
-        const ref = doc(db, `mesas_${user.uid}`, `mesa_${id}`);
+        const mesaRef = doc(db, `mesas_${user.uid}`, `mesa_${mesaId}`);
 
-        // Atualiza a lista de consumo em tempo real
-        onSnapshot(ref, (s) => {
-            if (s.exists()) {
-                const d = s.data();
-                document.getElementById('total-val').innerText = `R$ ${d.total.toFixed(2)}`;
-                document.getElementById('lista-itens').innerHTML = (d.itens && d.itens.length) ? 
-                    d.itens.map(i => `<div class="item-p"><span>${i.nome}</span> <b>R$ ${i.preco.toFixed(2)}</b></div>`).join('') : "Mesa vazia";
+        // 1. Monitora a mesa em tempo real (Total e Itens já pedidos)
+        onSnapshot(mesaRef, (snap) => {
+            if (snap.exists()) {
+                const dados = snap.data();
+                document.getElementById('total-val').innerText = `R$ ${dados.total.toFixed(2)}`;
+                document.getElementById('lista-itens').innerHTML = (dados.itens && dados.itens.length) ? 
+                    dados.itens.map(i => `<div class="item-linha"><span>${i.nome}</span> <b>R$ ${i.preco.toFixed(2)}</b></div>`).join('') : "Mesa vazia";
             }
         });
 
-        // CARREGA TODOS OS PRODUTOS DO SEU BANCO
-        const pSnap = await getDocs(collection(db, `produtos_${user.uid}`));
-        const cardDiv = document.getElementById('cardapio-btn');
-        cardDiv.innerHTML = '';
-        
-        pSnap.forEach(p => {
-            const pr = p.data();
-            const b = document.createElement('div');
-            b.className = 'prod-btn';
-            b.innerHTML = `<span>${pr.nome}</span> <span>R$ ${pr.preco.toFixed(2)}</span>`;
-            b.onclick = async () => {
-                const mesa = await getDoc(ref);
-                const t = mesa.exists() ? (mesa.data().total || 0) : 0;
-                await updateDoc(ref, { 
-                    ocupada: true, 
-                    itens: arrayUnion({ nome: pr.nome, preco: pr.preco }), 
-                    total: t + pr.preco 
-                });
-            };
-            cardDiv.appendChild(b);
-        });
+        // 2. Busca todos os produtos cadastrados na sua coleção 'produtos'
+        try {
+            const prodSnap = await getDocs(collection(db, `produtos_${user.uid}`));
+            const container = document.getElementById('cardapio-render');
+            container.innerHTML = '';
+
+            if (prodSnap.empty) {
+                container.innerHTML = "<p>Nenhum produto cadastrado. Vá em 'Produtos' e adicione itens.</p>";
+            }
+
+            prodSnap.forEach(docProd => {
+                const item = docProd.data();
+                const botao = document.createElement('div');
+                botao.className = 'btn-produto';
+                botao.innerHTML = `<span>${item.nome}</span> <b>R$ ${item.preco.toFixed(2)}</b>`;
+                
+                // Ação de adicionar ao clicar
+                botao.onclick = async () => {
+                    const mesaAtual = await getDoc(mesaRef);
+                    const totalVelho = mesaAtual.exists() ? (mesaAtual.data().total || 0) : 0;
+                    
+                    await updateDoc(mesaRef, {
+                        ocupada: true,
+                        itens: arrayUnion({ nome: item.nome, preco: item.preco }),
+                        total: totalVelho + item.preco
+                    });
+                };
+                container.appendChild(botao);
+            });
+        } catch (e) {
+            console.error("Erro ao carregar cardápio:", e);
+        }
     });
 </script>
 </body>
