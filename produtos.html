@@ -1,55 +1,53 @@
 <!DOCTYPE html>
-<html lang="pt-pt">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="style.css">
-    <title>Meus Produtos</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Produtos - Sistema Cris</title>
+    <style>
+        body { font-family: sans-serif; padding: 15px; background: #f4f7f6; }
+        .input-group { background: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        .btn-add { background: #3498db; color: white; border: none; width: 100%; padding: 12px; font-weight: bold; border-radius: 5px; }
+        .item-lista { display: flex; justify-content: space-between; background: white; padding: 12px; margin-bottom: 5px; border-radius: 8px; border: 1px solid #ddd; align-items: center; }
+        .btn-del { background: #e74c3c; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; }
+    </style>
 </head>
 <body>
-    <header>
-        <button onclick="location.href='index.html'">⬅ Voltar</button>
-        <strong>MINHA EMENTA</strong>
-    </header>
-
-    <div class="main-container">
-        <div class="card-auth" style="margin: 0; max-width: 100%;">
-            <h4>Novo Produto</h4>
-            <input type="text" id="nomeP" placeholder="Nome (Ex: Pão de Queijo)" class="input-padrao">
-            <input type="number" id="precoP" placeholder="Preço (Ex: 2.50)" class="input-padrao">
-            <button id="btn-salvar" class="btn-principal" style="background: var(--azul);">ADICIONAR</button>
-        </div>
-
-        <div id="lista-produtos"></div>
+    <button onclick="location.href='salao.html'">⬅ VOLTAR</button>
+    <h2>Gerenciar Produtos</h2>
+    <div class="input-group">
+        <input type="text" id="p-nome" placeholder="Nome (Ex: Pão de Queijo)">
+        <input type="number" id="p-preco" placeholder="Preço (Ex: 5.50)">
+        <button class="btn-add" id="btn-add">ADICIONAR</button>
     </div>
+    <h4>Lista de Produtos</h4>
+    <div id="lista-render"></div>
 
-    <script type="module">
-        import { db, auth } from './firebase.js';
-        import { collection, addDoc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-
-        onAuthStateChanged(auth, user => {
-            if (!user) location.href = 'login.html';
-
-            const q = query(collection(db, "produtos"), where("userId", "==", user.uid));
-
-            document.getElementById('btn-salvar').onclick = async () => {
-                await addDoc(collection(db, "produtos"), {
-                    nome: nomeP.value,
-                    preco: parseFloat(precoP.value),
-                    userId: user.uid
-                });
-                nomeP.value = ""; precoP.value = "";
-            };
-
-            onSnapshot(q, snap => {
-                const lista = document.getElementById('lista-produtos');
-                lista.innerHTML = "<h3>Produtos Cadastrados</h3>";
-                snap.forEach(doc => {
-                    const p = doc.data();
-                    lista.innerHTML += `<div class="input-padrao" style="background:white"><b>${p.nome}</b> - R$ ${p.preco.toFixed(2)}</div>`;
-                });
+<script type="module">
+    import { db, auth } from './firebase.js';
+    import { collection, addDoc, onSnapshot, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    auth.onAuthStateChanged(user => {
+        if (!user) return;
+        const colRef = collection(db, `produtos_${user.uid}`);
+        document.getElementById('btn-add').onclick = async () => {
+            const n = document.getElementById('p-nome').value;
+            const p = parseFloat(document.getElementById('p-preco').value);
+            if(n && p) { await addDoc(colRef, {nome: n, preco: p}); location.reload(); }
+        };
+        onSnapshot(colRef, snap => {
+            const cont = document.getElementById('lista-render');
+            cont.innerHTML = '';
+            snap.forEach(pDoc => {
+                const p = pDoc.data();
+                const div = document.createElement('div');
+                div.className = 'item-lista';
+                div.innerHTML = `<span>${p.nome} - R$ ${parseFloat(p.preco || 0).toFixed(2)}</span><button class="btn-del" id="del-${pDoc.id}">EXCLUIR</button>`;
+                cont.appendChild(div);
+                document.getElementById(`del-${pDoc.id}`).onclick = () => { if(confirm("Apagar?")) deleteDoc(doc(db, `produtos_${user.uid}`, pDoc.id)); };
             });
         });
-    </script>
+    });
+</script>
 </body>
 </html>
