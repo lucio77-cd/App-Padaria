@@ -7,56 +7,42 @@
     <style>
         body { font-family: sans-serif; background: #f4f7f6; margin: 0; padding: 0; }
         header { background: #2c3e50; color: white; padding: 15px; text-align: center; }
-        
-        /* Menu Superior */
-        .nav-buttons { display: flex; gap: 5px; padding: 10px; background: #ecf0f1; position: sticky; top: 0; z-index: 100; }
+        .nav-buttons { display: flex; gap: 5px; padding: 10px; background: #ecf0f1; position: sticky; top: 0; }
         .nav-buttons button { flex: 1; padding: 12px 5px; border: none; border-radius: 8px; font-weight: bold; color: white; font-size: 0.75rem; cursor: pointer; }
         .btn-produtos { background: #e67e22; }
         .btn-caixa { background: #27ae60; }
         .btn-dash { background: #9b59b6; }
-
         .grid-mesas { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; padding: 15px; }
-        .mesa { aspect-ratio: 1/1; border-radius: 15px; display: flex; flex-direction: column; justify-content: center; align-items: center; font-weight: bold; font-size: 1.2rem; cursor: pointer; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .mesa { aspect-ratio: 1/1; border-radius: 15px; display: flex; flex-direction: column; justify-content: center; align-items: center; font-weight: bold; cursor: pointer; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .livre { background-color: #a2e4c9; color: #1e4d3a; border: 2px solid #2ecc71; }
         .ocupada { background-color: #f1948a; color: #7b241c; border: 2px solid #e74c3c; }
-        
-        .status-footer { position: fixed; bottom: 0; width: 100%; background: #2c3e50; color: white; text-align: center; padding: 8px; font-size: 0.8rem; }
     </style>
 </head>
 <body>
-
 <header><h1 style="margin:0; font-size: 1.4rem;">SISTEMA CRIS</h1></header>
-
 <div class="nav-buttons">
     <button class="btn-produtos" onclick="location.href='produtos.html'">PRODUTOS</button>
     <button class="btn-caixa" onclick="location.href='caixa.html'">CAIXA</button>
     <button class="btn-dash" onclick="location.href='dashboard.html'">DASHBOARD</button>
 </div>
-
 <div class="grid-mesas" id="salao-container"></div>
-<div class="status-footer" id="contagem">Carregando...</div>
-
 <script type="module">
     import { db, auth } from './firebase.js';
     import { collection, onSnapshot, query } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
     auth.onAuthStateChanged(user => {
         if (user) {
             onSnapshot(query(collection(db, `mesas_${user.uid}`)), (snapshot) => {
                 const container = document.getElementById('salao-container');
                 container.innerHTML = '';
-                let ocu = 0;
-                for (let i = 1; i <= 10; i++) {
+                for (let i = 1; i <= 6; i++) {
                     let d = { ocupada: false, total: 0 };
                     snapshot.forEach(doc => { if (doc.id === `mesa_${i}`) d = doc.data(); });
-                    if(d.ocupada) ocu++;
                     const btn = document.createElement('button');
                     btn.className = `mesa ${d.ocupada ? 'ocupada' : 'livre'}`;
                     btn.innerHTML = `<span>MESA ${i}</span><small>${d.ocupada ? 'R$ '+d.total.toFixed(2) : 'LIVRE'}</small>`;
-                    btn.onclick = () => location.href = `pedido.html?mesa=${i}`;
+                    btn.onclick = () => location.href = (d.ocupada ? `caixa.html?mesa=${i}` : `pedido.html?mesa=${i}`);
                     container.appendChild(btn);
                 }
-                document.getElementById('contagem').innerText = `Ocupadas: ${ocu} | Livres: ${10-ocu}`;
             });
         }
     });
