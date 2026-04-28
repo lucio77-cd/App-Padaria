@@ -4,19 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Salão - Sistema Cris</title>
-    <link rel="stylesheet" href="style.css">
     <style>
         body { font-family: sans-serif; background: #f4f7f6; margin: 0; padding: 0; }
         header { background: #2c3e50; color: white; padding: 15px; text-align: center; }
         .grid-mesas { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; padding: 15px; }
-        .mesa { aspect-ratio: 1/1; border-radius: 15px; display: flex; flex-direction: column; justify-content: center; align-items: center; font-weight: bold; font-size: 1.2rem; cursor: pointer; border: none; }
+        .mesa { aspect-ratio: 1/1; border-radius: 15px; display: flex; flex-direction: column; justify-content: center; align-items: center; font-weight: bold; font-size: 1.2rem; cursor: pointer; border: none; transition: 0.2s; }
         .livre { background-color: #a2e4c9; color: #1e4d3a; border: 2px solid #2ecc71; }
         .ocupada { background-color: #f1948a; color: #7b241c; border: 2px solid #e74c3c; }
+        .status-bar { position: fixed; bottom: 0; width: 100%; background: #2c3e50; color: white; text-align: center; padding: 10px; font-size: 0.8rem; }
     </style>
 </head>
 <body>
     <header><h1>SALÃO</h1></header>
     <div class="grid-mesas" id="salao-container"></div>
+    <div class="status-bar" id="status-contagem">Carregando mesas...</div>
 
     <script type="module">
         import { db, auth } from './firebase.js';
@@ -28,16 +29,20 @@
                 onSnapshot(q, (snapshot) => {
                     const container = document.getElementById('salao-container');
                     container.innerHTML = '';
+                    let ocupadas = 0;
+
                     for (let i = 1; i <= 10; i++) {
                         let dados = { ocupada: false };
                         snapshot.forEach(doc => { if (doc.id === `mesa_${i}`) dados = doc.data(); });
+                        if(dados.ocupada) ocupadas++;
                         
                         const btn = document.createElement('button');
                         btn.className = `mesa ${dados.ocupada ? 'ocupada' : 'livre'}`;
-                        btn.innerHTML = `<span>MESA ${i}</span><small>${dados.ocupada ? 'EDITAR' : 'ABRIR'}</small>`;
+                        btn.innerHTML = `<span>MESA ${i}</span><small>${dados.ocupada ? 'R$ '+dados.total.toFixed(2) : 'LIVRE'}</small>`;
                         btn.onclick = () => window.location.href = `pedido.html?mesa=${i}`;
                         container.appendChild(btn);
                     }
+                    document.getElementById('status-contagem').innerText = `Ocupadas: ${ocupadas} | Livres: ${10 - ocupadas}`;
                 });
             }
         });
