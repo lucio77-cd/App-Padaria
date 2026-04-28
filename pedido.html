@@ -9,109 +9,45 @@
         .nav-back { background: #2c3e50; padding: 15px; color: white; display: flex; align-items: center; gap: 10px; }
         .btn-voltar { background: #7f8c8d; color: white; border: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; }
         .container { padding: 15px; }
-        .resumo { background: #34495e; color: white; padding: 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .lista-consumo { background: white; padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 20px; min-height: 50px; }
-        .item-linha { border-bottom: 1px solid #eee; padding: 10px 0; display: flex; justify-content: space-between; }
+        .resumo { background: #34495e; color: white; padding: 15px; border-radius: 10px; display: flex; justify-content: space-between; margin-bottom: 20px; }
         .grid-produtos { display: grid; grid-template-columns: 1fr; gap: 10px; }
-        .btn-produto { 
-            background: white; border: 1px solid #dcdde1; padding: 20px; border-radius: 12px; 
-            display: flex; justify-content: space-between; align-items: center;
-            font-weight: bold; font-size: 1.1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            cursor: pointer;
-        }
-        .btn-produto b { color: #27ae60; }
+        .btn-produto { background: white; border: 1px solid #ddd; padding: 18px; border-radius: 12px; display: flex; justify-content: space-between; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
-
 <div class="nav-back">
-    <button class="btn-voltar" onclick="location.href='salao.html'">⬅ VOLTAR</button>
+    <button class="btn-voltar" onclick="location.href='salao.html'">⬅ SALÃO</button>
     <h3 style="margin:0">Mesa <span id="mesa-num">?</span></h3>
 </div>
-
 <div class="container">
-    <div class="resumo">
-        <span>TOTAL:</span>
-        <h2 id="total-val" style="margin:0">R$ 0,00</h2>
-    </div>
-
-    <h4>Itens na Mesa:</h4>
-    <div class="lista-consumo" id="lista-itens">Carregando consumo...</div>
-
-    <hr>
-    <h4>Toque para Adicionar:</h4>
-    <div class="grid-produtos" id="cardapio-render">Buscando seus produtos...</div>
+    <div class="resumo"><span>TOTAL:</span><h2 id="total-val" style="margin:0">R$ 0,00</h2></div>
+    <h4>Cardápio:</h4>
+    <div class="grid-produtos" id="cardapio-render">Carregando...</div>
 </div>
-
 <script type="module">
     import { db, auth } from './firebase.js';
     import { doc, onSnapshot, updateDoc, arrayUnion, collection, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-    const params = new URLSearchParams(window.location.search);
-    const mesaId = params.get('mesa') || "1";
+    const mesaId = new URLSearchParams(window.location.search).get('mesa');
     document.getElementById('mesa-num').innerText = mesaId;
-
     auth.onAuthStateChanged(async user => {
-        if (!user) {
-            console.log("Usuário não logado");
-            return;
-        }
-
+        if (!user) return;
         const mesaRef = doc(db, `mesas_${user.uid}`, `mesa_${mesaId}`);
-
-        // 1. ESCUTA A MESA
-        onSnapshot(mesaRef, (snap) => {
-            if (snap.exists()) {
-                const dados = snap.data();
-                document.getElementById('total-val').innerText = `R$ ${(dados.total || 0).toFixed(2)}`;
-                document.getElementById('lista-itens').innerHTML = (dados.itens && dados.itens.length) ? 
-                    dados.itens.map(i => `<div class="item-linha"><span>${i.nome}</span> <b>R$ ${i.preco.toFixed(2)}</b></div>`).join('') : "Mesa vazia";
-            } else {
-                document.getElementById('lista-itens').innerText = "Mesa vazia (não iniciada)";
-            }
+        onSnapshot(mesaRef, s => { if(s.exists()) document.getElementById('total-val').innerText = `R$ ${s.data().total.toFixed(2)}`; });
+        const pSnap = await getDocs(collection(db, `produtos_${user.uid}`));
+        const container = document.getElementById('cardapio-render');
+        container.innerHTML = '';
+        pSnap.forEach(p => {
+            const pr = p.data();
+            const b = document.createElement('div');
+            b.className = 'btn-produto';
+            b.innerHTML = `<span>${pr.nome}</span> <span>R$ ${parseFloat(pr.preco).toFixed(2)}</span>`;
+            b.onclick = async () => {
+                const mesa = await getDoc(mesaRef);
+                const total = mesa.exists() ? (mesa.data().total || 0) : 0;
+                await updateDoc(mesaRef, { ocupada: true, itens: arrayUnion({nome: pr.nome, preco: parseFloat(pr.preco)}), total: total + parseFloat(pr.preco) });
+            };
+            container.appendChild(b);
         });
-
-        // 2. FUNÇÃO PARA RENDERIZAR
-        const renderizarProdutos = (querySnapshot) => {
-            const container = document.getElementById('cardapio-render');
-            container.innerHTML = '';
-            querySnapshot.forEach(docProd => {
-                const item = docProd.data();
-                const botao = document.createElement('div');
-                botao.className = 'btn-produto';
-                botao.innerHTML = `<span>${item.nome}</span> <b>R$ ${parseFloat(item.preco).toFixed(2)}</b>`;
-                botao.onclick = async () => {
-                    const mesaAtual = await getDoc(mesaRef);
-                    const totalVelho = mesaAtual.exists() ? (mesaAtual.data().total || 0) : 0;
-                    await updateDoc(mesaRef, {
-                        ocupada: true,
-                        itens: arrayUnion({ nome: item.nome, preco: parseFloat(item.preco) }),
-                        total: totalVelho + parseFloat(item.preco)
-                    });
-                };
-                container.appendChild(botao);
-            });
-        };
-
-        // 3. TENTA BUSCAR PRODUTOS (EM DUAS COLEÇÕES POSSÍVEIS)
-        try {
-            // Tenta primeiro na coleção personalizada
-            let pSnap = await getDocs(collection(db, `produtos_${user.uid}`));
-            
-            // Se estiver vazia, tenta na coleção geral 'produtos'
-            if (pSnap.empty) {
-                console.log("Tentando coleção geral...");
-                pSnap = await getDocs(collection(db, "produtos"));
-            }
-
-            if (pSnap.empty) {
-                document.getElementById('cardapio-render').innerHTML = "Nenhum produto achado no banco. Verifique o cadastro.";
-            } else {
-                renderizarProdutos(pSnap);
-            }
-        } catch (e) {
-            document.getElementById('cardapio-render').innerText = "Erro ao ler banco: " + e.message;
-        }
     });
 </script>
 </body>
