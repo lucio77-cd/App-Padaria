@@ -3,100 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Salão - Sistema Cris</title>
+    <title>Sistema Cris - Salão</title>
     <style>
-        /* Mantendo o seu estilo visual original */
+        /* Mantendo o visual exato das suas capturas de tela */
         body { font-family: sans-serif; background: #f4f7f6; margin: 0; padding: 0; }
-        header { background: #2c3e50; color: white; padding: 20px; text-align: center; margin-bottom: 20px; }
+        
+        header { 
+            background: #2c3e50; 
+            color: white; 
+            padding: 40px 20px; 
+            text-align: center; 
+            font-size: 1.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
         .grid-mesas { 
             display: grid; 
             grid-template-columns: repeat(2, 1fr); 
-            gap: 15px; 
-            padding: 15px; 
+            gap: 20px; 
+            padding: 20px; 
+            margin-bottom: 60px; /* Espaço para o menu inferior */
         }
+
         .mesa { 
             aspect-ratio: 1/1; 
-            border-radius: 20px; 
+            border-radius: 25px; 
             display: flex; 
             flex-direction: column; 
             justify-content: center; 
             align-items: center; 
             font-weight: bold; 
             cursor: pointer; 
-            border: none; 
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
-            transition: 0.2s; 
+            border: 3px solid transparent;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+            transition: transform 0.1s;
         }
-        /* Suas cores de status */
-        .livre { background: #a2e4c1; color: #1e4d35; border: 3px solid #2ecc71; }
-        .ocupada { background: #f1948a; color: #7b241c; border: 3px solid #e74c3c; }
+
         .mesa:active { transform: scale(0.95); }
-        
-        .footer-info { 
+
+        /* Cores conforme sua imagem 1777379947150.jpeg */
+        .livre { background: #a2e4c1; color: #1e4d35; border-color: #2ecc71; }
+        .ocupada { background: #f1948a; color: #7b241c; border-color: #e74c3c; }
+
+        .mesa-titulo { font-size: 1.4rem; margin-bottom: 5px; }
+        .mesa-status { font-size: 0.9rem; text-transform: uppercase; }
+
+        /* Barra de menus inferior */
+        .footer-status { 
             background: #2c3e50; 
             color: white; 
-            padding: 10px; 
+            padding: 15px; 
             position: fixed; 
             bottom: 0; 
             width: 100%; 
             text-align: center; 
-            font-size: 0.9rem;
+            font-size: 1rem;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
         }
     </style>
 </head>
 <body>
 
 <header>
-    <h1>SISTEMA CRIS</h1>
+    SISTEMA CRIS
 </header>
 
 <div class="grid-mesas" id="container-mesas">
     </div>
 
-<div class="footer-info" id="status-footer">
-    Carregando informações...
+<div class="footer-status" id="barra-status">
+    Ocupadas: 0 | Livres: 0
 </div>
 
 <script type="module">
     import { db, auth } from './firebase.js';
-    import { collection, onSnapshot, query } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     auth.onAuthStateChanged(user => {
         if (!user) return;
 
-        // Referência da sua coleção de mesas
         const mesasRef = collection(db, `mesas_${user.uid}`);
 
         onSnapshot(mesasRef, (snapshot) => {
             const container = document.getElementById('container-mesas');
             container.innerHTML = '';
             
-            let totalOcupadas = 0;
-            let totalLivres = 0;
+            let ocupadas = 0;
+            let livres = 0;
 
-            // Criando as 6 mesas conforme sua imagem
+            // Criamos as 6 mesas mantendo a ordem
             for (let i = 1; i <= 6; i++) {
-                let dadosMesa = { ocupada: false, total: 0 };
+                let mesaDoc = { ocupada: false, total: 0 };
                 
-                // Busca os dados reais de cada mesa no Firebase
                 snapshot.forEach(doc => {
-                    if (doc.id === `mesa_${i}`) {
-                        dadosMesa = doc.data();
-                    }
+                    if (doc.id === `mesa_${i}`) mesaDoc = doc.data();
                 });
 
-                if (dadosMesa.ocupada) totalOcupadas++; else totalLivres++;
+                if (mesaDoc.ocupada) ocupadas++; else livres++;
 
-                const btn = document.createElement('button');
-                btn.className = `mesa ${dadosMesa.ocupada ? 'ocupada' : 'livre'}`;
+                const btn = document.createElement('div');
+                btn.className = `mesa ${mesaDoc.ocupada ? 'ocupada' : 'livre'}`;
                 
-                // Mantendo o layout de texto das suas mesas
                 btn.innerHTML = `
-                    <div style="font-size: 1.3rem; margin-bottom: 5px;">MESA ${i}</div>
-                    <div style="font-size: 0.9rem;">${dadosMesa.ocupada ? 'R$ ' + (dadosMesa.total || 0).toFixed(2) : 'LIVRE'}</div>
+                    <div class="mesa-titulo">MESA ${i}</div>
+                    <div class="mesa-status">
+                        ${mesaDoc.ocupada ? 'R$ ' + (mesaDoc.total || 0).toFixed(2) : 'LIVRE'}
+                    </div>
                 `;
                 
-                // CORREÇÃO: O clique agora envia o ID da mesa corretamente para o pedido.html
+                // A CORREÇÃO: Passa o ID da mesa na URL para o arquivo de pedidos
                 btn.onclick = () => {
                     window.location.href = `pedido.html?mesa=${i}`;
                 };
@@ -104,8 +122,140 @@
                 container.appendChild(btn);
             }
 
-            // Atualiza o rodapé de contagem como no seu app original
-            document.getElementById('status-footer').innerText = `Ocupadas: ${totalOcupadas} | Livres: ${totalLivres}`;
+            // Atualiza o menu inferior
+            document.getElementById('barra-status').innerText = `Ocupadas: ${ocupadas} | Livres: ${livres}`;
+        });
+    });
+</script>
+
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Cris - Salão</title>
+    <style>
+        /* Mantendo o visual exato das suas capturas de tela */
+        body { font-family: sans-serif; background: #f4f7f6; margin: 0; padding: 0; }
+        
+        header { 
+            background: #2c3e50; 
+            color: white; 
+            padding: 40px 20px; 
+            text-align: center; 
+            font-size: 1.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .grid-mesas { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 20px; 
+            padding: 20px; 
+            margin-bottom: 60px; /* Espaço para o menu inferior */
+        }
+
+        .mesa { 
+            aspect-ratio: 1/1; 
+            border-radius: 25px; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            font-weight: bold; 
+            cursor: pointer; 
+            border: 3px solid transparent;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+            transition: transform 0.1s;
+        }
+
+        .mesa:active { transform: scale(0.95); }
+
+        /* Cores conforme sua imagem 1777379947150.jpeg */
+        .livre { background: #a2e4c1; color: #1e4d35; border-color: #2ecc71; }
+        .ocupada { background: #f1948a; color: #7b241c; border-color: #e74c3c; }
+
+        .mesa-titulo { font-size: 1.4rem; margin-bottom: 5px; }
+        .mesa-status { font-size: 0.9rem; text-transform: uppercase; }
+
+        /* Barra de menus inferior */
+        .footer-status { 
+            background: #2c3e50; 
+            color: white; 
+            padding: 15px; 
+            position: fixed; 
+            bottom: 0; 
+            width: 100%; 
+            text-align: center; 
+            font-size: 1rem;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    SISTEMA CRIS
+</header>
+
+<div class="grid-mesas" id="container-mesas">
+    </div>
+
+<div class="footer-status" id="barra-status">
+    Ocupadas: 0 | Livres: 0
+</div>
+
+<script type="module">
+    import { db, auth } from './firebase.js';
+    import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    auth.onAuthStateChanged(user => {
+        if (!user) return;
+
+        const mesasRef = collection(db, `mesas_${user.uid}`);
+
+        onSnapshot(mesasRef, (snapshot) => {
+            const container = document.getElementById('container-mesas');
+            container.innerHTML = '';
+            
+            let ocupadas = 0;
+            let livres = 0;
+
+            // Criamos as 6 mesas mantendo a ordem
+            for (let i = 1; i <= 6; i++) {
+                let mesaDoc = { ocupada: false, total: 0 };
+                
+                snapshot.forEach(doc => {
+                    if (doc.id === `mesa_${i}`) mesaDoc = doc.data();
+                });
+
+                if (mesaDoc.ocupada) ocupadas++; else livres++;
+
+                const btn = document.createElement('div');
+                btn.className = `mesa ${mesaDoc.ocupada ? 'ocupada' : 'livre'}`;
+                
+                btn.innerHTML = `
+                    <div class="mesa-titulo">MESA ${i}</div>
+                    <div class="mesa-status">
+                        ${mesaDoc.ocupada ? 'R$ ' + (mesaDoc.total || 0).toFixed(2) : 'LIVRE'}
+                    </div>
+                `;
+                
+                // A CORREÇÃO: Passa o ID da mesa na URL para o arquivo de pedidos
+                btn.onclick = () => {
+                    window.location.href = `pedido.html?mesa=${i}`;
+                };
+
+                container.appendChild(btn);
+            }
+
+            // Atualiza o menu inferior
+            document.getElementById('barra-status').innerText = `Ocupadas: ${ocupadas} | Livres: ${livres}`;
         });
     });
 </script>
