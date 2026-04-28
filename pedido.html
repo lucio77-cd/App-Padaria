@@ -8,26 +8,29 @@
         body { font-family: sans-serif; margin: 0; background: #f4f7f6; }
         .header { background: #2c3e50; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
         .container { padding: 15px; }
-        .card-resumo { background: #34495e; color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
-        .grid-cardapio { display: grid; grid-template-columns: 1fr; gap: 10px; }
-        .btn-item { background: white; border: 1px solid #ddd; padding: 20px; border-radius: 12px; display: flex; justify-content: space-between; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
-        .btn-caixa { background: #27ae60; color: white; border: none; width: 100%; padding: 15px; border-radius: 10px; font-weight: bold; margin-top: 20px; cursor: pointer; }
+        .total-box { background: #34495e; color: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .cardapio-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        .btn-p { background: white; border: 1px solid #ddd; padding: 15px; border-radius: 10px; display: flex; justify-content: space-between; cursor: pointer; font-weight: bold; }
+        .btn-caixa { background: #27ae60; color: white; border: none; width: 100%; padding: 18px; border-radius: 10px; font-weight: bold; margin-top: 25px; cursor: pointer; font-size: 1rem; }
     </style>
 </head>
 <body>
     <div class="header">
         <button onclick="location.href='salao.html'">⬅ Voltar</button>
-        <h2 id="num-mesa">Mesa ?</h2>
+        <h2 id="mesa-titulo">Mesa</h2>
     </div>
 
     <div class="container">
-        <div class="card-resumo">
-            <small>TOTAL ACUMULADO:</small>
-            <h1 id="total-txt" style="margin:0">R$ 0,00</h1>
+        <div class="total-box">
+            <span>TOTAL ACUMULADO:</span>
+            <h2 id="total-txt" style="margin:0">R$ 0,00</h2>
         </div>
 
+        <h4>Consumo Atual:</h4>
+        <div id="itens-mesa" style="background:#eee; padding:10px; border-radius:5px; margin-bottom:20px;">Nenhum item...</div>
+
         <h4>Toque para Adicionar:</h4>
-        <div id="cardapio" class="grid-cardapio">Carregando cardápio...</div>
+        <div id="cardapio-lista" class="cardapio-grid">Carregando cardápio...</div>
 
         <button class="btn-caixa" id="ir-caixa">💰 IR PARA O CAIXA (FECHAR)</button>
     </div>
@@ -36,29 +39,35 @@
     import { db, auth } from './firebase.js';
     import { doc, onSnapshot, updateDoc, arrayUnion, collection, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    const mesaId = new URLSearchParams(window.location.search).get('mesa') || "1";
-    document.getElementById('num-mesa').innerText = `Mesa ${mesaId}`;
+    const params = new URLSearchParams(window.location.search);
+    const mesaId = params.get('mesa') || "1";
+    document.getElementById('mesa-titulo').innerText = `Mesa ${mesaId}`;
     document.getElementById('ir-caixa').onclick = () => location.href = `caixa.html?mesa=${mesaId}`;
 
     auth.onAuthStateChanged(async user => {
         if (!user) return;
         const mesaRef = doc(db, `mesas_${user.uid}`, `mesa_${mesaId}`);
 
-        // Atualiza o total em tempo real
+        // Observa mudanças na mesa (Total e Itens)
         onSnapshot(mesaRef, s => {
-            const t = s.exists() ? (s.data().total || 0) : 0;
-            document.getElementById('total-txt').innerText = `R$ ${t.toFixed(2)}`;
+            const data = s.exists() ? s.data() : { total: 0, itens: [] };
+            document.getElementById('total-txt').innerText = `R$ ${(data.total || 0).toFixed(2)}`;
+            
+            const divItens = document.getElementById('itens-mesa');
+            divItens.innerHTML = (data.itens && data.itens.length > 0) 
+                ? data.itens.map(i => `<div>${i.nome} - R$ ${i.preco.toFixed(2)}</div>`).join('')
+                : "Nenhum item na mesa.";
         });
 
-        // Carrega os produtos do banco
+        // Carrega o Cardápio
         const pSnap = await getDocs(collection(db, `produtos_${user.uid}`));
-        const cardapio = document.getElementById('cardapio');
-        cardapio.innerHTML = pSnap.empty ? "Vá em 'Produtos' e cadastre itens primeiro." : "";
+        const listaUI = document.getElementById('cardapio-lista');
+        listaUI.innerHTML = pSnap.empty ? "Cadastre produtos primeiro!" : "";
 
         pSnap.forEach(pDoc => {
             const p = pDoc.data();
             const btn = document.createElement('div');
-            btn.className = 'btn-item';
+            btn.className = 'btn-p';
             btn.innerHTML = `<span>${p.nome}</span> <span>R$ ${parseFloat(p.preco).toFixed(2)}</span>`;
             btn.onclick = async () => {
                 const mesaSnap = await getDoc(mesaRef);
@@ -69,7 +78,7 @@
                     itens: arrayUnion({ nome: p.nome, preco: parseFloat(p.preco) })
                 });
             };
-            cardapio.appendChild(btn);
+            listaUI.appendChild(btn);
         });
     });
 </script>
