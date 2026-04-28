@@ -3,59 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Caixa - Sistema Cris</title>
+    <title>Caixa Central - Sistema Cris</title>
     <style>
-        body { font-family: sans-serif; background: #f4f7f6; text-align: center; padding: 20px; }
-        .caixa-card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-top: 20px; }
-        .valor-final { font-size: 3.5rem; color: #27ae60; font-weight: bold; margin: 20px 0; }
-        .btn-ok { background: #27ae60; color: white; border: none; padding: 20px; width: 100%; border-radius: 12px; font-size: 1.2rem; font-weight: bold; cursor: pointer; }
+        body { font-family: sans-serif; background: #f4f7f6; margin: 0; padding: 15px; text-align: center; }
+        .grid-mesas { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .mesa-card { padding: 20px; border-radius: 15px; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.2s; }
+        .livre { background-color: #a2e4c1; color: #1e4d35; cursor: default; opacity: 0.6; }
+        .ocupada { background-color: #f1948a; color: #78281f; border: 2px solid #c0392b; }
+        .header { background: #2c3e50; color: white; padding: 15px; margin: -15px -15px 15px -15px; }
     </style>
 </head>
 <body>
-    <button onclick="location.href='salao.html'">⬅ VOLTAR AO SALÃO</button>
-
-    <div id="caixa-container">
-        <p>Aguardando seleção de mesa...</p>
+    <div class="header">
+        <h1>CAIXA</h1>
+        <button onclick="location.href='salao.html'">VOLTAR AO SALÃO</button>
     </div>
+
+    <h3>Selecione uma mesa ocupada para finalizar:</h3>
+    <div id="grid-caixa" class="grid-mesas">Carregando mesas...</div>
 
 <script type="module">
     import { db, auth } from './firebase.js';
-    import { doc, onSnapshot, updateDoc, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-    const mesaId = new URLSearchParams(window.location.search).get('mesa');
+    import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     auth.onAuthStateChanged(user => {
-        if (user && mesaId) {
-            const mesaRef = doc(db, `mesas_${user.uid}`, `mesa_${mesaId}`);
-            onSnapshot(mesaRef, s => {
-                if (s.exists() && s.data().ocupada) {
-                    const total = s.data().total || 0;
-                    document.getElementById('caixa-container').innerHTML = `
-                        <div class="caixa-card">
-                            <h3>PAGAMENTO MESA ${mesaId}</h3>
-                            <div class="valor-final">R$ ${total.toFixed(2)}</div>
-                            <button class="btn-ok" id="btn-fim">FINALIZAR E LIBERAR MESA</button>
-                        </div>`;
-                    
-                    document.getElementById('btn-fim').onclick = async () => {
-                        if (confirm("Confirmar pagamento recebido?")) {
-                            // Salva a venda no histórico
-                            await addDoc(collection(db, `vendas_${user.uid}`), {
-                                valor: total,
-                                mesa: mesaId,
-                                data: serverTimestamp()
-                            });
-                            // Limpa a mesa
-                            await updateDoc(mesaRef, { ocupada: false, total: 0, itens: [] });
-                            alert("Venda finalizada!");
-                            location.href = 'salao.html';
-                        }
-                    };
-                } else {
-                    document.getElementById('caixa-container').innerHTML = "<h3>Esta mesa já está livre.</h3>";
+        if (!user) return;
+        const mesasRef = collection(db, `mesas_${user.uid}`);
+
+        onSnapshot(mesasRef, snap => {
+            const grid = document.getElementById('grid-caixa');
+            grid.innerHTML = "";
+            
+            // Cria os cards das mesas (1 a 6)
+            snap.forEach(doc => {
+                const mesa = doc.data();
+                const idNum = doc.id.replace('mesa_', '');
+                const card = document.createElement('div');
+                
+                card.className = `mesa-card ${mesa.ocupada ? 'ocupada' : 'livre'}`;
+                card.innerHTML = `MESA ${idNum}<br>${mesa.ocupada ? 'R$ ' + mesa.total.toFixed(2) : 'LIVRE'}`;
+                
+                // Só permite clicar se estiver ocupada
+                if (mesa.ocupada) {
+                    card.onclick = () => location.href = `detalhe-caixa.html?mesa=${idNum}`;
                 }
+                
+                grid.appendChild(card);
             });
-        }
+        });
     });
 </script>
 </body>
