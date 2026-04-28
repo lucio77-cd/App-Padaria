@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finalizar Mesa - Sistema Cris</title>
+    <style>
+        body { font-family: sans-serif; background: #f4f7f6; padding: 20px; }
+        .extrato { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .item-linha { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #ddd; }
+        .total-destaque { font-size: 2.5rem; color: #27ae60; font-weight: bold; margin: 20px 0; }
+        .btn-pagar { background: #27ae60; color: white; border: none; width: 100%; padding: 20px; border-radius: 10px; font-size: 1.2rem; font-weight: bold; cursor: pointer; }
+        .btn-voltar { background: #95a5a6; color: white; border: none; padding: 10px; margin-bottom: 15px; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <button class="btn-voltar" onclick="location.href='caixa.html'">⬅ VOLTAR AO CAIXA</button>
+
+    <div class="extrato" id="conteudo-extrato">
+        <h2 id="titulo-mesa">Mesa </h2>
+        <hr>
+        <div id="lista-produtos">Carregando itens...</div>
+        <div class="total-destaque" id="valor-total">R$ 0,00</div>
+        <button class="btn-pagar" id="btn-finalizar">FINALIZAR PAGAMENTO</button>
+    </div>
+
+<script type="module">
+    import { db, auth } from './firebase.js';
+    import { doc, onSnapshot, updateDoc, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const mesaId = new URLSearchParams(window.location.search).get('mesa');
+    document.getElementById('titulo-mesa').innerText = `Mesa ${mesaId}`;
+
+    auth.onAuthStateChanged(user => {
+        if (!user || !mesaId) return;
+        const mesaRef = doc(db, `mesas_${user.uid}`, `mesa_${mesaId}`);
+
+        onSnapshot(mesaRef, s => {
+            if (!s.exists() || !s.data().ocupada) {
+                alert("Esta mesa já foi liberada!");
+                location.href = 'caixa.html';
+                return;
+            }
+
+            const data = s.data();
+            document.getElementById('valor-total').innerText = `R$ ${data.total.toFixed(2)}`;
+            
+            // Mostra os produtos consumidos
+            const listaDiv = document.getElementById('lista-produtos');
+            listaDiv.innerHTML = data.itens.map(i => `
+                <div class="item-linha">
+                    <span>${i.nome}</span>
+                    <span>R$ ${i.preco.toFixed(2)}</span>
+                </div>
+            `).join('');
+
+            // Função para fechar a conta
+            document.getElementById('btn-finalizar').onclick = async () => {
+                if (confirm(`Confirmar recebimento de R$ ${data.total.toFixed(2)}?`)) {
+                    // 1. Salva no histórico de vendas (Dashboard)
+                    await addDoc(collection(db, `vendas_${user.uid}`), {
+                        valor: data.total,
+                        mesa: mesaId,
+                        data: serverTimestamp(),
+                        itens: data.itens
+                    });
+                    // 2. Limpa a mesa no banco de dados
+                    await updateDoc(mesaRef, { ocupada: false, total: 0, itens: [] });
+                    alert("Pagamento finalizado com sucesso!");
+                    location.href = 'caixa.html';
+                }
+            };
+        });
+    });
+</script>
+</body>
+</html>
