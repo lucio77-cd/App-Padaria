@@ -3,97 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mesa - Sistema Cris</title>
+    <title>Pedido - Sistema Cris</title>
     <style>
-        body { font-family: sans-serif; margin: 0; background: #f4f7f6; }
-        .header { background: #2c3e50; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        body { font-family: sans-serif; background: #f4f7f6; margin: 0; }
+        .nav { background: #2c3e50; color: white; padding: 15px; display: flex; align-items: center; gap: 10px; }
         .container { padding: 15px; }
-        .total-box { background: #34495e; color: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; }
-        .lista-consumo { background: white; padding: 10px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ddd; max-height: 150px; overflow-y: auto; }
-        .cardapio-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
-        .btn-produto { background: white; border: 1px solid #3498db; padding: 15px; border-radius: 10px; display: flex; justify-content: space-between; cursor: pointer; font-weight: bold; color: #2c3e50; transition: 0.2s; }
-        .btn-produto:active { background: #d6eaf8; transform: scale(0.98); }
-        .btn-caixa { background: #27ae60; color: white; border: none; width: 100%; padding: 18px; border-radius: 10px; font-weight: bold; margin-top: 20px; cursor: pointer; font-size: 1.1rem; }
+        .total-card { background: #34495e; color: white; padding: 20px; border-radius: 15px; margin-bottom: 20px; text-align: center; }
+        .grid-produtos { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        .item-btn { background: white; border: 1px solid #ddd; padding: 15px; border-radius: 12px; display: flex; justify-content: space-between; font-weight: bold; cursor: pointer; }
+        .btn-voltar { background: #7f8c8d; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <button onclick="location.href='salao.html'">⬅ Voltar</button>
-        <h2 id="mesa-titulo">Mesa</h2>
+
+<div class="nav">
+    <button class="btn-voltar" onclick="location.href='salao.html'">⬅ VOLTAR</button>
+    <h2 style="margin:0">Mesa <span id="num-mesa">?</span></h2>
+</div>
+
+<div class="container">
+    <div class="total-card">
+        <small>VALOR DA CONTA</small>
+        <h1 id="total-val" style="margin:0">R$ 0,00</h1>
     </div>
 
-    <div class="container">
-        <div class="total-box">
-            <small>TOTAL ACUMULADO:</small>
-            <h1 id="total-txt" style="margin:0">R$ 0,00</h1>
-        </div>
-
-        <h4>Itens na Mesa:</h4>
-        <div id="itens-mesa" class="lista-consumo">Nenhum item adicionado.</div>
-
-        <h4>Cardápio (Toque para Adicionar):</h4>
-        <div id="cardapio-lista" class="cardapio-grid">Carregando produtos...</div>
-
-        <button class="btn-caixa" id="ir-caixa">💰 IR PARA O CAIXA (FECHAR)</button>
-    </div>
+    <h4>Adicionar Produtos:</h4>
+    <div id="lista-cardapio" class="grid-produtos">Carregando cardápio...</div>
+</div>
 
 <script type="module">
     import { db, auth } from './firebase.js';
     import { doc, onSnapshot, updateDoc, arrayUnion, collection, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+    // 1. PEGA O ID DA MESA DA URL
     const params = new URLSearchParams(window.location.search);
-    const mesaId = params.get('mesa') || "1";
-    document.getElementById('mesa-titulo').innerText = `Mesa ${mesaId}`;
-    
-    // Redireciona para o caixa levando o ID da mesa
-    document.getElementById('ir-caixa').onclick = () => location.href = `caixa.html?mesa=${mesaId}`;
+    const mesaId = params.get('mesa') || "1"; 
+    document.getElementById('num-mesa').innerText = mesaId;
 
     auth.onAuthStateChanged(async user => {
         if (!user) return;
+
+        // Referência correta da mesa baseada no clique
         const mesaRef = doc(db, `mesas_${user.uid}`, `mesa_${mesaId}`);
 
-        // 1. Monitora o consumo da mesa em tempo real
-        onSnapshot(mesaRef, s => {
-            const data = s.exists() ? s.data() : { total: 0, itens: [] };
-            document.getElementById('total-txt').innerText = `R$ ${(data.total || 0).toFixed(2)}`;
-            
-            const divItens = document.getElementById('itens-mesa');
-            if (data.itens && data.itens.length > 0) {
-                // Agrupa itens repetidos para facilitar a leitura
-                const resumo = data.itens.reduce((acc, curr) => {
-                    acc[curr.nome] = (acc[curr.nome] || 0) + 1;
-                    return acc;
-                }, {});
-                
-                divItens.innerHTML = Object.entries(resumo)
-                    .map(([nome, qtd]) => `<div><b>${qtd}x</b> ${nome}</div>`)
-                    .join('');
-            } else {
-                divItens.innerHTML = "Nenhum item na mesa.";
+        // 2. MOSTRA O TOTAL DA MESA EM TEMPO REAL
+        onSnapshot(mesaRef, (snap) => {
+            if (snap.exists()) {
+                const total = snap.data().total || 0;
+                document.getElementById('total-val').innerText = `R$ ${total.toFixed(2)}`;
             }
         });
 
-        // 2. Carrega a lista de produtos cadastrados no Cardápio
+        // 3. CARREGA O CARDÁPIO E ADICIONA NA MESA CORRETA
         const pSnap = await getDocs(collection(db, `produtos_${user.uid}`));
-        const listaUI = document.getElementById('cardapio-lista');
-        
-        if (pSnap.empty) {
-            listaUI.innerHTML = "<p>Nenhum produto cadastrado. Vá em 'Gerenciar Cardápio' primeiro.</p>";
-            return;
-        }
+        const cardapioDiv = document.getElementById('lista-cardapio');
+        cardapioDiv.innerHTML = '';
 
-        listaUI.innerHTML = ""; // Limpa o "Carregando..."
-        
         pSnap.forEach(pDoc => {
             const p = pDoc.data();
-            // Pula produtos com erro de preço (NaN)
-            if (isNaN(p.preco)) return;
+            if (isNaN(p.preco)) return; // Ignora erros de NaN
 
             const btn = document.createElement('div');
-            btn.className = 'btn-produto';
+            btn.className = 'item-btn';
             btn.innerHTML = `<span>${p.nome}</span> <span>R$ ${parseFloat(p.preco).toFixed(2)}</span>`;
             
-            // Ação ao clicar: Adiciona mais um item à mesa
             btn.onclick = async () => {
                 const mesaSnap = await getDoc(mesaRef);
                 const totalAtual = mesaSnap.exists() ? (mesaSnap.data().total || 0) : 0;
@@ -101,16 +74,13 @@
                 await updateDoc(mesaRef, {
                     ocupada: true,
                     total: totalAtual + parseFloat(p.preco),
-                    itens: arrayUnion({ 
-                        nome: p.nome, 
-                        preco: parseFloat(p.preco),
-                        timestamp: Date.now() // Diferencia itens iguais para o Firebase
-                    })
+                    itens: arrayUnion({ nome: p.nome, preco: parseFloat(p.preco), hora: Date.now() })
                 });
             };
-            listaUI.appendChild(btn);
+            cardapioDiv.appendChild(btn);
         });
     });
 </script>
 </body>
 </html>
+
