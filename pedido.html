@@ -4,73 +4,72 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pedido - Sistema Cris</title>
-    <link rel="stylesheet" href="style.css">
     <style>
         body { font-family: sans-serif; padding: 15px; background: #f4f7f6; }
-        .item-btn { width: 100%; padding: 15px; margin-bottom: 10px; background: white; border: 1px solid #ddd; border-radius: 8px; text-align: left; display: flex; justify-content: space-between; }
-        .resumo-mesa { background: #2c3e50; color: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; }
-        .lista-consumo { background: white; padding: 10px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ddd; }
-        .btn-caixa { background: #27ae60; color: white; width: 100%; padding: 18px; border: none; border-radius: 10px; font-weight: bold; font-size: 1.1rem; }
+        .cabecalho { background: #2c3e50; color: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .lista-consumo { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ddd; min-height: 50px; }
+        .item-cardapio { width: 100%; padding: 15px; margin-bottom: 10px; background: white; border: 1px solid #ddd; border-radius: 8px; display: flex; justify-content: space-between; font-weight: bold; cursor: pointer; }
+        .btn-voltar { background: #95a5a6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
-    <button onclick="location.href='salao.html'">⬅ Voltar</button>
-    <div id="cabecalho-mesa" class="resumo-mesa">
-        <h2 id="num-mesa">Mesa ...</h2>
-        <h3 id="total-mesa">Total: R$ 0,00</h3>
+    <button class="btn-voltar" onclick="location.href='salao.html'">⬅ VOLTAR SALÃO</button>
+    
+    <div class="cabecalho">
+        <h2 id="num-mesa">MESA --</h2>
+        <h2 id="total-mesa">R$ 0,00</h2>
     </div>
 
-    <h4>Itens na Mesa:</h4>
-    <div id="lista-consumo" class="lista-consumo">Nenhum item.</div>
+    <h4>Itens já pedidos:</h4>
+    <div id="lista-consumo" class="lista-consumo">Nenhum item lançado.</div>
 
-    <h4>Adicionar Produtos:</h4>
+    <h4>Adicionar à conta:</h4>
     <div id="cardapio">Carregando produtos...</div>
-
-    <button class="btn-caixa" id="btn-ir-caixa">💰 IR PARA O CAIXA (FECHAR)</button>
 
     <script type="module">
         import { db, auth } from './firebase.js';
-        import { doc, onSnapshot, updateDoc, arrayUnion, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { doc, onSnapshot, updateDoc, arrayUnion, collection, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-        const mesaId = new URLSearchParams(window.location.search).get('mesa');
+        const params = new URLSearchParams(window.location.search);
+        const mesaId = params.get('mesa');
         document.getElementById('num-mesa').innerText = `MESA ${mesaId}`;
 
         auth.onAuthStateChanged(async user => {
             if (!user) return;
             const mesaRef = doc(db, `mesas_${user.uid}`, `mesa_${mesaId}`);
 
-            // 1. Carrega consumo atual
+            // 1. Escuta a mesa em tempo real para mostrar o que já tem
             onSnapshot(mesaRef, (snap) => {
                 if (snap.exists()) {
                     const dados = snap.data();
-                    document.getElementById('total-mesa').innerText = `Total: R$ ${dados.total.toFixed(2)}`;
-                    document.getElementById('lista-consumo').innerHTML = dados.itens.length > 0 ? 
-                        dados.itens.map(i => `<div style="border-bottom:1px solid #eee; padding:5px 0;">${i.nome} - R$ ${i.preco.toFixed(2)}</div>`).join('') : "Mesa vazia";
+                    document.getElementById('total-mesa').innerText = `R$ ${dados.total.toFixed(2)}`;
+                    document.getElementById('lista-consumo').innerHTML = (dados.itens && dados.itens.length > 0) ? 
+                        dados.itens.map(i => `<div style="border-bottom:1px solid #eee; padding:8px 0;">${i.nome} - R$ ${i.preco.toFixed(2)}</div>`).join('') : "Mesa vazia";
                 }
             });
 
-            // 2. Carrega Cardápio
+            // 2. Carrega o Cardápio para o Garçom clicar
             const prodSnap = await getDocs(collection(db, `produtos_${user.uid}`));
-            const cardapio = document.getElementById('cardapio');
-            cardapio.innerHTML = '';
+            const cardapioDiv = document.getElementById('cardapio');
+            cardapioDiv.innerHTML = '';
+            
             prodSnap.forEach(p => {
                 const prod = p.data();
-                const btn = document.createElement('button');
-                btn.className = 'item-btn';
-                btn.innerHTML = `<span>${prod.nome}</span> <b>R$ ${prod.preco.toFixed(2)}</b>`;
+                const btn = document.createElement('div');
+                btn.className = 'item-cardapio';
+                btn.innerHTML = `<span>${prod.nome}</span> <span>R$ ${prod.preco.toFixed(2)}</span>`;
                 btn.onclick = async () => {
-                    const mesaAtual = (await getDocs(query(collection(db, `mesas_${user.uid}`)))).docs.find(d => d.id === `mesa_${mesaId}`)?.data();
-                    const novoTotal = (mesaAtual?.total || 0) + prod.preco;
+                    const mesaAtual = await getDoc(mesaRef);
+                    const totalAntigo = mesaAtual.exists() ? (mesaAtual.data().total || 0) : 0;
+                    
                     await updateDoc(mesaRef, {
                         ocupada: true,
-                        itens: arrayUnion({ nome: prod.nome, preco: prod.preco }),
-                        total: novoTotal
+                        itens: arrayUnion({ nome: prod.nome, preco: prod.preco, data: new Date().toISOString() }),
+                        total: totalAntigo + prod.preco
                     });
                 };
-                cardapio.appendChild(btn);
+                cardapioDiv.appendChild(btn);
             });
-
-            document.getElementById('btn-ir-caixa').onclick = () => location.href = `caixa.html?mesa=${mesaId}`;
         });
     </script>
 </body>
