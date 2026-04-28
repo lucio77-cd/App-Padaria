@@ -3,79 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Caixa - Sistema Cris</title>
+    <title>Produtos - Sistema Cris</title>
     <style>
-        body { font-family: sans-serif; background: #f4f7f6; margin: 0; padding: 0; }
-        header { background: #2c3e50; color: white; padding: 15px; text-align: center; }
-        .nav-buttons { display: flex; gap: 5px; padding: 10px; background: #ecf0f1; }
-        .nav-buttons button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; color: white; cursor: pointer; }
-        .btn-salao { background: #34495e; }
-        .btn-dash { background: #9b59b6; }
-        .container { padding: 15px; }
-        .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; }
-        .total-giga { font-size: 3.5rem; font-weight: bold; color: #2ecc71; margin: 20px 0; }
-        .lista-fechamento { text-align: left; margin: 15px 0; border-top: 1px solid #eee; padding-top: 10px; }
-        .btn-pago { background: #27ae60; color: white; border: none; padding: 20px; border-radius: 12px; width: 100%; font-size: 1.3rem; font-weight: bold; cursor: pointer; }
+        body { font-family: sans-serif; padding: 15px; background: #f4f7f6; }
+        .input-group { background: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        .btn-add { background: #3498db; color: white; border: none; width: 100%; padding: 12px; font-weight: bold; border-radius: 5px; }
+        .item-lista { display: flex; justify-content: space-between; background: white; padding: 12px; margin-bottom: 5px; border-radius: 8px; border: 1px solid #ddd; align-items: center; }
+        .btn-del { background: #e74c3c; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
-
-<header><h1 style="margin:0">CAIXA</h1></header>
-
-<div class="nav-buttons">
-    <button class="btn-salao" onclick="location.href='salao.html'">⬅ VOLTAR SALÃO</button>
-    <button class="btn-dash" onclick="location.href='dashboard.html'">DASHBOARD</button>
-</div>
-
-<div class="container" id="conteudo-caixa">
-    <div class="card">
-        <p>⚠️ Nenhuma mesa selecionada!<br>Volte ao salão e clique em uma mesa ocupada.</p>
+    <button onclick="location.href='salao.html'">⬅ VOLTAR</button>
+    <h2>Gerenciar Produtos</h2>
+    <div class="input-group">
+        <input type="text" id="p-nome" placeholder="Nome (Ex: Pão de Queijo)">
+        <input type="number" id="p-preco" placeholder="Preço (Ex: 5.50)">
+        <button class="btn-add" id="btn-add">ADICIONAR</button>
     </div>
-</div>
+    <h4>Lista de Produtos</h4>
+    <div id="lista-render"></div>
 
 <script type="module">
     import { db, auth } from './firebase.js';
-    import { doc, onSnapshot, updateDoc, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-    const mesaId = new URLSearchParams(window.location.search).get('mesa');
-
+    import { collection, addDoc, onSnapshot, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     auth.onAuthStateChanged(user => {
-        if (user && mesaId) {
-            const ref = doc(db, `mesas_${user.uid}`, `mesa_${mesaId}`);
-            
-            onSnapshot(ref, (s) => {
-                if (s.exists() && s.data().ocupada) {
-                    const d = s.data();
-                    document.getElementById('conteudo-caixa').innerHTML = `
-                        <div class="card">
-                            <h2 style="color:#7f8c8d;">MESA ${mesaId}</h2>
-                            <div class="lista-fechamento">
-                                ${d.itens.map(i => `<div>• ${i.nome} - R$ ${i.preco.toFixed(2)}</div>`).join('')}
-                            </div>
-                            <div class="total-giga">R$ ${d.total.toFixed(2)}</div>
-                            <button class="btn-pago" id="btn-finalizar">FINALIZAR PAGAMENTO</button>
-                        </div>`;
-                    
-                    document.getElementById('btn-finalizar').onclick = async () => {
-                        if(!confirm("Confirmar recebimento de R$ " + d.total.toFixed(2) + "?")) return;
-                        
-                        // Salva a venda para o Dashboard
-                        await addDoc(collection(db, `vendas_${user.uid}`), {
-                            valor: d.total,
-                            mesa: mesaId,
-                            data: serverTimestamp(),
-                            itens: d.itens
-                        });
-
-                        // Limpa a mesa (fica verde de novo)
-                        await updateDoc(ref, { ocupada: false, itens: [], total: 0 });
-                        
-                        alert("Mesa liberada com sucesso!");
-                        location.href = 'salao.html';
-                    };
-                }
+        if (!user) return;
+        const colRef = collection(db, `produtos_${user.uid}`);
+        document.getElementById('btn-add').onclick = async () => {
+            const n = document.getElementById('p-nome').value;
+            const p = parseFloat(document.getElementById('p-preco').value);
+            if(n && p) { await addDoc(colRef, {nome: n, preco: p}); location.reload(); }
+        };
+        onSnapshot(colRef, snap => {
+            const cont = document.getElementById('lista-render');
+            cont.innerHTML = '';
+            snap.forEach(pDoc => {
+                const p = pDoc.data();
+                const div = document.createElement('div');
+                div.className = 'item-lista';
+                div.innerHTML = `<span>${p.nome} - R$ ${parseFloat(p.preco || 0).toFixed(2)}</span><button class="btn-del" id="del-${pDoc.id}">EXCLUIR</button>`;
+                cont.appendChild(div);
+                document.getElementById(`del-${pDoc.id}`).onclick = () => { if(confirm("Apagar?")) deleteDoc(doc(db, `produtos_${user.uid}`, pDoc.id)); };
             });
-        }
+        });
     });
 </script>
 </body>
