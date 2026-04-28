@@ -5,84 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema Cris - Salão</title>
     <style>
-        /* Mantendo o visual exato das suas capturas de tela */
         body { font-family: sans-serif; background: #f4f7f6; margin: 0; padding: 0; }
+        header { background: #2c3e50; color: white; padding: 40px 20px; text-align: center; font-size: 1.8rem; font-weight: bold; text-transform: uppercase; }
         
-        header { 
-            background: #2c3e50; 
-            color: white; 
-            padding: 40px 20px; 
-            text-align: center; 
-            font-size: 1.8rem;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-        .grid-mesas { 
-            display: grid; 
-            grid-template-columns: repeat(2, 1fr); 
-            gap: 20px; 
-            padding: 20px; 
-            margin-bottom: 60px; /* Espaço para o menu inferior */
-        }
-
-        .mesa { 
-            aspect-ratio: 1/1; 
-            border-radius: 25px; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            font-weight: bold; 
-            cursor: pointer; 
-            border: 3px solid transparent;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
-            transition: transform 0.1s;
-        }
-
-        .mesa:active { transform: scale(0.95); }
-
-        /* Cores conforme sua imagem 1777379947150.jpeg */
+        /* Ajuste para 3 colunas para caber as 11 mesas melhor */
+        .grid-mesas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 15px; margin-bottom: 70px; }
+        
+        .mesa { aspect-ratio: 1/1; border-radius: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; font-weight: bold; cursor: pointer; border: 3px solid transparent; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         .livre { background: #a2e4c1; color: #1e4d35; border-color: #2ecc71; }
         .ocupada { background: #f1948a; color: #7b241c; border-color: #e74c3c; }
+        .mesa-titulo { font-size: 1.1rem; }
+        .mesa-status { font-size: 0.8rem; }
 
-        .mesa-titulo { font-size: 1.4rem; margin-bottom: 5px; }
-        .mesa-status { font-size: 0.9rem; text-transform: uppercase; }
-
-        /* Barra de menus inferior */
-        .footer-status { 
-            background: #2c3e50; 
-            color: white; 
-            padding: 15px; 
-            position: fixed; 
-            bottom: 0; 
-            width: 100%; 
-            text-align: center; 
-            font-size: 1rem;
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-        }
+        .footer-status { background: #2c3e50; color: white; padding: 15px; position: fixed; bottom: 0; width: 100%; text-align: center; font-size: 1rem; }
+        
+        .nav-buttons { display: flex; justify-content: space-around; padding: 10px; gap: 10px; background: #ecf0f1; }
+        .nav-buttons button { flex: 1; padding: 12px; border-radius: 8px; border: none; background: #34495e; color: white; font-weight: bold; cursor: pointer; font-size: 0.7rem; }
     </style>
 </head>
 <body>
 
-<header>
-    SISTEMA CRIS
-</header>
+<header>SISTEMA CRIS</header>
 
-            <div style="display: flex; justify-content: space-around; margin-top: 10px; padding: 0 20px;">
-            <button onclick="location.href='produtos.html'" style="flex: 1; margin: 5px; padding: 15px; border-radius: 10px; border: none; background: #34495e; color: white; font-weight: bold; cursor: pointer;">PRODUTO</button>
-            <button onclick="location.href='caixa.html'" style="flex: 1; margin: 5px; padding: 15px; border-radius: 10px; border: none; background: #34495e; color: white; font-weight: bold; cursor: pointer;">CAIXA</button>
-            <button onclick="location.href='dashboard.html'" style="flex: 1; margin: 5px; padding: 15px; border-radius: 10px; border: none; background: #34495e; color: white; font-weight: bold; cursor: pointer;">DASHBOARD</button>
-        </div>
-
-<div class="grid-mesas" id="container-mesas">
-    </div>
-
-<div class="footer-status" id="barra-status">
-    Ocupadas: 0 | Livres: 0
+<div class="nav-buttons">
+    <button onclick="location.href='produtos.html'">PRODUTO</button>
+    <button onclick="location.href='caixa.html'">CAIXA</button>
+    <button onclick="location.href='dashboard.html'">DASHBOARD</button>
 </div>
+
+<div class="grid-mesas" id="container-mesas"></div>
+
+<div class="footer-status" id="barra-status">Ocupadas: 0 | Livres: 0</div>
 
 <script type="module">
     import { db, auth } from './firebase.js';
@@ -90,20 +43,16 @@
 
     auth.onAuthStateChanged(user => {
         if (!user) return;
-
         const mesasRef = collection(db, `mesas_${user.uid}`);
 
         onSnapshot(mesasRef, (snapshot) => {
             const container = document.getElementById('container-mesas');
             container.innerHTML = '';
-            
-            let ocupadas = 0;
-            let livres = 0;
+            let ocupadas = 0; let livres = 0;
 
-            // Criamos as 6 mesas mantendo a ordem
-            for (let i = 1; i <= 6; i++) {
+            // MUDANÇA PARA 11 MESAS AQUI
+            for (let i = 1; i <= 11; i++) {
                 let mesaDoc = { ocupada: false, total: 0 };
-                
                 snapshot.forEach(doc => {
                     if (doc.id === `mesa_${i}`) mesaDoc = doc.data();
                 });
@@ -112,164 +61,17 @@
 
                 const btn = document.createElement('div');
                 btn.className = `mesa ${mesaDoc.ocupada ? 'ocupada' : 'livre'}`;
-                
                 btn.innerHTML = `
                     <div class="mesa-titulo">MESA ${i}</div>
-                    <div class="mesa-status">
-                        ${mesaDoc.ocupada ? 'R$ ' + (mesaDoc.total || 0).toFixed(2) : 'LIVRE'}
-                    </div>
+                    <div class="mesa-status">${mesaDoc.ocupada ? 'R$ ' + (mesaDoc.total || 0).toFixed(2) : 'LIVRE'}</div>
                 `;
                 
-                // A CORREÇÃO: Passa o ID da mesa na URL para o arquivo de pedidos
-                btn.onclick = () => {
-                    window.location.href = `pedido.html?mesa=${i}`;
-                };
-
+                btn.onclick = () => { window.location.href = `pedido.html?mesa=${i}`; };
                 container.appendChild(btn);
             }
-
-            // Atualiza o menu inferior
             document.getElementById('barra-status').innerText = `Ocupadas: ${ocupadas} | Livres: ${livres}`;
         });
     });
 </script>
-
-</body>
-</html>
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema Cris - Salão</title>
-    <style>
-        /* Mantendo o visual exato das suas capturas de tela */
-        body { font-family: sans-serif; background: #f4f7f6; margin: 0; padding: 0; }
-        
-        header { 
-            background: #2c3e50; 
-            color: white; 
-            padding: 40px 20px; 
-            text-align: center; 
-            font-size: 1.8rem;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-        .grid-mesas { 
-            display: grid; 
-            grid-template-columns: repeat(2, 1fr); 
-            gap: 20px; 
-            padding: 20px; 
-            margin-bottom: 60px; /* Espaço para o menu inferior */
-        }
-
-        .mesa { 
-            aspect-ratio: 1/1; 
-            border-radius: 25px; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            font-weight: bold; 
-            cursor: pointer; 
-            border: 3px solid transparent;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
-            transition: transform 0.1s;
-        }
-
-        .mesa:active { transform: scale(0.95); }
-
-        /* Cores conforme sua imagem 1777379947150.jpeg */
-        .livre { background: #a2e4c1; color: #1e4d35; border-color: #2ecc71; }
-        .ocupada { background: #f1948a; color: #7b241c; border-color: #e74c3c; }
-
-        .mesa-titulo { font-size: 1.4rem; margin-bottom: 5px; }
-        .mesa-status { font-size: 0.9rem; text-transform: uppercase; }
-
-        /* Barra de menus inferior */
-        .footer-status { 
-            background: #2c3e50; 
-            color: white; 
-            padding: 15px; 
-            position: fixed; 
-            bottom: 0; 
-            width: 100%; 
-            text-align: center; 
-            font-size: 1rem;
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-        }
-    </style>
-</head>
-<body>
-
-<header>
-    SISTEMA CRIS
-</header>
-        <div style="display: flex; justify-content: space-around; padding: 10px; gap: 10px;">
-            <button onclick="location.href='produtos.html'" style="flex: 1; padding: 15px; border-radius: 10px; border: none; background: #34495e; color: white; font-weight: bold; cursor: pointer;">PRODUTO</button>
-            <button onclick="location.href='caixa.html'" style="flex: 1; padding: 15px; border-radius: 10px; border: none; background: #34495e; color: white; font-weight: bold; cursor: pointer;">CAIXA</button>
-            <button onclick="location.href='dashboard.html'" style="flex: 1; padding: 15px; border-radius: 10px; border: none; background: #34495e; color: white; font-weight: bold; cursor: pointer;">DASHBOARD</button>
-        </div>
-
-<div class="grid-mesas" id="container-mesas">
-    </div>
-
-<div class="footer-status" id="barra-status">
-    Ocupadas: 0 | Livres: 0
-</div>
-
-<script type="module">
-    import { db, auth } from './firebase.js';
-    import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-    auth.onAuthStateChanged(user => {
-        if (!user) return;
-
-        const mesasRef = collection(db, `mesas_${user.uid}`);
-
-        onSnapshot(mesasRef, (snapshot) => {
-            const container = document.getElementById('container-mesas');
-            container.innerHTML = '';
-            
-            let ocupadas = 0;
-            let livres = 0;
-
-            // Criamos as 6 mesas mantendo a ordem
-            for (let i = 1; i <= 6; i++) {
-                let mesaDoc = { ocupada: false, total: 0 };
-                
-                snapshot.forEach(doc => {
-                    if (doc.id === `mesa_${i}`) mesaDoc = doc.data();
-                });
-
-                if (mesaDoc.ocupada) ocupadas++; else livres++;
-
-                const btn = document.createElement('div');
-                btn.className = `mesa ${mesaDoc.ocupada ? 'ocupada' : 'livre'}`;
-                
-                btn.innerHTML = `
-                    <div class="mesa-titulo">MESA ${i}</div>
-                    <div class="mesa-status">
-                        ${mesaDoc.ocupada ? 'R$ ' + (mesaDoc.total || 0).toFixed(2) : 'LIVRE'}
-                    </div>
-                `;
-                
-                // A CORREÇÃO: Passa o ID da mesa na URL para o arquivo de pedidos
-                btn.onclick = () => {
-                    window.location.href = `pedido.html?mesa=${i}`;
-                };
-
-                container.appendChild(btn);
-            }
-
-            // Atualiza o menu inferior
-            document.getElementById('barra-status').innerText = `Ocupadas: ${ocupadas} | Livres: ${livres}`;
-        });
-    });
-</script>
-
 </body>
 </html>
