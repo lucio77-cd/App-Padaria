@@ -8,40 +8,28 @@
     <style>
         body { font-family: sans-serif; background: #f4f7f6; margin: 0; padding: 0; }
         header { background: #2c3e50; color: white; padding: 15px; text-align: center; }
-        
-        .nav-buttons { display: flex; gap: 10px; padding: 10px; background: #ecf0f1; }
-        .nav-buttons button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .btn-salao { background: #3498db; color: white; }
-        .btn-dash { background: #9b59b6; color: white; }
-
+        .nav-bar { padding: 10px; background: #ecf0f1; display: flex; gap: 10px; }
+        .btn-nav { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; color: white; }
+        .btn-voltar { background: #95a5a6; }
+        .btn-dash { background: #9b59b6; }
         .container { padding: 15px; }
-        .card-fechamento { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; margin-bottom: 20px; }
-        .mesa-numero { font-size: 1.2rem; color: #7f8c8d; margin-bottom: 5px; }
-        .total-valor { font-size: 2.5rem; font-weight: bold; color: #2c3e50; margin: 10px 0; }
-        
-        .lista-itens { text-align: left; margin: 15px 0; border-top: 1px solid #eee; padding-top: 10px; }
-        .item-linha { display: flex; justify-content: space-between; padding: 5px 0; color: #34495e; }
-
-        .btn-finalizar { background: #27ae60; color: white; border: none; padding: 20px; border-radius: 12px; width: 100%; font-size: 1.2rem; font-weight: bold; box-shadow: 0 4px 0 #219150; }
-        .btn-finalizar:active { box-shadow: none; transform: translateY(4px); }
+        .card-caixa { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; }
+        .total-valor { font-size: 3rem; font-weight: bold; color: #2c3e50; margin: 20px 0; }
+        .btn-finalizar { background: #27ae60; color: white; border: none; padding: 20px; border-radius: 12px; width: 100%; font-size: 1.3rem; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<header>
-    <h1>CAIXA</h1>
-</header>
+<header><h1>CAIXA</h1></header>
 
-<div class="nav-buttons">
-    <button class="btn-salao" onclick="location.href='salao.html'">⬅ Ir para Salão</button>
-    <button class="btn-dash" onclick="location.href='dashboard.html'">📊 Ir para Dashboard</button>
+<div class="nav-bar">
+    <button class="btn-nav btn-voltar" onclick="location.href='salao.html'">⬅ VOLTAR SALÃO</button>
+    <button class="btn-nav btn-dash" onclick="location.href='dashboard.html'">📊 DASHBOARD</button>
 </div>
 
-<div class="container">
-    <div id="conteudo-caixa">
-        <div class="card-fechamento">
-            <p>Selecione uma mesa ocupada no salão para fechar a conta.</p>
-        </div>
+<div class="container" id="conteudo-caixa">
+    <div class="card-caixa">
+        <p>Selecione uma mesa ocupada no salão para fechar.</p>
     </div>
 </div>
 
@@ -49,64 +37,35 @@
     import { db, auth } from './firebase.js';
     import { doc, getDoc, updateDoc, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    // Pega o número da mesa que veio do Salão (ex: caia.html?mesa=1)
     const params = new URLSearchParams(window.location.search);
     const mesaId = params.get('mesa');
 
     if (mesaId) {
-        carregarDadosMesa(mesaId);
-    }
-
-    async function carregarDadosMesa(id) {
-        const user = auth.currentUser;
-        if (!user) return;
-
-        const mesaRef = doc(db, `mesas_${user.uid}`, `mesa_${id}`);
-        const docSnap = await getDoc(mesaRef);
-
-        if (docSnap.exists() && docSnap.data().ocupada) {
-            const dados = docSnap.data();
-            let total = 0;
-            let itensHtml = dados.itens.map(item => {
-                total += item.preco;
-                return `<div class="item-linha"><span>${item.nome}</span><span>R$ ${item.preco.toFixed(2)}</span></div>`;
-            }).join('');
-
-            document.getElementById('conteudo-caixa').innerHTML = `
-                <div class="card-fechamento">
-                    <div class="mesa-numero">FECHANDO MESA</div>
-                    <div style="font-size: 3rem; font-weight: bold;">${id}</div>
-                    <div class="lista-itens">${itensHtml}</div>
-                    <div class="mesa-numero">TOTAL A PAGAR</div>
-                    <div class="total-valor">R$ ${total.toFixed(2)}</div>
-                    <button class="btn-finalizar" id="btnConfirmar">RECEBER E LIBERAR MESA</button>
-                </div>
-            `;
-
-            document.getElementById('btnConfirmar').onclick = () => finalizarVenda(id, total, dados.itens);
-        }
-    }
-
-    async function finalizarVenda(id, total, itens) {
-        const user = auth.currentUser;
-        
-        // 1. Salva a venda no histórico (Dashboard)
-        await addDoc(collection(db, "vendas"), {
-            userId: user.uid,
-            mesa: id,
-            total: total,
-            itens: itens,
-            data: serverTimestamp()
+        const user = auth.onAuthStateChanged(async user => {
+            if (user) {
+                const mesaRef = doc(db, `mesas_${user.uid}`, `mesa_${mesaId}`);
+                const snap = await getDoc(mesaRef);
+                if (snap.exists() && snap.data().ocupada) {
+                    const dados = snap.data();
+                    document.getElementById('conteudo-caixa').innerHTML = `
+                        <div class="card-caixa">
+                            <h2>FECHAR MESA ${mesaId}</h2>
+                            <div class="total-valor">R$ ${dados.total.toFixed(2)}</div>
+                            <button class="btn-finalizar" id="btnConfirmar">RECEBER E LIBERAR</button>
+                        </div>`;
+                    document.getElementById('btnConfirmar').onclick = () => finalizar(mesaId, dados.total, dados.itens);
+                }
+            }
         });
+    }
 
-        // 2. Libera a mesa no Salão
-        const mesaRef = doc(db, `mesas_${user.uid}`, `mesa_${id}`);
-        await updateDoc(mesaRef, { ocupada: false, itens: [] });
-
-        alert("Venda realizada! Mesa " + id + " está livre.");
+    async function finalizar(id, total, itens) {
+        const user = auth.currentUser;
+        await addDoc(collection(db, "vendas"), { userId: user.uid, mesa: id, total: total, data: serverTimestamp() });
+        await updateDoc(doc(db, `mesas_${user.uid}`, `mesa_${id}`), { ocupada: false, itens: [] });
+        alert("Mesa liberada!");
         location.href = 'salao.html';
     }
 </script>
-
 </body>
 </html>
