@@ -4,19 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Caixa - Sistema Cris</title>
-    <link rel="stylesheet" href="style.css">
     <style>
         body { font-family: sans-serif; background: #f4f7f6; padding: 15px; }
         .card-caixa { background: white; border-radius: 15px; padding: 20px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .total-valor { font-size: 3rem; font-weight: bold; color: #2ecc71; margin: 20px 0; }
-        .item-linha { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dotted #ccc; font-size: 0.9rem; }
-        .btn-pago { background: #27ae60; color: white; border: none; padding: 20px; border-radius: 12px; width: 100%; font-size: 1.2rem; font-weight: bold; }
+        .total-giga { font-size: 3.5rem; font-weight: bold; color: #2ecc71; margin: 20px 0; }
+        .lista-resumo { text-align: left; margin-bottom: 20px; border-top: 2px solid #eee; padding-top: 10px; }
+        .btn-finalizar { background: #27ae60; color: white; border: none; padding: 20px; border-radius: 12px; width: 100%; font-size: 1.3rem; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
-    <button onclick="location.href='salao.html'">⬅ Cancelar</button>
-    <div id="caixa-container" class="card-caixa" style="margin-top:20px;">
-        <p>Carregando...</p>
+    <button onclick="location.href='salao.html'">⬅ VOLTAR AO SALÃO</button>
+
+    <div id="caixa-render" style="margin-top:20px;">
+        <div class="card-caixa">
+            <p>Selecione uma mesa ocupada no Salão para receber.</p>
+        </div>
     </div>
 
     <script type="module">
@@ -31,22 +33,34 @@
                 onSnapshot(mesaRef, (snap) => {
                     if (snap.exists() && snap.data().ocupada) {
                         const dados = snap.data();
-                        const itensHtml = dados.itens.map(i => `<div class="item-linha"><span>${i.nome}</span><span>R$ ${i.preco.toFixed(2)}</span></div>`).join('');
+                        const itensHtml = dados.itens.map(i => `<div>• ${i.nome} - R$ ${i.preco.toFixed(2)}</div>`).join('');
                         
-                        document.getElementById('caixa-container').innerHTML = `
-                            <h2 style="color:#7f8c8d;">MESA ${mesaId}</h2>
-                            <div style="margin: 20px 0; text-align:left;">${itensHtml}</div>
-                            <div class="total-valor">R$ ${dados.total.toFixed(2)}</div>
-                            <button class="btn-pago" id="finalizar">FINALIZAR PAGAMENTO</button>
-                        `;
+                        document.getElementById('caixa-render').innerHTML = `
+                            <div class="card-caixa">
+                                <h2>FECHAMENTO MESA ${mesaId}</h2>
+                                <div class="lista-resumo">${itensHtml}</div>
+                                <div class="total-giga">R$ ${dados.total.toFixed(2)}</div>
+                                <button class="btn-finalizar" id="acaoFinalizar">RECEBER E LIMPAR MESA</button>
+                            </div>`;
 
-                        document.getElementById('finalizar').onclick = async () => {
-                            if(!confirm("Confirmar pagamento?")) return;
-                            await addDoc(collection(db, "vendas"), { total: dados.total, mesa: mesaId, data: serverTimestamp(), userId: user.uid });
+                        document.getElementById('acaoFinalizar').onclick = async () => {
+                            if(!confirm("Confirmar recebimento?")) return;
+                            
+                            // 1. Salva no financeiro
+                            await addDoc(collection(db, `vendas_${user.uid}`), {
+                                total: dados.total,
+                                mesa: mesaId,
+                                data: serverTimestamp()
+                            });
+
+                            // 2. Limpa a mesa (volta a ficar VERDE no salão)
                             await updateDoc(mesaRef, { ocupada: false, itens: [], total: 0 });
-                            alert("Mesa liberada!");
+                            
+                            alert("Venda registrada! Mesa livre.");
                             location.href = 'salao.html';
                         };
+                    } else {
+                        document.getElementById('caixa-render').innerHTML = `<div class="card-caixa"><h3>A mesa ${mesaId} já está livre.</h3></div>`;
                     }
                 });
             }
