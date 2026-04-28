@@ -5,21 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pedido - Sistema Cris</title>
     <style>
-        body { font-family: sans-serif; background: #f4f7f6; padding: 0; margin: 0; }
+        body { font-family: sans-serif; background: #f4f7f6; margin: 0; padding: 0; }
         .nav-back { background: #2c3e50; padding: 15px; color: white; display: flex; align-items: center; gap: 10px; }
         .btn-voltar { background: #7f8c8d; color: white; border: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; }
         .container { padding: 15px; }
         .resumo { background: #34495e; color: white; padding: 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .lista { background: white; padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 20px; }
-        .item-p { border-bottom: 1px solid #eee; padding: 8px 0; display: flex; justify-content: space-between; }
+        .item-p { border-bottom: 1px solid #eee; padding: 10px 0; display: flex; justify-content: space-between; }
         .cardapio-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
-        .prod-btn { background: white; border: 1px solid #ddd; padding: 15px; border-radius: 10px; display: flex; justify-content: space-between; font-weight: bold; }
+        .prod-btn { background: white; border: 1px solid #ddd; padding: 18px; border-radius: 12px; display: flex; justify-content: space-between; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
     </style>
 </head>
 <body>
 
 <div class="nav-back">
-    <button class="btn-voltar" onclick="location.href='salao.html'">⬅ SALÃO</button>
+    <button class="btn-voltar" onclick="location.href='salao.html'">⬅ VOLTAR</button>
     <h3 style="margin:0">Mesa <span id="mesa-num">?</span></h3>
 </div>
 
@@ -30,10 +30,10 @@
     </div>
 
     <h4>Consumo Atual:</h4>
-    <div class="lista" id="lista-itens">Nenhum item.</div>
+    <div class="lista" id="lista-itens">Nenhum item lançado.</div>
 
-    <h4>Cardápio:</h4>
-    <div class="cardapio-grid" id="cardapio-btn">Carregando produtos...</div>
+    <h4>Adicionar Produtos:</h4>
+    <div class="cardapio-grid" id="cardapio-btn">Carregando cardápio...</div>
 </div>
 
 <script type="module">
@@ -47,17 +47,21 @@
         if (!user) return;
         const ref = doc(db, `mesas_${user.uid}`, `mesa_${id}`);
 
+        // Atualiza a lista de consumo em tempo real
         onSnapshot(ref, (s) => {
             if (s.exists()) {
                 const d = s.data();
                 document.getElementById('total-val').innerText = `R$ ${d.total.toFixed(2)}`;
-                document.getElementById('lista-itens').innerHTML = d.itens.length ? d.itens.map(i => `<div class="item-p"><span>${i.nome}</span> <b>R$ ${i.preco.toFixed(2)}</b></div>`).join('') : "Mesa vazia";
+                document.getElementById('lista-itens').innerHTML = (d.itens && d.itens.length) ? 
+                    d.itens.map(i => `<div class="item-p"><span>${i.nome}</span> <b>R$ ${i.preco.toFixed(2)}</b></div>`).join('') : "Mesa vazia";
             }
         });
 
+        // CARREGA TODOS OS PRODUTOS DO SEU BANCO
         const pSnap = await getDocs(collection(db, `produtos_${user.uid}`));
         const cardDiv = document.getElementById('cardapio-btn');
         cardDiv.innerHTML = '';
+        
         pSnap.forEach(p => {
             const pr = p.data();
             const b = document.createElement('div');
@@ -66,7 +70,11 @@
             b.onclick = async () => {
                 const mesa = await getDoc(ref);
                 const t = mesa.exists() ? (mesa.data().total || 0) : 0;
-                await updateDoc(ref, { ocupada: true, itens: arrayUnion({nome: pr.nome, preco: pr.preco}), total: t + pr.preco });
+                await updateDoc(ref, { 
+                    ocupada: true, 
+                    itens: arrayUnion({ nome: pr.nome, preco: pr.preco }), 
+                    total: t + pr.preco 
+                });
             };
             cardDiv.appendChild(b);
         });
