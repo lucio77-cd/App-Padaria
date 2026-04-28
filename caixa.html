@@ -5,66 +5,64 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Caixa - Sistema Cris</title>
     <style>
-        body { font-family: sans-serif; background: #f4f7f6; padding: 15px; }
-        .card-caixa { background: white; border-radius: 15px; padding: 20px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .total-giga { font-size: 3.5rem; font-weight: bold; color: #2ecc71; margin: 20px 0; }
-        .lista-resumo { text-align: left; margin-bottom: 20px; border-top: 2px solid #eee; padding-top: 10px; }
-        .btn-finalizar { background: #27ae60; color: white; border: none; padding: 20px; border-radius: 12px; width: 100%; font-size: 1.3rem; font-weight: bold; cursor: pointer; }
+        body { font-family: sans-serif; background: #f4f7f6; padding: 0; margin: 0; }
+        header { background: #2c3e50; color: white; padding: 15px; text-align: center; }
+        .nav-buttons { display: flex; gap: 5px; padding: 10px; background: #ecf0f1; }
+        .nav-buttons button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; color: white; font-size: 0.75rem; }
+        .btn-salao { background: #34495e; }
+        .btn-dash { background: #9b59b6; }
+        
+        .container { padding: 15px; }
+        .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; }
+        .total { font-size: 3.5rem; font-weight: bold; color: #2ecc71; margin: 20px 0; }
+        .btn-pago { background: #27ae60; color: white; border: none; padding: 20px; border-radius: 12px; width: 100%; font-size: 1.3rem; font-weight: bold; }
     </style>
 </head>
 <body>
-    <button onclick="location.href='salao.html'">⬅ VOLTAR AO SALÃO</button>
 
-    <div id="caixa-render" style="margin-top:20px;">
-        <div class="card-caixa">
-            <p>Selecione uma mesa ocupada no Salão para receber.</p>
-        </div>
+<header><h1 style="margin:0">CAIXA</h1></header>
+
+<div class="nav-buttons">
+    <button class="btn-salao" onclick="location.href='salao.html'">SALÃO</button>
+    <button class="btn-dash" onclick="location.href='dashboard.html'">DASHBOARD</button>
+</div>
+
+<div class="container" id="area-caixa">
+    <div class="card">
+        <p>Aguardando seleção de mesa ocupada no salão...</p>
     </div>
+</div>
 
-    <script type="module">
-        import { db, auth } from './firebase.js';
-        import { doc, onSnapshot, updateDoc, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+<script type="module">
+    import { db, auth } from './firebase.js';
+    import { doc, onSnapshot, updateDoc, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-        const mesaId = new URLSearchParams(window.location.search).get('mesa');
+    const id = new URLSearchParams(window.location.search).get('mesa');
 
-        auth.onAuthStateChanged(user => {
-            if (user && mesaId) {
-                const mesaRef = doc(db, `mesas_${user.uid}`, `mesa_${mesaId}`);
-                onSnapshot(mesaRef, (snap) => {
-                    if (snap.exists() && snap.data().ocupada) {
-                        const dados = snap.data();
-                        const itensHtml = dados.itens.map(i => `<div>• ${i.nome} - R$ ${i.preco.toFixed(2)}</div>`).join('');
-                        
-                        document.getElementById('caixa-render').innerHTML = `
-                            <div class="card-caixa">
-                                <h2>FECHAMENTO MESA ${mesaId}</h2>
-                                <div class="lista-resumo">${itensHtml}</div>
-                                <div class="total-giga">R$ ${dados.total.toFixed(2)}</div>
-                                <button class="btn-finalizar" id="acaoFinalizar">RECEBER E LIMPAR MESA</button>
-                            </div>`;
-
-                        document.getElementById('acaoFinalizar').onclick = async () => {
-                            if(!confirm("Confirmar recebimento?")) return;
-                            
-                            // 1. Salva no financeiro
-                            await addDoc(collection(db, `vendas_${user.uid}`), {
-                                total: dados.total,
-                                mesa: mesaId,
-                                data: serverTimestamp()
-                            });
-
-                            // 2. Limpa a mesa (volta a ficar VERDE no salão)
-                            await updateDoc(mesaRef, { ocupada: false, itens: [], total: 0 });
-                            
-                            alert("Venda registrada! Mesa livre.");
-                            location.href = 'salao.html';
-                        };
-                    } else {
-                        document.getElementById('caixa-render').innerHTML = `<div class="card-caixa"><h3>A mesa ${mesaId} já está livre.</h3></div>`;
-                    }
-                });
-            }
-        });
-    </script>
+    auth.onAuthStateChanged(user => {
+        if (user && id) {
+            const ref = doc(db, `mesas_${user.uid}`, `mesa_${id}`);
+            onSnapshot(ref, (s) => {
+                if (s.exists() && s.data().total > 0) {
+                    const d = s.data();
+                    document.getElementById('area-caixa').innerHTML = `
+                        <div class="card">
+                            <h2>MESA ${id}</h2>
+                            <div class="total">R$ ${d.total.toFixed(2)}</div>
+                            <button class="btn-finalizar btn-pago" id="ok">FINALIZAR PAGAMENTO</button>
+                        </div>`;
+                    
+                    document.getElementById('ok').onclick = async () => {
+                        if(!confirm("Recebeu o valor?")) return;
+                        await addDoc(collection(db, `vendas_${user.uid}`), { valor: d.total, mesa: id, data: serverTimestamp() });
+                        await updateDoc(ref, { ocupada: false, itens: [], total: 0 });
+                        alert("Pago!");
+                        location.href = 'salao.html';
+                    };
+                }
+            });
+        }
+    });
+</script>
 </body>
 </html>
