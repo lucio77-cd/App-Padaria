@@ -8,10 +8,12 @@
         body { font-family: sans-serif; margin: 0; background: #f4f7f6; }
         .header { background: #2c3e50; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
         .container { padding: 15px; }
-        .total-box { background: #34495e; color: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .total-box { background: #34495e; color: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; }
+        .lista-consumo { background: white; padding: 10px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ddd; max-height: 150px; overflow-y: auto; }
         .cardapio-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
-        .btn-p { background: white; border: 1px solid #ddd; padding: 15px; border-radius: 10px; display: flex; justify-content: space-between; cursor: pointer; font-weight: bold; }
-        .btn-caixa { background: #27ae60; color: white; border: none; width: 100%; padding: 18px; border-radius: 10px; font-weight: bold; margin-top: 25px; cursor: pointer; font-size: 1rem; }
+        .btn-produto { background: white; border: 1px solid #3498db; padding: 15px; border-radius: 10px; display: flex; justify-content: space-between; cursor: pointer; font-weight: bold; color: #2c3e50; transition: 0.2s; }
+        .btn-produto:active { background: #d6eaf8; transform: scale(0.98); }
+        .btn-caixa { background: #27ae60; color: white; border: none; width: 100%; padding: 18px; border-radius: 10px; font-weight: bold; margin-top: 20px; cursor: pointer; font-size: 1.1rem; }
     </style>
 </head>
 <body>
@@ -22,15 +24,15 @@
 
     <div class="container">
         <div class="total-box">
-            <span>TOTAL ACUMULADO:</span>
-            <h2 id="total-txt" style="margin:0">R$ 0,00</h2>
+            <small>TOTAL ACUMULADO:</small>
+            <h1 id="total-txt" style="margin:0">R$ 0,00</h1>
         </div>
 
-        <h4>Consumo Atual:</h4>
-        <div id="itens-mesa" style="background:#eee; padding:10px; border-radius:5px; margin-bottom:20px;">Nenhum item...</div>
+        <h4>Itens na Mesa:</h4>
+        <div id="itens-mesa" class="lista-consumo">Nenhum item adicionado.</div>
 
-        <h4>Toque para Adicionar:</h4>
-        <div id="cardapio-lista" class="cardapio-grid">Carregando cardápio...</div>
+        <h4>Cardápio (Toque para Adicionar):</h4>
+        <div id="cardapio-lista" class="cardapio-grid">Carregando produtos...</div>
 
         <button class="btn-caixa" id="ir-caixa">💰 IR PARA O CAIXA (FECHAR)</button>
     </div>
@@ -42,40 +44,68 @@
     const params = new URLSearchParams(window.location.search);
     const mesaId = params.get('mesa') || "1";
     document.getElementById('mesa-titulo').innerText = `Mesa ${mesaId}`;
+    
+    // Redireciona para o caixa levando o ID da mesa
     document.getElementById('ir-caixa').onclick = () => location.href = `caixa.html?mesa=${mesaId}`;
 
     auth.onAuthStateChanged(async user => {
         if (!user) return;
         const mesaRef = doc(db, `mesas_${user.uid}`, `mesa_${mesaId}`);
 
-        // Observa mudanças na mesa (Total e Itens)
+        // 1. Monitora o consumo da mesa em tempo real
         onSnapshot(mesaRef, s => {
             const data = s.exists() ? s.data() : { total: 0, itens: [] };
             document.getElementById('total-txt').innerText = `R$ ${(data.total || 0).toFixed(2)}`;
             
             const divItens = document.getElementById('itens-mesa');
-            divItens.innerHTML = (data.itens && data.itens.length > 0) 
-                ? data.itens.map(i => `<div>${i.nome} - R$ ${i.preco.toFixed(2)}</div>`).join('')
-                : "Nenhum item na mesa.";
+            if (data.itens && data.itens.length > 0) {
+                // Agrupa itens repetidos para facilitar a leitura
+                const resumo = data.itens.reduce((acc, curr) => {
+                    acc[curr.nome] = (acc[curr.nome] || 0) + 1;
+                    return acc;
+                }, {});
+                
+                divItens.innerHTML = Object.entries(resumo)
+                    .map(([nome, qtd]) => `<div><b>${qtd}x</b> ${nome}</div>`)
+                    .join('');
+            } else {
+                divItens.innerHTML = "Nenhum item na mesa.";
+            }
         });
 
-        // Carrega o Cardápio
+        // 2. Carrega a lista de produtos cadastrados no Cardápio
         const pSnap = await getDocs(collection(db, `produtos_${user.uid}`));
         const listaUI = document.getElementById('cardapio-lista');
-        listaUI.innerHTML = pSnap.empty ? "Cadastre produtos primeiro!" : "";
+        
+        if (pSnap.empty) {
+            listaUI.innerHTML = "<p>Nenhum produto cadastrado. Vá em 'Gerenciar Cardápio' primeiro.</p>";
+            return;
+        }
 
+        listaUI.innerHTML = ""; // Limpa o "Carregando..."
+        
         pSnap.forEach(pDoc => {
             const p = pDoc.data();
+            // Pula produtos com erro de preço (NaN)
+            if (isNaN(p.preco)) return;
+
             const btn = document.createElement('div');
-            btn.className = 'btn-p';
+            btn.className = 'btn-produto';
             btn.innerHTML = `<span>${p.nome}</span> <span>R$ ${parseFloat(p.preco).toFixed(2)}</span>`;
+            
+            // Ação ao clicar: Adiciona mais um item à mesa
             btn.onclick = async () => {
                 const mesaSnap = await getDoc(mesaRef);
                 const totalAtual = mesaSnap.exists() ? (mesaSnap.data().total || 0) : 0;
+                
                 await updateDoc(mesaRef, {
                     ocupada: true,
                     total: totalAtual + parseFloat(p.preco),
-                    itens: arrayUnion({ nome: p.nome, preco: parseFloat(p.preco) })
+                    itens: arrayUnion({ 
+                        nome: p.nome, 
+                        preco: parseFloat(p.preco),
+                        timestamp: Date.now() // Diferencia itens iguais para o Firebase
+                    })
                 });
             };
             listaUI.appendChild(btn);
