@@ -5,17 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Caixa - Sistema Cris</title>
     <style>
-        body { font-family: sans-serif; background: #f4f7f6; padding: 0; margin: 0; }
+        body { font-family: sans-serif; background: #f4f7f6; margin: 0; padding: 0; }
         header { background: #2c3e50; color: white; padding: 15px; text-align: center; }
         .nav-buttons { display: flex; gap: 5px; padding: 10px; background: #ecf0f1; }
-        .nav-buttons button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; color: white; font-size: 0.75rem; }
+        .nav-buttons button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; color: white; cursor: pointer; }
         .btn-salao { background: #34495e; }
         .btn-dash { background: #9b59b6; }
-        
         .container { padding: 15px; }
         .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; }
-        .total { font-size: 3.5rem; font-weight: bold; color: #2ecc71; margin: 20px 0; }
-        .btn-pago { background: #27ae60; color: white; border: none; padding: 20px; border-radius: 12px; width: 100%; font-size: 1.3rem; font-weight: bold; }
+        .total-giga { font-size: 3.5rem; font-weight: bold; color: #2ecc71; margin: 20px 0; }
+        .lista-fechamento { text-align: left; margin: 15px 0; border-top: 1px solid #eee; padding-top: 10px; }
+        .btn-pago { background: #27ae60; color: white; border: none; padding: 20px; border-radius: 12px; width: 100%; font-size: 1.3rem; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -23,13 +23,13 @@
 <header><h1 style="margin:0">CAIXA</h1></header>
 
 <div class="nav-buttons">
-    <button class="btn-salao" onclick="location.href='salao.html'">SALÃO</button>
+    <button class="btn-salao" onclick="location.href='salao.html'">⬅ VOLTAR SALÃO</button>
     <button class="btn-dash" onclick="location.href='dashboard.html'">DASHBOARD</button>
 </div>
 
-<div class="container" id="area-caixa">
+<div class="container" id="conteudo-caixa">
     <div class="card">
-        <p>Aguardando seleção de mesa ocupada no salão...</p>
+        <p>⚠️ Nenhuma mesa selecionada!<br>Volte ao salão e clique em uma mesa ocupada.</p>
     </div>
 </div>
 
@@ -37,26 +37,40 @@
     import { db, auth } from './firebase.js';
     import { doc, onSnapshot, updateDoc, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    const id = new URLSearchParams(window.location.search).get('mesa');
+    const mesaId = new URLSearchParams(window.location.search).get('mesa');
 
     auth.onAuthStateChanged(user => {
-        if (user && id) {
-            const ref = doc(db, `mesas_${user.uid}`, `mesa_${id}`);
+        if (user && mesaId) {
+            const ref = doc(db, `mesas_${user.uid}`, `mesa_${mesaId}`);
+            
             onSnapshot(ref, (s) => {
-                if (s.exists() && s.data().total > 0) {
+                if (s.exists() && s.data().ocupada) {
                     const d = s.data();
-                    document.getElementById('area-caixa').innerHTML = `
+                    document.getElementById('conteudo-caixa').innerHTML = `
                         <div class="card">
-                            <h2>MESA ${id}</h2>
-                            <div class="total">R$ ${d.total.toFixed(2)}</div>
-                            <button class="btn-finalizar btn-pago" id="ok">FINALIZAR PAGAMENTO</button>
+                            <h2 style="color:#7f8c8d;">MESA ${mesaId}</h2>
+                            <div class="lista-fechamento">
+                                ${d.itens.map(i => `<div>• ${i.nome} - R$ ${i.preco.toFixed(2)}</div>`).join('')}
+                            </div>
+                            <div class="total-giga">R$ ${d.total.toFixed(2)}</div>
+                            <button class="btn-pago" id="btn-finalizar">FINALIZAR PAGAMENTO</button>
                         </div>`;
                     
-                    document.getElementById('ok').onclick = async () => {
-                        if(!confirm("Recebeu o valor?")) return;
-                        await addDoc(collection(db, `vendas_${user.uid}`), { valor: d.total, mesa: id, data: serverTimestamp() });
+                    document.getElementById('btn-finalizar').onclick = async () => {
+                        if(!confirm("Confirmar recebimento de R$ " + d.total.toFixed(2) + "?")) return;
+                        
+                        // Salva a venda para o Dashboard
+                        await addDoc(collection(db, `vendas_${user.uid}`), {
+                            valor: d.total,
+                            mesa: mesaId,
+                            data: serverTimestamp(),
+                            itens: d.itens
+                        });
+
+                        // Limpa a mesa (fica verde de novo)
                         await updateDoc(ref, { ocupada: false, itens: [], total: 0 });
-                        alert("Pago!");
+                        
+                        alert("Mesa liberada com sucesso!");
                         location.href = 'salao.html';
                     };
                 }
