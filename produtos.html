@@ -6,47 +6,62 @@
     <title>Produtos - Sistema Cris</title>
     <style>
         body { font-family: sans-serif; padding: 15px; background: #f4f7f6; }
-        .input-group { background: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-        .btn-add { background: #3498db; color: white; border: none; width: 100%; padding: 12px; font-weight: bold; border-radius: 5px; }
-        .item-lista { display: flex; justify-content: space-between; background: white; padding: 12px; margin-bottom: 5px; border-radius: 8px; border: 1px solid #ddd; align-items: center; }
-        .btn-del { background: #e74c3c; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; }
+        .card-add { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .btn-add { background: #3498db; color: white; border: none; width: 100%; padding: 15px; font-weight: bold; border-radius: 8px; cursor: pointer; }
+        .item { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px; margin-bottom: 8px; border-radius: 8px; border: 1px solid #eee; }
+        .btn-del { background: #ff4757; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
     <button onclick="location.href='salao.html'">⬅ VOLTAR</button>
-    <h2>Gerenciar Produtos</h2>
-    <div class="input-group">
-        <input type="text" id="p-nome" placeholder="Nome (Ex: Pão de Queijo)">
-        <input type="number" id="p-preco" placeholder="Preço (Ex: 5.50)">
-        <button class="btn-add" id="btn-add">ADICIONAR</button>
+    <h2>Gerenciar Cardápio</h2>
+
+    <div class="card-add">
+        <input type="text" id="nome" placeholder="Nome do Produto">
+        <input type="number" id="preco" step="0.01" placeholder="Preço (Ex: 5.50)">
+        <button class="btn-add" id="salvar">CADASTRAR PRODUTO</button>
     </div>
-    <h4>Lista de Produtos</h4>
-    <div id="lista-render"></div>
+
+    <div id="lista">Carregando produtos...</div>
 
 <script type="module">
     import { db, auth } from './firebase.js';
     import { collection, addDoc, onSnapshot, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
     auth.onAuthStateChanged(user => {
         if (!user) return;
         const colRef = collection(db, `produtos_${user.uid}`);
-        document.getElementById('btn-add').onclick = async () => {
-            const n = document.getElementById('p-nome').value;
-            const p = parseFloat(document.getElementById('p-preco').value);
-            if(n && p) { await addDoc(colRef, {nome: n, preco: p}); location.reload(); }
+
+        document.getElementById('salvar').onclick = async () => {
+            const n = document.getElementById('nome').value;
+            const p = parseFloat(document.getElementById('preco').value);
+            if (n && !isNaN(p)) {
+                await addDoc(colRef, { nome: n, preco: p });
+                document.getElementById('nome').value = '';
+                document.getElementById('preco').value = '';
+            } else { alert("Preencha nome e preço corretamente!"); }
         };
+
         onSnapshot(colRef, snap => {
-            const cont = document.getElementById('lista-render');
-            cont.innerHTML = '';
+            const lista = document.getElementById('lista');
+            lista.innerHTML = snap.empty ? 'Nenhum produto cadastrado.' : '';
             snap.forEach(pDoc => {
                 const p = pDoc.data();
+                const precoVal = parseFloat(p.preco || 0).toFixed(2);
                 const div = document.createElement('div');
-                div.className = 'item-lista';
-                div.innerHTML = `<span>${p.nome} - R$ ${parseFloat(p.preco || 0).toFixed(2)}</span><button class="btn-del" id="del-${pDoc.id}">EXCLUIR</button>`;
-                cont.appendChild(div);
-                document.getElementById(`del-${pDoc.id}`).onclick = () => { if(confirm("Apagar?")) deleteDoc(doc(db, `produtos_${user.uid}`, pDoc.id)); };
+                div.className = 'item';
+                div.innerHTML = `<span>${p.nome} - <b>R$ ${precoVal}</b></span>
+                                 <button class="btn-del" onclick="apagar('${pDoc.id}')">Excluir</button>`;
+                lista.appendChild(div);
             });
         });
+
+        window.apagar = async (id) => {
+            if (confirm("Deseja excluir este produto?")) {
+                await deleteDoc(doc(db, `produtos_${user.uid}`, id));
+            }
+        };
     });
 </script>
 </body>
