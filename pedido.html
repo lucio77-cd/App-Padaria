@@ -3,85 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lançar Pedido - Sistema Cris</title>
+    <title>Pedido - Sistema Cris</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        body { font-family: sans-serif; background: #f4f7f6; margin: 0; padding: 0; }
-        header { background: #2c3e50; color: white; padding: 15px; text-align: center; }
-        .nav-bar { padding: 10px; background: #ecf0f1; }
-        .btn-voltar { background: #95a5a6; color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: bold; font-size: 1rem; }
-        .container { padding: 15px; padding-bottom: 100px; }
-        .card-item { background: white; padding: 15px; margin-bottom: 10px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .btn-add { background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; font-size: 1.2rem; }
-        .footer-pedido { position: fixed; bottom: 0; width: 100%; background: #2c3e50; color: white; padding: 20px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; }
-        .btn-salvar { background: #f1c40f; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; color: #2c3e50; }
+        body { font-family: sans-serif; padding: 15px; background: #f4f7f6; }
+        .item-btn { width: 100%; padding: 15px; margin-bottom: 10px; background: white; border: 1px solid #ddd; border-radius: 8px; text-align: left; display: flex; justify-content: space-between; }
+        .resumo-mesa { background: #2c3e50; color: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; }
+        .lista-consumo { background: white; padding: 10px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ddd; }
+        .btn-caixa { background: #27ae60; color: white; width: 100%; padding: 18px; border: none; border-radius: 10px; font-weight: bold; font-size: 1.1rem; }
     </style>
 </head>
 <body>
+    <button onclick="location.href='salao.html'">⬅ Voltar</button>
+    <div id="cabecalho-mesa" class="resumo-mesa">
+        <h2 id="num-mesa">Mesa ...</h2>
+        <h3 id="total-mesa">Total: R$ 0,00</h3>
+    </div>
 
-<header>
-    <h2 id="titulo-mesa" style="margin:0;">Mesa --</h2>
-</header>
+    <h4>Itens na Mesa:</h4>
+    <div id="lista-consumo" class="lista-consumo">Nenhum item.</div>
 
-<div class="nav-bar">
-    <button class="btn-voltar" onclick="location.href='salao.html'">⬅ VOLTAR PARA O SALÃO</button>
-</div>
+    <h4>Adicionar Produtos:</h4>
+    <div id="cardapio">Carregando produtos...</div>
 
-<div class="container" id="lista-produtos">
-    <p style="text-align:center;">A carregar menu...</p>
-</div>
+    <button class="btn-caixa" id="btn-ir-caixa">💰 IR PARA O CAIXA (FECHAR)</button>
 
-<div class="footer-pedido">
-    <span>Total: <b id="total-acumulado">R$ 0,00</b></span>
-    <button class="btn-salvar" id="btnSalvar">CONFIRMAR PEDIDO</button>
-</div>
+    <script type="module">
+        import { db, auth } from './firebase.js';
+        import { doc, onSnapshot, updateDoc, arrayUnion, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-<script type="module">
-    import { db, auth } from './firebase.js';
-    import { doc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        const mesaId = new URLSearchParams(window.location.search).get('mesa');
+        document.getElementById('num-mesa').innerText = `MESA ${mesaId}`;
 
-    const params = new URLSearchParams(window.location.search);
-    const mesaId = params.get('mesa');
-    document.getElementById('titulo-mesa').innerText = `Mesa ${mesaId}`;
+        auth.onAuthStateChanged(async user => {
+            if (!user) return;
+            const mesaRef = doc(db, `mesas_${user.uid}`, `mesa_${mesaId}`);
 
-    let itensNaMesa = [];
-    let totalMesa = 0;
-
-    async function carregarMenu() {
-        try {
-            const querySnapshot = await getDocs(collection(db, "produtos"));
-            let html = '';
-            querySnapshot.forEach((doc) => {
-                const p = doc.data();
-                html += `
-                    <div class="card-item">
-                        <div><b>${p.nome}</b><br><small>R$ ${p.preco.toFixed(2)}</small></div>
-                        <button class="btn-add" onclick="adicionarItem('${p.nome}', ${p.preco})">+</button>
-                    </div>`;
+            // 1. Carrega consumo atual
+            onSnapshot(mesaRef, (snap) => {
+                if (snap.exists()) {
+                    const dados = snap.data();
+                    document.getElementById('total-mesa').innerText = `Total: R$ ${dados.total.toFixed(2)}`;
+                    document.getElementById('lista-consumo').innerHTML = dados.itens.length > 0 ? 
+                        dados.itens.map(i => `<div style="border-bottom:1px solid #eee; padding:5px 0;">${i.nome} - R$ ${i.preco.toFixed(2)}</div>`).join('') : "Mesa vazia";
+                }
             });
-            document.getElementById('lista-produtos').innerHTML = html || '<p>Nenhum produto cadastrado.</p>';
-        } catch (e) { console.error(e); }
-    }
 
-    window.adicionarItem = (nome, preco) => {
-        itensNaMesa.push({ nome, preco });
-        totalMesa += preco;
-        document.getElementById('total-acumulado').innerText = `R$ ${totalMesa.toFixed(2)}`;
-    };
+            // 2. Carrega Cardápio
+            const prodSnap = await getDocs(collection(db, `produtos_${user.uid}`));
+            const cardapio = document.getElementById('cardapio');
+            cardapio.innerHTML = '';
+            prodSnap.forEach(p => {
+                const prod = p.data();
+                const btn = document.createElement('button');
+                btn.className = 'item-btn';
+                btn.innerHTML = `<span>${prod.nome}</span> <b>R$ ${prod.preco.toFixed(2)}</b>`;
+                btn.onclick = async () => {
+                    const mesaAtual = (await getDocs(query(collection(db, `mesas_${user.uid}`)))).docs.find(d => d.id === `mesa_${mesaId}`)?.data();
+                    const novoTotal = (mesaAtual?.total || 0) + prod.preco;
+                    await updateDoc(mesaRef, {
+                        ocupada: true,
+                        itens: arrayUnion({ nome: prod.nome, preco: prod.preco }),
+                        total: novoTotal
+                    });
+                };
+                cardapio.appendChild(btn);
+            });
 
-    document.getElementById('btnSalvar').onclick = async () => {
-        if (itensNaMesa.length === 0) return alert("Adicione pelo menos um item!");
-        const user = auth.currentUser;
-        await setDoc(doc(db, `mesas_${user.uid}`, `mesa_${mesaId}`), {
-            ocupada: true,
-            itens: itensNaMesa,
-            total: totalMesa
+            document.getElementById('btn-ir-caixa').onclick = () => location.href = `caixa.html?mesa=${mesaId}`;
         });
-        alert("Mesa atualizada!");
-        location.href = 'salao.html';
-    };
-
-    carregarMenu();
-</script>
+    </script>
 </body>
 </html>
