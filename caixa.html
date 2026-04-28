@@ -1,5 +1,5 @@
 
-    <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
@@ -10,12 +10,13 @@
         body { font-family: sans-serif; background: #f4f7f6; margin: 0; padding: 0; }
         header { background: #2c3e50; color: white; padding: 15px; text-align: center; }
         .nav-bar { padding: 10px; background: #ecf0f1; display: flex; gap: 10px; }
-        .btn-nav { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; color: white; }
+        .btn-nav { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; color: white; cursor: pointer; }
         .btn-voltar { background: #95a5a6; }
         .container { padding: 15px; }
         .card-caixa { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; }
         .total-valor { font-size: 3.5rem; font-weight: bold; color: #2ecc71; margin: 15px 0; }
         .btn-finalizar { background: #27ae60; color: white; border: none; padding: 20px; border-radius: 12px; width: 100%; font-size: 1.3rem; font-weight: bold; }
+        .alerta { background: #fff3cd; color: #856404; padding: 15px; border-radius: 8px; border: 1px solid #ffeeba; }
     </style>
 </head>
 <body>
@@ -36,42 +37,67 @@
     import { db, auth } from './firebase.js';
     import { doc, onSnapshot, updateDoc, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    // Pega o número da mesa que vem do Salão
+    // 1. PEGA O NÚMERO DA MESA DA URL
     const urlParams = new URLSearchParams(window.location.search);
     const mesaId = urlParams.get('mesa');
 
+    // 2. VERIFICA SE O MESAID EXISTE
     if (!mesaId) {
-        document.getElementById('msg-status').innerHTML = "⚠️ Nenhuma mesa selecionada!<br>Volte ao salão e clique em uma mesa ocupada.";
+        document.getElementById('conteudo-caixa').innerHTML = `
+            <div class="alerta">
+                ⚠️ <b>Nenhuma mesa selecionada!</b><br>
+                Volte ao salão e clique em uma mesa ocupada (vermelha).
+            </div>`;
     }
 
     auth.onAuthStateChanged(user => {
         if (user && mesaId) {
             const mesaRef = doc(db, `mesas_${user.uid}`, `mesa_${mesaId}`);
             
+            // 3. ESCUTA A MESA EM TEMPO REAL
             onSnapshot(mesaRef, (docSnap) => {
                 if (docSnap.exists() && docSnap.data().ocupada) {
                     const dados = docSnap.data();
                     document.getElementById('conteudo-caixa').innerHTML = `
                         <div class="card-caixa">
-                            <h2 style="color:#7f8c8d;">MESA ${mesaId}</h2>
+                            <h2 style="color:#7f8c8d; margin-top:0;">MESA ${mesaId}</h2>
                             <div class="total-valor">R$ ${dados.total.toFixed(2)}</div>
                             <button class="btn-finalizar" id="btnPagar">FINALIZAR PAGAMENTO</button>
                         </div>`;
                     
                     document.getElementById('btnPagar').onclick = () => finalizar(user.uid, mesaId, dados.total);
                 } else {
-                    document.getElementById('msg-status').innerText = "Esta mesa já está livre.";
+                    document.getElementById('conteudo-caixa').innerHTML = `
+                        <div class="card-caixa">
+                            <p>Esta mesa já está livre ou não tem pedidos.</p>
+                            <button class="btn-nav btn-voltar" style="width:100%; background:#2c3e50" onclick="location.href='salao.html'">VOLTAR</button>
+                        </div>`;
                 }
             });
         }
     });
 
     async function finalizar(uid, id, total) {
-        if(!confirm("Confirmar fechamento?")) return;
-        await addDoc(collection(db, "vendas"), { total, mesa: id, data: serverTimestamp(), userId: uid });
-        await updateDoc(doc(db, `mesas_${uid}`, `mesa_${id}`), { ocupada: false, itens: [], total: 0 });
-        alert("Caixa fechado!");
-        location.href = 'salao.html';
+        if(!confirm("Confirmar recebimento de R$ " + total.toFixed(2) + "?")) return;
+        
+        try {
+            // Salva a venda no histórico
+            await addDoc(collection(db, "vendas"), { 
+                total, 
+                mesa: id, 
+                data: serverTimestamp(), 
+                userId: uid 
+            });
+
+            // Libera a mesa
+            const mesaRef = doc(db, `mesas_${uid}`, `mesa_${id}`);
+            await updateDoc(mesaRef, { ocupada: false, itens: [], total: 0 });
+
+            alert("Venda finalizada com sucesso!");
+            location.href = 'salao.html';
+        } catch (e) {
+            alert("Erro ao finalizar: " + e.message);
+        }
     }
 </script>
 </body>
