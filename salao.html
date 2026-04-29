@@ -43,6 +43,31 @@
 <div class="footer-status" id="barra-status">Ocupadas: 0 | Livres: 0</div>
 
 <script type="module">
+
+    // No topo do script do salao.html, adicione o signOut
+import { db, auth } from './firebase.js';
+import { signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+// ... (resto do seu código das mesas) ...
+
+// Lógica para o botão Sair (Coloque isso antes de fechar o script)
+const btnSair = document.getElementById('btn-sair');
+if (btnSair) {
+    btnSair.onclick = async () => {
+        if (confirm("Deseja realmente sair do sistema?")) {
+            await signOut(auth);
+            location.href = 'index.html'; 
+        }
+    };
+}
+
+// Proteção: Se deslogar, volta pro login
+auth.onAuthStateChanged(user => {
+    if (!user) location.href = 'index.html';
+});
+
+
+    
     import { db, auth } from './firebase.js';
     import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
