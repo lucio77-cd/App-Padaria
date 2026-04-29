@@ -12,7 +12,7 @@
         .valor { font-size: 1.5rem; font-weight: bold; color: #27ae60; margin-top: 5px; }
         .filtro { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
         input[type="date"] { padding: 10px; border-radius: 8px; border: 1px solid #ddd; flex: 1; }
-        button#btn-filtrar { background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; }
+        button#btn-filtrar { background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -66,6 +66,7 @@
             const d2 = document.getElementById('data-fim').value;
             if(!d1 || !d2) return alert("Selecione as datas!");
 
+            // Correção do fuso horário para pegar o dia inteiro
             const inicio = new Date(d1 + "T00:00:00");
             const fim = new Date(d2 + "T23:59:59");
 
@@ -74,16 +75,21 @@
                         where("data", "<=", fim),
                         orderBy("data", "asc"));
             
-            const snap = await getDocs(q);
-            processarDados(snap);
+            try {
+                const snap = await getDocs(q);
+                processarDados(snap);
+            } catch (e) {
+                console.error("Erro ao filtrar:", e);
+                alert("Erro ao buscar dados. Verifique sua conexão.");
+            }
         };
     });
 
     function processarDados(snap) {
         let total = 0, produtos = {}, horas = {}, diasUnicos = new Set();
 
-        // Criamos um objeto com todas as horas do dia (0 a 23) zeradas para o gráfico ficar bonito
-        for (let i = 6; i <= 22; i++) { // Ajuste aqui o horário de abertura e fechamento da padaria
+        // Inicia horas das 06:00 às 22:00 para o gráfico não ter buracos
+        for (let i = 6; i <= 22; i++) {
             horas[`${i}:00`] = 0;
         }
 
@@ -95,7 +101,6 @@
             total += v.valor;
             diasUnicos.add(dataObj.toLocaleDateString());
 
-            // Agrupa por hora exata
             const h = dataObj.getHours() + ":00";
             if (horas[h] !== undefined) {
                 horas[h] += v.valor;
@@ -103,10 +108,22 @@
                 horas[h] = v.valor;
             }
 
-            v.itens.forEach(i => { produtos[i.nome] = (produtos[i.nome] || 0) + 1; });
+            if(v.itens) {
+                v.itens.forEach(i => { produtos[i.nome] = (produtos[i.nome] || 0) + 1; });
+            }
         });
 
-        // ... (mantenha os códigos dos cards de total, produto top, pico e média) ...
+        // Atualização dos Cards
+        document.getElementById('total-periodo').innerText = `R$ ${total.toFixed(2)}`;
+        
+        const top = Object.entries(produtos).sort((a,b)=>b[1]-a[1])[0];
+        document.getElementById('produto-top').innerText = top ? `${top[0]} (${top[1]}x)` : "-";
+
+        const pico = Object.entries(horas).sort((a,b)=>b[1]-a[1])[0];
+        document.getElementById('horario-pico').innerText = pico && pico[1] > 0 ? pico[0] : "-";
+
+        const media = total / (diasUnicos.size || 1);
+        document.getElementById('previsao-venda').innerText = `R$ ${media.toFixed(2)}`;
 
         renderGrafico(horas);
     }
@@ -115,42 +132,25 @@
         const ctx = document.getElementById('graficoVendas').getContext('2d');
         if(chart) chart.destroy();
 
-        // Ordena as horas para o gráfico não ficar bagunçado
+        // Ordenação correta das horas para o gráfico de barras
         const labelsOrdenadas = Object.keys(dados).sort((a, b) => parseInt(a) - parseInt(b));
         const valoresOrdenados = labelsOrdenadas.map(h => dados[h]);
 
         chart = new Chart(ctx, {
-            type: 'bar', // MUDANÇA PARA BARRA
+            type: 'bar', 
             data: {
                 labels: labelsOrdenadas,
                 datasets: [{
-                    label: 'Vendas R$ por Hora',
+                    label: 'Vendas R$',
                     data: valoresOrdenados,
-                    backgroundColor: 'rgba(52, 152, 219, 0.7)', // Cor azul mais sólida para barras
-                    borderColor: '#2980b9',
-                    borderWidth: 1
+                    backgroundColor: '#3498db',
+                    borderRadius: 5
                 }]
             },
             options: {
-                scales: {
-                    y: { beginAtZero: true }
-                },
-                plugins: {
-                    legend: { display: false }
-                }
-            }
-        });
-    }
-
-00000
-    function renderGrafico(dados) {
-        const ctx = document.getElementById('graficoVendas').getContext('2d');
-        if(chart) chart.destroy();
-        chart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: Object.keys(dados),
-                datasets: [{ label: 'Vendas R$', data: Object.values(dados), borderColor: '#3498db', fill: true, backgroundColor: 'rgba(52,152,219,0.1)' }]
+                responsive: true,
+                scales: { y: { beginAtZero: true } },
+                plugins: { legend: { display: false } }
             }
         });
     }
