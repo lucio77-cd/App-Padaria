@@ -59,9 +59,9 @@
         const cardapioDiv = document.getElementById('lista-cardapio');
         cardapioDiv.innerHTML = '';
 
-        pSnap.forEach(pDoc => {
+                pSnap.forEach(pDoc => {
             const p = pDoc.data();
-            if (isNaN(p.preco)) return; // Ignora erros de NaN
+            if (isNaN(p.preco)) return;
 
             const btn = document.createElement('div');
             btn.className = 'item-btn';
@@ -69,15 +69,28 @@
             
             btn.onclick = async () => {
                 const mesaSnap = await getDoc(mesaRef);
-                const totalAtual = mesaSnap.exists() ? (mesaSnap.data().total || 0) : 0;
-                
-                await updateDoc(mesaRef, {
-                    ocupada: true,
-                    total: totalAtual + parseFloat(p.preco),
-                    itens: arrayUnion({ nome: p.nome, preco: parseFloat(p.preco), hora: Date.now() })
-                });
+                const precoProduto = parseFloat(p.preco);
+
+                // Se a mesa já existe, usa updateDoc. Se é a primeira vez, usa setDoc.
+                if (mesaSnap.exists()) {
+                    await updateDoc(mesaRef, {
+                        ocupada: true,
+                        total: (mesaSnap.data().total || 0) + precoProduto,
+                        itens: arrayUnion({ nome: p.nome, preco: precoProduto, hora: Date.now() })
+                    });
+                } else {
+                    // Importação interna caso o setDoc não esteja no topo
+                    const { setDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+                    await setDoc(mesaRef, {
+                        ocupada: true,
+                        total: precoProduto,
+                        itens: [{ nome: p.nome, preco: precoProduto, hora: Date.now() }]
+                    });
+                }
             };
             cardapioDiv.appendChild(btn);
+        });
+
         });
     });
 </script>
