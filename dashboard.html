@@ -35,6 +35,15 @@
         <small>PRODUTO CAMPEÃO</small>
         <div class="valor" id="produto-top" style="color: #2980b9;">-</div>
     </div>
+<div class="card-metrica">
+    <small>HORÁRIO DE PICO</small>
+    <div class="valor" id="horario-pico" style="color: #e67e22;">-</div>
+</div>
+
+<div class="card-metrica">
+    <small>PREVISÃO PARA AMANHÃ (MÉDIA)</small>
+    <div class="valor" id="previsao-venda" style="color: #9b59b6;">R$ 0,00</div>
+</div>
 
     <canvas id="graficoVendas"></canvas>
 
@@ -61,23 +70,47 @@
     });
 
     function processarDados(snap) {
-        let total = 0;
-        let produtosContagem = {};
-        let vendasPorHora = {};
+    let total = 0;
+    let produtosContagem = {};
+    let vendasPorHora = {};
+    let totalDias = new Set(); // Para contar quantos dias diferentes foram filtrados
 
-        snap.forEach(doc => {
-            const venda = doc.data();
-            total += venda.valor;
+    snap.forEach(doc => {
+        const venda = doc.data();
+        total += venda.valor;
 
-            // 1. Calcular Produto mais consumido
-            venda.itens.forEach(item => {
-                produtosContagem[item.nome] = (produtosContagem[item.nome] || 0) + 1;
-            });
+        // Guarda a data (sem a hora) para saber quantos dias estamos analisando
+        const dataVenda = venda.data.toDate().toLocaleDateString();
+        totalDias.add(dataVenda);
 
-            // 2. Agrupar por hora para a Linha do Tempo
-            const hora = venda.data.toDate().getHours() + ":00";
-            vendasPorHora[hora] = (vendasPorHora[hora] || 0) + venda.valor;
+        // 1. Produto mais consumido
+        venda.itens.forEach(item => {
+            produtosContagem[item.nome] = (produtosContagem[item.nome] || 0) + 1;
         });
+
+        // 2. Agrupar por hora
+        const hora = venda.data.toDate().getHours() + ":00";
+        vendasPorHora[hora] = (vendasPorHora[hora] || 0) + venda.valor;
+    });
+
+    // ATUALIZAR TELAS
+    document.getElementById('total-periodo').innerText = `R$ ${total.toFixed(2)}`;
+    
+    // Produto Top
+    const topProd = Object.entries(produtosContagem).sort((a,b) => b[1] - a[1])[0];
+    document.getElementById('produto-top').innerText = topProd ? `${topProd[0]} (${topProd[1]}x)` : "-";
+
+    // 3. CÁLCULO DO HORÁRIO DE PICO
+    const pico = Object.entries(vendasPorHora).sort((a,b) => b[1] - a[1])[0];
+    document.getElementById('horario-pico').innerText = pico ? `${pico[0]}` : "-";
+
+    // 4. CÁLCULO DE PREVISÃO (Média por dia)
+    const qtdDias = totalDias.size || 1;
+    const mediaDiaria = total / qtdDias;
+    document.getElementById('previsao-venda').innerText = `R$ ${mediaDiaria.toFixed(2)}`;
+
+    gerarGrafico(vendasPorHora);
+}
 
         // Atualizar Telas
         document.getElementById('total-periodo').innerText = `R$ ${total.toFixed(2)}`;
