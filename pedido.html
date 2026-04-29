@@ -37,8 +37,10 @@
 
     // 1. PEGA O ID DA MESA DA URL
     const params = new URLSearchParams(window.location.search);
-    const mesaId = params.get('mesa') || "1"; 
+const mesaId = params.get('mesa'); // Pega o número que vem da URL
+if (mesaId) {
     document.getElementById('num-mesa').innerText = mesaId;
+}
 
     auth.onAuthStateChanged(async user => {
         if (!user) return;
