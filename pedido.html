@@ -33,19 +33,20 @@
 
 <script type="module">
     import { db, auth } from './firebase.js';
-    import { doc, onSnapshot, updateDoc, arrayUnion, collection, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { doc, onSnapshot, updateDoc, arrayUnion, collection, getDocs, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     // 1. PEGA O ID DA MESA DA URL
     const params = new URLSearchParams(window.location.search);
-const mesaId = params.get('mesa'); // Pega o número que vem da URL
-if (mesaId) {
-    document.getElementById('num-mesa').innerText = mesaId;
-}
+    const mesaId = params.get('mesa'); 
+    
+    if (mesaId) {
+        document.getElementById('num-mesa').innerText = mesaId;
+    }
 
     auth.onAuthStateChanged(async user => {
         if (!user) return;
 
-        // Referência correta da mesa baseada no clique
+        // Referência da mesa baseada no clique (ex: mesa_2)
         const mesaRef = doc(db, `mesas_${user.uid}`, `mesa_${mesaId}`);
 
         // 2. MOSTRA O TOTAL DA MESA EM TEMPO REAL
@@ -53,15 +54,17 @@ if (mesaId) {
             if (snap.exists()) {
                 const total = snap.data().total || 0;
                 document.getElementById('total-val').innerText = `R$ ${total.toFixed(2)}`;
+            } else {
+                document.getElementById('total-val').innerText = `R$ 0,00`;
             }
         });
 
-        // 3. CARREGA O CARDÁPIO E ADICIONA NA MESA CORRETA
+        // 3. CARREGA O CARDÁPIO
         const pSnap = await getDocs(collection(db, `produtos_${user.uid}`));
         const cardapioDiv = document.getElementById('lista-cardapio');
         cardapioDiv.innerHTML = '';
 
-                pSnap.forEach(pDoc => {
+        pSnap.forEach(pDoc => {
             const p = pDoc.data();
             if (isNaN(p.preco)) return;
 
@@ -70,19 +73,23 @@ if (mesaId) {
             btn.innerHTML = `<span>${p.nome}</span> <span>R$ ${parseFloat(p.preco).toFixed(2)}</span>`;
             
             btn.onclick = async () => {
+                if (!mesaId) {
+                    alert("Erro: Mesa não identificada!");
+                    return;
+                }
+
                 const mesaSnap = await getDoc(mesaRef);
                 const precoProduto = parseFloat(p.preco);
 
-                // Se a mesa já existe, usa updateDoc. Se é a primeira vez, usa setDoc.
                 if (mesaSnap.exists()) {
+                    // Atualiza mesa existente
                     await updateDoc(mesaRef, {
                         ocupada: true,
                         total: (mesaSnap.data().total || 0) + precoProduto,
                         itens: arrayUnion({ nome: p.nome, preco: precoProduto, hora: Date.now() })
                     });
                 } else {
-                    // Importação interna caso o setDoc não esteja no topo
-                    const { setDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+                    // Cria mesa nova (Mesa 2, 3, etc)
                     await setDoc(mesaRef, {
                         ocupada: true,
                         total: precoProduto,
@@ -92,10 +99,7 @@ if (mesaId) {
             };
             cardapioDiv.appendChild(btn);
         });
-
-        });
     });
 </script>
 </body>
 </html>
-
