@@ -6,46 +6,51 @@
     <title>Dashboard - Sistema Cris</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: sans-serif; background: #f4f7f6; padding: 15px; }
-        .card-metrica { background: white; padding: 20px; border-radius: 15px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .valor { font-size: 1.8rem; font-weight: bold; color: #27ae60; }
-        .filtro-data { margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
-        input { padding: 10px; border-radius: 8px; border: 1px solid #ddd; }
-        canvas { background: white; padding: 15px; border-radius: 15px; margin-top: 20px; }
+        body { font-family: sans-serif; background: #f4f7f6; padding: 15px; margin:0; }
+        .nav { background: #2c3e50; color: white; padding: 15px; margin-bottom: 20px; }
+        .card-metrica { background: white; padding: 15px; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .valor { font-size: 1.5rem; font-weight: bold; color: #27ae60; margin-top: 5px; }
+        .filtro { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+        input[type="date"] { padding: 10px; border-radius: 8px; border: 1px solid #ddd; flex: 1; }
+        button#btn-filtrar { background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <button onclick="location.href='salao.html'" style="margin-bottom: 20px;">⬅ VOLTAR</button>
-    
-    <h2>Relatórios de Vendas</h2>
+<div class="nav">
+    <button onclick="location.href='salao.html'" style="background:none; border:1px solid white; color:white; padding:5px 10px; border-radius:5px; cursor:pointer;">⬅ VOLTAR</button>
+    <h2 style="margin: 10px 0 0 0;">Relatórios</h2>
+</div>
 
-    <div class="filtro-data">
+<div class="container" style="padding: 0 15px;">
+    <div class="filtro">
         <input type="date" id="data-inicio">
         <input type="date" id="data-fim">
-        <button id="btn-filtrar" style="padding: 10px 20px; background: #2c3e50; color: white; border: none; border-radius: 8px;">FILTRAR</button>
+        <button id="btn-filtrar">FILTRAR</button>
     </div>
 
     <div class="card-metrica">
-        <small>TOTAL CONSUMIDO NO PERÍODO</small>
+        <small>TOTAL NO PERÍODO</small>
         <div class="valor" id="total-periodo">R$ 0,00</div>
     </div>
 
     <div class="card-metrica">
-        <small>PRODUTO CAMPEÃO</small>
+        <small>PRODUTO MAIS VENDIDO</small>
         <div class="valor" id="produto-top" style="color: #2980b9;">-</div>
     </div>
-<div class="card-metrica">
-    <small>HORÁRIO DE PICO</small>
-    <div class="valor" id="horario-pico" style="color: #e67e22;">-</div>
-</div>
 
-<div class="card-metrica">
-    <small>PREVISÃO PARA AMANHÃ (MÉDIA)</small>
-    <div class="valor" id="previsao-venda" style="color: #9b59b6;">R$ 0,00</div>
-</div>
+    <div class="card-metrica">
+        <small>HORÁRIO DE PICO</small>
+        <div class="valor" id="horario-pico" style="color: #e67e22;">-</div>
+    </div>
 
-    <canvas id="graficoVendas"></canvas>
+    <div class="card-metrica">
+        <small>PREVISÃO/MÉDIA DIÁRIA</small>
+        <div class="valor" id="previsao-venda" style="color: #9b59b6;">R$ 0,00</div>
+    </div>
+
+    <canvas id="graficoVendas" style="max-height: 300px; margin-top: 20px;"></canvas>
+</div>
 
 <script type="module">
     import { db, auth } from './firebase.js';
@@ -57,12 +62,17 @@
         if (!user) return;
 
         document.getElementById('btn-filtrar').onclick = async () => {
-            const inicio = new Date(document.getElementById('data-inicio').value);
-            const fim = new Date(document.getElementById('data-fim').value);
-            fim.setHours(23, 59, 59);
+            const d1 = document.getElementById('data-inicio').value;
+            const d2 = document.getElementById('data-fim').value;
+            if(!d1 || !d2) return alert("Selecione as datas!");
 
-            const vendasRef = collection(db, `vendas_${user.uid}`);
-            const q = query(vendasRef, where("data", ">=", inicio), where("data", "<=", fim), orderBy("data", "asc"));
+            const inicio = new Date(d1 + "T00:00:00");
+            const fim = new Date(d2 + "T23:59:59");
+
+            const q = query(collection(db, `vendas_${user.uid}`), 
+                        where("data", ">=", inicio), 
+                        where("data", "<=", fim),
+                        orderBy("data", "asc"));
             
             const snap = await getDocs(q);
             processarDados(snap);
@@ -70,73 +80,44 @@
     });
 
     function processarDados(snap) {
-    let total = 0;
-    let produtosContagem = {};
-    let vendasPorHora = {};
-    let totalDias = new Set(); // Para contar quantos dias diferentes foram filtrados
+        let total = 0, produtos = {}, horas = {}, diasUnicos = new Set();
 
-    snap.forEach(doc => {
-        const venda = doc.data();
-        total += venda.valor;
+        snap.forEach(doc => {
+            const v = doc.data();
+            if (!v.data) return; // Pula vendas sem data (as antigas)
 
-        // Guarda a data (sem a hora) para saber quantos dias estamos analisando
-        const dataVenda = venda.data.toDate().toLocaleDateString();
-        totalDias.add(dataVenda);
+            const dataObj = v.data.toDate();
+            total += v.valor;
+            diasUnicos.add(dataObj.toLocaleDateString());
 
-        // 1. Produto mais consumido
-        venda.itens.forEach(item => {
-            produtosContagem[item.nome] = (produtosContagem[item.nome] || 0) + 1;
+            const h = dataObj.getHours() + ":00";
+            horas[h] = (horas[h] || 0) + v.valor;
+
+            v.itens.forEach(i => { produtos[i.nome] = (produtos[i.nome] || 0) + 1; });
         });
 
-        // 2. Agrupar por hora
-        const hora = venda.data.toDate().getHours() + ":00";
-        vendasPorHora[hora] = (vendasPorHora[hora] || 0) + venda.valor;
-    });
-
-    // ATUALIZAR TELAS
-    document.getElementById('total-periodo').innerText = `R$ ${total.toFixed(2)}`;
-    
-    // Produto Top
-    const topProd = Object.entries(produtosContagem).sort((a,b) => b[1] - a[1])[0];
-    document.getElementById('produto-top').innerText = topProd ? `${topProd[0]} (${topProd[1]}x)` : "-";
-
-    // 3. CÁLCULO DO HORÁRIO DE PICO
-    const pico = Object.entries(vendasPorHora).sort((a,b) => b[1] - a[1])[0];
-    document.getElementById('horario-pico').innerText = pico ? `${pico[0]}` : "-";
-
-    // 4. CÁLCULO DE PREVISÃO (Média por dia)
-    const qtdDias = totalDias.size || 1;
-    const mediaDiaria = total / qtdDias;
-    document.getElementById('previsao-venda').innerText = `R$ ${mediaDiaria.toFixed(2)}`;
-
-    gerarGrafico(vendasPorHora);
-}
-
-        // Atualizar Telas
         document.getElementById('total-periodo').innerText = `R$ ${total.toFixed(2)}`;
         
-        const topProd = Object.entries(produtosContagem).sort((a,b) => b[1] - a[1])[0];
-        document.getElementById('produto-top').innerText = topProd ? `${topProd[0]} (${topProd[1]}x)` : "-";
+        const top = Object.entries(produtos).sort((a,b)=>b[1]-a[1])[0];
+        document.getElementById('produto-top').innerText = top ? `${top[0]} (${top[1]}x)` : "-";
 
-        gerarGrafico(vendasPorHora);
+        const pico = Object.entries(horas).sort((a,b)=>b[1]-a[1])[0];
+        document.getElementById('horario-pico').innerText = pico ? pico[0] : "-";
+
+        const media = total / (diasUnicos.size || 1);
+        document.getElementById('previsao-venda').innerText = `R$ ${media.toFixed(2)}`;
+
+        renderGrafico(horas);
     }
 
-    function gerarGrafico(dados) {
+    function renderGrafico(dados) {
         const ctx = document.getElementById('graficoVendas').getContext('2d');
-        if (chart) chart.destroy();
-
+        if(chart) chart.destroy();
         chart = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: Object.keys(dados),
-                datasets: [{
-                    label: 'Vendas por Hora (R$)',
-                    data: Object.values(dados),
-                    borderColor: '#3498db',
-                    tension: 0.3,
-                    fill: true,
-                    backgroundColor: 'rgba(52, 152, 219, 0.1)'
-                }]
+                datasets: [{ label: 'Vendas R$', data: Object.values(dados), borderColor: '#3498db', fill: true, backgroundColor: 'rgba(52,152,219,0.1)' }]
             }
         });
     }
