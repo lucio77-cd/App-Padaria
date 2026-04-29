@@ -6,9 +6,11 @@
     <title>Sistema - Salão</title>
     <style>
         body { font-family: sans-serif; background: #f4f7f6; margin: 0; padding: 0; }
-        header { background: #2c3e50; color: white; padding: 40px 20px; text-align: center; font-size: 1.8rem; font-weight: bold; text-transform: uppercase; }
+        header { background: #2c3e50; color: white; padding: 30px 20px; text-align: center; font-size: 1.8rem; font-weight: bold; text-transform: uppercase; }
         
-        /* Grid ajustado para 3 colunas para caber as 11 mesas no celular */
+        .nav-botoes { padding: 10px; display: flex; justify-content: flex-end; background: #2c3e50; }
+        
+        /* Grid para 3 colunas para caber as 11 mesas no celular */
         .grid-mesas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 15px; margin-bottom: 70px; }
         
         .mesa { aspect-ratio: 1/1; border-radius: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; font-weight: bold; cursor: pointer; border: 3px solid transparent; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
@@ -25,7 +27,7 @@
 </head>
 <body>
 
-<header>SISTEMA </header>
+<header>SISTEMA CRIS</header>
     
 <div class="nav-botoes">
     <button id="btn-sair" style="background: #e74c3c; color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer;">SAIR</button>
@@ -37,42 +39,33 @@
     <button onclick="location.href='dashboard.html'">DASHBOARD</button>
 </div>
 
-<div class="grid-mesas" id="container-mesas">
-    </div>
+<div class="grid-mesas" id="container-mesas"></div>
 
-<div class="footer-status" id="barra-status">Ocupadas: 0 | Livres: 0</div>
+<div class="footer-status" id="barra-status">Ocupadas: 0 | Livres: 11</div>
 
 <script type="module">
-
-    // No topo do script do salao.html, adicione o signOut
-import { db, auth } from './firebase.js';
-import { signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-
-// ... (resto do seu código das mesas) ...
-
-// Lógica para o botão Sair (Coloque isso antes de fechar o script)
-const btnSair = document.getElementById('btn-sair');
-if (btnSair) {
-    btnSair.onclick = async () => {
-        if (confirm("Deseja realmente sair do sistema?")) {
-            await signOut(auth);
-            location.href = 'index.html'; 
-        }
-    };
-}
-
-// Proteção: Se deslogar, volta pro login
-auth.onAuthStateChanged(user => {
-    if (!user) location.href = 'index.html';
-});
-
-
-    
     import { db, auth } from './firebase.js';
     import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
+    // 1. Lógica do botão Sair
+    const btnSair = document.getElementById('btn-sair');
+    if (btnSair) {
+        btnSair.onclick = async () => {
+            if (confirm("Deseja realmente sair do sistema?")) {
+                await signOut(auth);
+                location.href = 'index.html'; 
+            }
+        };
+    }
+
+    // 2. Proteção e Carregamento das Mesas
     auth.onAuthStateChanged(user => {
-        if (!user) return;
+        if (!user) {
+            location.href = 'index.html';
+            return;
+        }
+
         const mesasRef = collection(db, `mesas_${user.uid}`);
 
         onSnapshot(mesasRef, (snapshot) => {
@@ -81,7 +74,7 @@ auth.onAuthStateChanged(user => {
             let ocupadas = 0; 
             let livres = 0;
 
-            // Lógica para 11 mesas conforme configurado no Firebase
+            // Gera as 11 mesas
             for (let i = 1; i <= 11; i++) {
                 let mesaDoc = { ocupada: false, total: 0 };
                 
@@ -101,7 +94,6 @@ auth.onAuthStateChanged(user => {
                     </div>
                 `;
                 
-                // Clique dinâmico: envia o número da mesa para a página de pedidos
                 btn.onclick = () => {
                     window.location.href = `pedido.html?mesa=${i}`;
                 };
@@ -109,7 +101,6 @@ auth.onAuthStateChanged(user => {
                 container.appendChild(btn);
             }
 
-            // Atualiza a barra inferior com os totais reais
             document.getElementById('barra-status').innerText = `Ocupadas: ${ocupadas} | Livres: ${livres}`;
         });
     });
