@@ -1,110 +1,234 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema - Salão</title>
-    <style>
-        body { font-family: sans-serif; background: #f4f7f6; margin: 0; padding: 0; }
-        header { background: #2c3e50; color: white; padding: 30px 20px; text-align: center; font-size: 1.8rem; font-weight: bold; text-transform: uppercase; }
-        
-        .nav-botoes { padding: 10px; display: flex; justify-content: flex-end; background: #2c3e50; }
-        
-        /* Grid para 3 colunas para caber as 11 mesas no celular */
-        .grid-mesas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 15px; margin-bottom: 70px; }
-        
-        .mesa { aspect-ratio: 1/1; border-radius: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; font-weight: bold; cursor: pointer; border: 3px solid transparent; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        .livre { background: #a2e4c1; color: #1e4d35; border-color: #2ecc71; }
-        .ocupada { background: #f1948a; color: #7b241c; border-color: #e74c3c; }
-        .mesa-titulo { font-size: 1.1rem; }
-        .mesa-status { font-size: 0.8rem; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Salão — Sistema Cris</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* GRID DE MESAS */
+    .mesas-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 16px;
+    }
 
-        .footer-status { background: #2c3e50; color: white; padding: 15px; position: fixed; bottom: 0; width: 100%; text-align: center; font-size: 1rem; }
-        
-        .nav-menu { display: flex; justify-content: space-around; margin-top: 10px; padding: 0 20px; gap: 10px; }
-        .nav-menu button { flex: 1; padding: 15px; border-radius: 10px; border: none; background: #34495e; color: white; font-weight: bold; cursor: pointer; font-size: 0.7rem; }
-    </style>
+    .mesa-card {
+      aspect-ratio: 1 / 1;
+      border-radius: var(--radius-lg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: transform 0.15s, box-shadow 0.15s;
+      position: relative;
+      overflow: hidden;
+      gap: 6px;
+    }
+
+    .mesa-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+    .mesa-card:active { transform: scale(0.97); }
+
+    .mesa-card.livre {
+      background: var(--livre-bg);
+      border-color: #A7F3D0;
+    }
+
+    .mesa-card.ocupada {
+      background: var(--ocupada-bg);
+      border-color: #FECACA;
+      animation: pulse-ring 2.5s infinite;
+    }
+
+    .mesa-num {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .mesa-card.livre  .mesa-num { color: #065F46; }
+    .mesa-card.ocupada .mesa-num { color: #991B1B; }
+
+    .mesa-icon { font-size: 2rem; line-height: 1; }
+
+    .mesa-valor {
+      font-size: 1rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .mesa-card.livre  .mesa-valor { color: #065F46; font-size: 0.75rem; font-weight: 500; }
+    .mesa-card.ocupada .mesa-valor { color: #991B1B; }
+
+    /* STATUS BAR */
+    .status-bar {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 7px 16px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .status-dot {
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .dot-livre   { background: var(--livre); }
+    .dot-ocupada { background: var(--ocupada); }
+
+    @media (max-width: 768px) {
+      .mesas-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+      .mesa-icon { font-size: 1.5rem; }
+      .mesa-valor { font-size: 0.85rem; }
+    }
+
+    @media (max-width: 380px) {
+      .mesas-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
 </head>
 <body>
 
-<header>SISTEMA CRIS</header>
-    
-<div class="nav-botoes">
-    <button id="btn-sair" style="background: #e74c3c; color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer;">SAIR</button>
+<div class="app-shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <span class="logo-icon">🍞</span>
+      <div>
+        <div class="logo-text">Sistema Cris</div>
+        <span class="logo-sub">Padaria</span>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="salao.html"    class="nav-item active"><span class="nav-icon">🪑</span> Salão</a>
+      <a href="pedido.html"   class="nav-item"><span class="nav-icon">📋</span> Pedidos</a>
+      <a href="caixa.html"    class="nav-item"><span class="nav-icon">💰</span> Caixa</a>
+      <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="produtos.html" class="nav-item"><span class="nav-icon">🛍️</span> Cardápio</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <button id="btn-sair" class="nav-item" style="color:rgba(255,255,255,0.5);">
+        <span class="nav-icon">🚪</span> Sair
+      </button>
+    </div>
+  </aside>
+
+  <!-- CONTEÚDO -->
+  <div class="main-content">
+    <div class="topbar">
+      <span class="topbar-title">🪑 Salão</span>
+      <div class="topbar-right">
+        <div id="status-resumo" style="font-size:0.8rem; color:var(--text-muted); font-weight:500;"></div>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <div class="status-bar">
+        <div class="status-pill"><div class="status-dot dot-ocupada"></div><span id="cnt-ocupadas">0 ocupadas</span></div>
+        <div class="status-pill"><div class="status-dot dot-livre"></div><span id="cnt-livres">11 livres</span></div>
+      </div>
+
+      <div id="container-mesas" class="mesas-grid">
+        <!-- Mesas geradas via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV MOBILE -->
+  <nav class="bottom-nav">
+    <div class="bottom-nav-inner">
+      <a href="salao.html"     class="bnav-item active"><span class="bnav-icon">🪑</span>Salão</a>
+      <a href="caixa.html"     class="bnav-item"><span class="bnav-icon">💰</span>Caixa</a>
+      <a href="dashboard.html" class="bnav-item"><span class="bnav-icon">📊</span>Dados</a>
+      <a href="produtos.html"  class="bnav-item"><span class="bnav-icon">🛍️</span>Cardápio</a>
+    </div>
+  </nav>
 </div>
 
-<div class="nav-menu">
-    <button onclick="location.href='produtos.html'">PRODUTO</button>
-    <button onclick="location.href='caixa.html'">CAIXA</button>
-    <button onclick="location.href='dashboard.html'">DASHBOARD</button>
-</div>
-
-<div class="grid-mesas" id="container-mesas"></div>
-
-<div class="footer-status" id="barra-status">Ocupadas: 0 | Livres: 11</div>
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toast-container"></div>
 
 <script type="module">
-    import { db, auth } from './firebase.js';
-    import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    import { signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { db, auth } from './firebase.js';
+  import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-    // 1. Lógica do botão Sair
-    const btnSair = document.getElementById('btn-sair');
-    if (btnSair) {
-        btnSair.onclick = async () => {
-            if (confirm("Deseja realmente sair do sistema?")) {
-                await signOut(auth);
-                location.href = 'index.html'; 
-            }
-        };
+  function showToast(msg, type = '') {
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.textContent = msg;
+    document.getElementById('toast-container').appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+  }
+
+  document.getElementById('btn-sair').onclick = async () => {
+    if (confirm('Deseja sair do sistema?')) {
+      await signOut(auth);
+      location.href = 'index.html';
     }
+  };
 
-    // 2. Proteção e Carregamento das Mesas
-    auth.onAuthStateChanged(user => {
-        if (!user) {
-            location.href = 'index.html';
-            return;
-        }
+  auth.onAuthStateChanged(user => {
+    if (!user) { location.href = 'index.html'; return; }
 
-        const mesasRef = collection(db, `mesas_${user.uid}`);
+    const mesasRef = collection(db, `mesas_${user.uid}`);
 
-        onSnapshot(mesasRef, (snapshot) => {
-            const container = document.getElementById('container-mesas');
-            container.innerHTML = '';
-            let ocupadas = 0; 
-            let livres = 0;
+    onSnapshot(mesasRef, snap => {
+      const container = document.getElementById('container-mesas');
+      container.innerHTML = '';
+      let ocupadas = 0;
 
-            // Gera as 11 mesas
-            for (let i = 1; i <= 11; i++) {
-                let mesaDoc = { ocupada: false, total: 0 };
-                
-                snapshot.forEach(doc => {
-                    if (doc.id === `mesa_${i}`) mesaDoc = doc.data();
-                });
+      const dados = {};
+      snap.forEach(d => { dados[d.id] = d.data(); });
 
-                if (mesaDoc.ocupada) ocupadas++; else livres++;
+      for (let i = 1; i <= 11; i++) {
+        const mesa = dados[`mesa_${i}`] || { ocupada: false, total: 0 };
+        if (mesa.ocupada) ocupadas++;
 
-                const btn = document.createElement('div');
-                btn.className = `mesa ${mesaDoc.ocupada ? 'ocupada' : 'livre'}`;
-                
-                btn.innerHTML = `
-                    <div class="mesa-titulo">MESA ${i}</div>
-                    <div class="mesa-status">
-                        ${mesaDoc.ocupada ? 'R$ ' + (mesaDoc.total || 0).toFixed(2) : 'LIVRE'}
-                    </div>
-                `;
-                
-                btn.onclick = () => {
-                    window.location.href = `pedido.html?mesa=${i}`;
-                };
+        const card = document.createElement('div');
+        card.className = `mesa-card ${mesa.ocupada ? 'ocupada' : 'livre'}`;
 
-                container.appendChild(btn);
-            }
+        card.innerHTML = `
+          <div class="mesa-num">Mesa ${i}</div>
+          <div class="mesa-icon">${mesa.ocupada ? '🔴' : '🪑'}</div>
+          <div class="mesa-valor">
+            ${mesa.ocupada
+              ? 'R$ ' + (mesa.total || 0).toFixed(2)
+              : 'Livre'}
+          </div>
+        `;
 
-            document.getElementById('barra-status').innerText = `Ocupadas: ${ocupadas} | Livres: ${livres}`;
-        });
+        card.onclick = () => { window.location.href = `pedido.html?mesa=${i}`; };
+        container.appendChild(card);
+      }
+
+      const livres = 11 - ocupadas;
+      document.getElementById('cnt-ocupadas').textContent = `${ocupadas} ocupada${ocupadas !== 1 ? 's' : ''}`;
+      document.getElementById('cnt-livres').textContent = `${livres} livre${livres !== 1 ? 's' : ''}`;
+      document.getElementById('status-resumo').textContent = `${ocupadas}/11 mesas`;
     });
+  });
 </script>
-
 </body>
 </html>
