@@ -1,77 +1,347 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finalizar Mesa - Sistema Cris</title>
-    <style>
-        body { font-family: sans-serif; background: #f4f7f6; padding: 20px; }
-        .extrato { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .item-linha { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #ddd; }
-        .total-destaque { font-size: 2.5rem; color: #27ae60; font-weight: bold; margin: 20px 0; }
-        .btn-pagar { background: #27ae60; color: white; border: none; width: 100%; padding: 20px; border-radius: 10px; font-size: 1.2rem; font-weight: bold; cursor: pointer; }
-        .btn-voltar { background: #95a5a6; color: white; border: none; padding: 10px; margin-bottom: 15px; border-radius: 5px; cursor: pointer; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Finalizar Mesa — Sistema Cris</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .extrato-card {
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+      max-width: 640px;
+    }
+
+    .extrato-header {
+      background: linear-gradient(135deg, var(--navy) 0%, #0F3460 100%);
+      padding: 28px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .extrato-header .mesa-info .label {
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.5);
+    }
+
+    .extrato-header .mesa-info .mesa-nome {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #fff;
+      margin-top: 2px;
+    }
+
+    .extrato-total-box {
+      text-align: right;
+    }
+
+    .extrato-total-box .label {
+      font-size: 0.65rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.5);
+    }
+
+    .extrato-total-box .total-val {
+      font-size: 2rem;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1;
+      margin-top: 4px;
+    }
+
+    /* LISTA DE ITENS */
+    .extrato-itens {
+      padding: 20px 24px;
+      max-height: 340px;
+      overflow-y: auto;
+    }
+
+    .extrato-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px dashed var(--border);
+    }
+
+    .extrato-item:last-child { border-bottom: none; }
+
+    .extrato-item .item-info .nome { font-size: 0.9rem; font-weight: 600; color: var(--text); }
+    .extrato-item .item-info .hora { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+    .extrato-item .preco { font-size: 0.9rem; font-weight: 700; color: var(--navy); }
+
+    /* TROCO */
+    .troco-section {
+      padding: 16px 24px;
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+    }
+
+    .troco-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .troco-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .troco-input {
+      flex: 1;
+      padding: 10px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .troco-input:focus { border-color: var(--amber); }
+
+    .troco-resultado {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      background: var(--card);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+    }
+
+    .troco-resultado .tl { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
+    .troco-resultado .tv { font-size: 1.1rem; font-weight: 800; color: var(--livre); }
+    .troco-resultado .tv.negativo { color: var(--ocupada); }
+
+    /* FOOTER DO EXTRATO */
+    .extrato-footer {
+      padding: 20px 24px;
+      border-top: 1px solid var(--border);
+    }
+  </style>
 </head>
 <body>
-    <button class="btn-voltar" onclick="location.href='caixa.html'">⬅ VOLTAR AO CAIXA</button>
 
-    <div class="extrato" id="conteudo-extrato">
-        <h2 id="titulo-mesa">Mesa </h2>
-        <hr>
-        <div id="lista-produtos">Carregando itens...</div>
-        <div class="total-destaque" id="valor-total">R$ 0,00</div>
-        <button class="btn-pagar" id="btn-finalizar">FINALIZAR PAGAMENTO</button>
+<div class="app-shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <span class="logo-icon">🍞</span>
+      <div>
+        <div class="logo-text">Sistema Cris</div>
+        <span class="logo-sub">Padaria</span>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="salao.html"     class="nav-item"><span class="nav-icon">🪑</span> Salão</a>
+      <a href="caixa.html"     class="nav-item active"><span class="nav-icon">💰</span> Caixa</a>
+      <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="produtos.html"  class="nav-item"><span class="nav-icon">🛍️</span> Cardápio</a>
+    </nav>
+  </aside>
+
+  <!-- CONTEÚDO -->
+  <div class="main-content">
+    <div class="topbar">
+      <a href="caixa.html" class="btn btn-ghost" style="padding:7px 12px; font-size:0.8rem;">← Caixa</a>
+      <span class="topbar-title" id="topbar-title">Detalhes</span>
+      <div style="width:80px;"></div>
     </div>
 
+    <div class="page-body">
+      <div class="extrato-card">
+
+        <!-- HEADER COM TOTAL -->
+        <div class="extrato-header">
+          <div class="mesa-info">
+            <div class="label">Finalizar conta</div>
+            <div class="mesa-nome" id="titulo-mesa">Mesa —</div>
+          </div>
+          <div class="extrato-total-box">
+            <div class="label">Total</div>
+            <div class="total-val" id="valor-total">R$ 0,00</div>
+          </div>
+        </div>
+
+        <!-- LISTA DE ITENS -->
+        <div class="extrato-itens" id="lista-produtos">
+          <div style="color:var(--text-muted); text-align:center; padding:20px;">Carregando itens...</div>
+        </div>
+
+        <!-- TROCO -->
+        <div class="troco-section">
+          <div class="troco-row">
+            <span class="troco-label">Valor recebido</span>
+            <input type="number" class="troco-input" id="valor-recebido" placeholder="R$ 0,00" step="0.01" min="0">
+          </div>
+          <div class="troco-resultado">
+            <span class="tl">Troco</span>
+            <span class="tv" id="troco-val">R$ 0,00</span>
+          </div>
+        </div>
+
+        <!-- BOTÃO FINALIZAR -->
+        <div class="extrato-footer">
+          <button class="btn btn-success btn-full btn-lg" id="btn-finalizar">
+            ✅ Finalizar Pagamento
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV MOBILE -->
+  <nav class="bottom-nav">
+    <div class="bottom-nav-inner">
+      <a href="salao.html"     class="bnav-item"><span class="bnav-icon">🪑</span>Salão</a>
+      <a href="caixa.html"     class="bnav-item active"><span class="bnav-icon">💰</span>Caixa</a>
+      <a href="dashboard.html" class="bnav-item"><span class="bnav-icon">📊</span>Dados</a>
+      <a href="produtos.html"  class="bnav-item"><span class="bnav-icon">🛍️</span>Cardápio</a>
+    </div>
+  </nav>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
 <script type="module">
-    import { db, auth } from './firebase.js';
-    import { doc, onSnapshot, updateDoc, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { db, auth } from './firebase.js';
+  import {
+    doc, onSnapshot, updateDoc,
+    addDoc, collection, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    const mesaId = new URLSearchParams(window.location.search).get('mesa');
-    document.getElementById('titulo-mesa').innerText = `Mesa ${mesaId}`;
+  const mesaId = new URLSearchParams(window.location.search).get('mesa');
 
-    auth.onAuthStateChanged(user => {
-        if (!user || !mesaId) return;
-        const mesaRef = doc(db, `mesas_${user.uid}`, `mesa_${mesaId}`);
+  document.getElementById('titulo-mesa').innerText = `Mesa ${mesaId || '—'}`;
+  document.getElementById('topbar-title').innerText = `Mesa ${mesaId}`;
 
-        onSnapshot(mesaRef, s => {
-            if (!s.exists() || !s.data().ocupada) {
-                alert("Esta mesa já foi liberada!");
-                location.href = 'caixa.html';
-                return;
-            }
+  function showToast(msg, type = '') {
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.textContent = msg;
+    document.getElementById('toast-container').appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+  }
 
-            const data = s.data();
-            document.getElementById('valor-total').innerText = `R$ ${data.total.toFixed(2)}`;
-            
-            // Mostra os produtos consumidos
-            const listaDiv = document.getElementById('lista-produtos');
-            listaDiv.innerHTML = data.itens.map(i => `
-                <div class="item-linha">
-                    <span>${i.nome}</span>
-                    <span>R$ ${i.preco.toFixed(2)}</span>
-                </div>
-            `).join('');
+  function fmtHora(ts) {
+    return new Date(ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  }
 
-            // Função para fechar a conta
-            document.getElementById('btn-finalizar').onclick = async () => {
-                if (confirm(`Confirmar recebimento de R$ ${data.total.toFixed(2)}?`)) {
-                    // 1. Salva no histórico de vendas (Dashboard)
-                    await addDoc(collection(db, `vendas_${user.uid}`), {
-                        valor: data.total,
-                        mesa: mesaId,
-                        data: serverTimestamp(),
-                        itens: data.itens
-                    });
-                    // 2. Limpa a mesa no banco de dados
-                    await updateDoc(mesaRef, { ocupada: false, total: 0, itens: [] });
-                    alert("Pagamento finalizado com sucesso!");
-                    location.href = 'caixa.html';
-                }
-            };
-        });
+  // TROCO em tempo real
+  let totalAtual = 0;
+  document.getElementById('valor-recebido').addEventListener('input', calcTroco);
+
+  function calcTroco() {
+    const recebido = parseFloat(document.getElementById('valor-recebido').value) || 0;
+    const troco = Math.round((recebido - totalAtual) * 100) / 100;
+    const el = document.getElementById('troco-val');
+    el.textContent = `R$ ${Math.abs(troco).toFixed(2)}`;
+    el.className = `tv ${troco < 0 ? 'negativo' : ''}`;
+  }
+
+  auth.onAuthStateChanged(user => {
+    // BUG CORRIGIDO: proteção de rota
+    if (!user) { location.href = 'index.html'; return; }
+    if (!mesaId) { location.href = 'caixa.html'; return; }
+
+    const mesaRef = doc(db, `mesas_${user.uid}`, `mesa_${mesaId}`);
+
+    // BUG CORRIGIDO: flag para evitar alert em loop
+    let redirecionado = false;
+
+    onSnapshot(mesaRef, s => {
+      if (redirecionado) return;
+
+      if (!s.exists() || !s.data().ocupada) {
+        redirecionado = true;
+        showToast('Esta mesa já foi liberada.', '');
+        setTimeout(() => location.href = 'caixa.html', 1500);
+        return;
+      }
+
+      const data = s.data();
+      // BUG CORRIGIDO: fallback para undefined
+      const itens = data.itens || [];
+      totalAtual = data.total || 0;
+
+      document.getElementById('valor-total').innerText = `R$ ${totalAtual.toFixed(2)}`;
+      calcTroco();
+
+      // BUG CORRIGIDO: crash se itens undefined
+      if (itens.length === 0) {
+        document.getElementById('lista-produtos').innerHTML =
+          '<div style="color:var(--text-muted);text-align:center;padding:20px;">Nenhum item registrado.</div>';
+      } else {
+        document.getElementById('lista-produtos').innerHTML = itens.map(i => `
+          <div class="extrato-item">
+            <div class="item-info">
+              <div class="nome">${i.nome}</div>
+              <div class="hora">${i.hora ? fmtHora(i.hora) : ''}</div>
+            </div>
+            <div class="preco">R$ ${parseFloat(i.preco).toFixed(2)}</div>
+          </div>
+        `).join('');
+      }
     });
+
+    // BUG CORRIGIDO: onclick FORA do onSnapshot — não acumula listeners
+    document.getElementById('btn-finalizar').onclick = async () => {
+      const recebido = parseFloat(document.getElementById('valor-recebido').value) || 0;
+
+      if (recebido > 0 && recebido < totalAtual) {
+        showToast('⚠️ Valor recebido é menor que o total.', 'error');
+        return;
+      }
+
+      const msg = recebido > 0
+        ? `Confirmar R$ ${totalAtual.toFixed(2)}? Troco: R$ ${(recebido - totalAtual).toFixed(2)}`
+        : `Confirmar recebimento de R$ ${totalAtual.toFixed(2)}?`;
+
+      if (!confirm(msg)) return;
+
+      const btn = document.getElementById('btn-finalizar');
+      btn.disabled = true;
+      btn.textContent = 'Processando...';
+
+      try {
+        // 1. Salva no histórico
+        await addDoc(collection(db, `vendas_${user.uid}`), {
+          valor: totalAtual,
+          mesa: mesaId,
+          data: serverTimestamp(),
+          itens: (await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js")
+            .then(m => m.getDoc(mesaRef))).data()?.itens || []
+        });
+
+        // 2. Limpa a mesa
+        await updateDoc(mesaRef, { ocupada: false, total: 0, itens: [] });
+
+        showToast('✅ Pagamento finalizado!', 'success');
+        setTimeout(() => location.href = 'caixa.html', 1200);
+      } catch (e) {
+        showToast('Erro ao finalizar. Tente novamente.', 'error');
+        btn.disabled = false;
+        btn.textContent = '✅ Finalizar Pagamento';
+      }
+    };
+  });
 </script>
 </body>
 </html>
