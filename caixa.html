@@ -8,24 +8,22 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="style.css">
   <style>
-    .page-intro {
+    .page-intro { margin-bottom: 20px; }
+    .page-intro h1 { font-size: 1.35rem; font-weight: 800; color: var(--navy); margin-bottom: 4px; }
+    .page-intro p  { font-size: 0.85rem; color: var(--text-muted); }
+
+    /* RESUMO */
+    .resumo-topo {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
       margin-bottom: 24px;
     }
-    .page-intro h1 {
-      font-size: 1.4rem;
-      font-weight: 800;
-      color: var(--navy);
-      margin-bottom: 4px;
-    }
-    .page-intro p {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-    }
 
-    /* GRID MESAS CAIXA */
+    /* GRID MESAS */
     .caixa-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
       gap: 14px;
     }
 
@@ -33,16 +31,16 @@
       background: var(--card);
       border: 1.5px solid var(--border);
       border-radius: var(--radius-md);
-      padding: 20px;
+      padding: 18px;
       display: flex;
       flex-direction: column;
       gap: 10px;
-      transition: transform 0.15s, box-shadow 0.15s;
       box-shadow: var(--shadow-sm);
+      transition: transform 0.15s, box-shadow 0.15s;
     }
 
     .caixa-card.ocupada {
-      border-color: #FECACA;
+      border-color: #FCA5A5;
       background: #FFFBFB;
       cursor: pointer;
     }
@@ -52,10 +50,7 @@
       box-shadow: var(--shadow-md);
     }
 
-    .caixa-card.livre {
-      opacity: 0.55;
-      cursor: default;
-    }
+    .caixa-card.livre { opacity: 0.5; cursor: default; }
 
     .caixa-card-header {
       display: flex;
@@ -64,45 +59,30 @@
     }
 
     .caixa-mesa-num {
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       font-weight: 700;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.07em;
       text-transform: uppercase;
       color: var(--text-muted);
     }
 
     .caixa-total {
-      font-size: 1.5rem;
+      font-size: 1.45rem;
       font-weight: 800;
-      color: var(--ocupada);
     }
 
-    .caixa-card.livre .caixa-total {
-      font-size: 1rem;
-      color: var(--text-muted);
-      font-weight: 500;
-    }
+    .caixa-card.livre   .caixa-total { font-size: 0.95rem; color: var(--text-muted); font-weight: 400; }
+    .caixa-card.ocupada .caixa-total { color: var(--ocupada); }
 
     .caixa-action {
-      font-size: 0.78rem;
+      font-size: 0.77rem;
       font-weight: 600;
       color: var(--ocupada);
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    /* RESUMO TOPO */
-    .resumo-topo {
-      display: flex;
-      gap: 14px;
-      margin-bottom: 24px;
-      flex-wrap: wrap;
     }
 
     @media (max-width: 768px) {
       .caixa-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
-      .caixa-total { font-size: 1.2rem; }
+      .caixa-total { font-size: 1.15rem; }
     }
   </style>
 </head>
@@ -131,30 +111,29 @@
   <div class="main-content">
     <div class="topbar">
       <span class="topbar-title">💰 Caixa</span>
-      <div class="topbar-right">
-        <span id="total-geral" style="font-size:0.85rem; font-weight:700; color: var(--navy);"></span>
-      </div>
     </div>
 
     <div class="page-body">
       <div class="page-intro">
         <h1>Caixa Central</h1>
-        <p>Clique em uma mesa ocupada para finalizar o pagamento.</p>
+        <p>Toque em uma mesa <span style="color:var(--ocupada);font-weight:700;">vermelha</span> para finalizar o pagamento.</p>
       </div>
 
       <div class="resumo-topo">
-        <div class="stat-card" style="flex:1; min-width:140px;">
+        <div class="stat-card">
           <div class="stat-label">Mesas abertas</div>
           <div class="stat-value" id="cnt-abertas" style="color:var(--ocupada);">0</div>
         </div>
-        <div class="stat-card" style="flex:1; min-width:140px;">
-          <div class="stat-label">Em aberto</div>
+        <div class="stat-card">
+          <div class="stat-label">Total em aberto</div>
           <div class="stat-value green" id="total-aberto">R$ 0,00</div>
         </div>
       </div>
 
       <div id="grid-caixa" class="caixa-grid">
-        <div style="color:var(--text-muted);">Carregando mesas...</div>
+        <div style="color:var(--text-muted); font-size:0.85rem; grid-column:1/-1; text-align:center; padding:32px;">
+          Carregando mesas...
+        </div>
       </div>
     </div>
   </div>
@@ -170,13 +149,30 @@
   </nav>
 </div>
 
+<div class="toast-container" id="toast-container"></div>
+
 <script type="module">
   import { db, auth } from './firebase.js';
-  import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { collection, onSnapshot, doc, getDoc } from
+    "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  auth.onAuthStateChanged(user => {
-    // BUG CORRIGIDO: redirecionamento explícito se não logado
+  function showToast(msg, type = '') {
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.textContent = msg;
+    document.getElementById('toast-container').appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+  }
+
+  auth.onAuthStateChanged(async user => {
     if (!user) { location.href = 'index.html'; return; }
+
+    // Lê número de mesas da config (mesmo que salao.html)
+    let qtdMesas = 11;
+    try {
+      const configSnap = await getDoc(doc(db, `config_${user.uid}`, 'salao'));
+      if (configSnap.exists()) qtdMesas = configSnap.data().totalMesas || 11;
+    } catch (e) { /* usa 11 como padrão */ }
 
     const mesasRef = collection(db, `mesas_${user.uid}`);
 
@@ -184,16 +180,17 @@
       const grid = document.getElementById('grid-caixa');
       grid.innerHTML = '';
 
+      // Monta mapa de dados
       const dados = {};
       snap.forEach(d => { dados[d.id] = d.data(); });
 
       let cntAbertas = 0;
       let totalAberto = 0;
 
-      for (let i = 1; i <= 11; i++) {
-        // BUG CORRIGIDO: total com fallback para 0
-        const mesa = dados[`mesa_${i}`] || { ocupada: false, total: 0 };
-        const total = mesa.total || 0; // EVITA null.toFixed crash
+      for (let i = 1; i <= qtdMesas; i++) {
+        // FIX: fallback para mesa sem doc no Firestore
+        const mesa  = dados[`mesa_${i}`] || { ocupada: false, total: 0 };
+        const total = mesa.total || 0;
 
         if (mesa.ocupada) {
           cntAbertas++;
@@ -207,15 +204,15 @@
           <div class="caixa-card-header">
             <span class="caixa-mesa-num">Mesa ${i}</span>
             ${mesa.ocupada
-              ? '<span class="badge badge-ocupada">Ocupada</span>'
-              : '<span class="badge badge-livre">Livre</span>'}
+              ? '<span class="badge badge-ocupada">🔴 Ocupada</span>'
+              : '<span class="badge badge-livre">🟢 Livre</span>'}
           </div>
           <div class="caixa-total">
             ${mesa.ocupada ? 'R$ ' + total.toFixed(2) : '—'}
           </div>
           ${mesa.ocupada
-            ? '<div class="caixa-action">Finalizar pagamento →</div>'
-            : '<div style="font-size:0.75rem;color:var(--text-muted);">Mesa disponível</div>'}
+            ? '<div class="caixa-action">Toque para finalizar →</div>'
+            : '<div style="font-size:0.75rem;color:var(--text-muted);">Disponível</div>'}
         `;
 
         if (mesa.ocupada) {
@@ -232,3 +229,4 @@
 </script>
 </body>
 </html>
+
