@@ -1,62 +1,234 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Caixa Central - Sistema Cris</title>
-    <style>
-        body { font-family: sans-serif; background: #f4f7f6; margin: 0; padding: 15px; text-align: center; }
-        .grid-mesas { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
-        .mesa-card { padding: 20px; border-radius: 15px; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.2s; }
-        .livre { background-color: #a2e4c1; color: #1e4d35; cursor: default; opacity: 0.6; }
-        .ocupada { background-color: #f1948a; color: #78281f; border: 2px solid #c0392b; }
-        .header { background: #2c3e50; color: white; padding: 15px; margin: -15px -15px 15px -15px; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Caixa — Sistema Cris</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .page-intro {
+      margin-bottom: 24px;
+    }
+    .page-intro h1 {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--navy);
+      margin-bottom: 4px;
+    }
+    .page-intro p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    /* GRID MESAS CAIXA */
+    .caixa-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 14px;
+    }
+
+    .caixa-card {
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .caixa-card.ocupada {
+      border-color: #FECACA;
+      background: #FFFBFB;
+      cursor: pointer;
+    }
+
+    .caixa-card.ocupada:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .caixa-card.livre {
+      opacity: 0.55;
+      cursor: default;
+    }
+
+    .caixa-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .caixa-mesa-num {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .caixa-total {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--ocupada);
+    }
+
+    .caixa-card.livre .caixa-total {
+      font-size: 1rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .caixa-action {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--ocupada);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* RESUMO TOPO */
+    .resumo-topo {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 768px) {
+      .caixa-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .caixa-total { font-size: 1.2rem; }
+    }
+  </style>
 </head>
 <body>
-    <div class="header">
-        <h1>CAIXA</h1>
-        <button onclick="location.href='salao.html'">VOLTAR AO SALÃO</button>
+
+<div class="app-shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <span class="logo-icon">🍞</span>
+      <div>
+        <div class="logo-text">Sistema Cris</div>
+        <span class="logo-sub">Padaria</span>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="salao.html"     class="nav-item"><span class="nav-icon">🪑</span> Salão</a>
+      <a href="caixa.html"     class="nav-item active"><span class="nav-icon">💰</span> Caixa</a>
+      <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="produtos.html"  class="nav-item"><span class="nav-icon">🛍️</span> Cardápio</a>
+    </nav>
+  </aside>
+
+  <!-- CONTEÚDO -->
+  <div class="main-content">
+    <div class="topbar">
+      <span class="topbar-title">💰 Caixa</span>
+      <div class="topbar-right">
+        <span id="total-geral" style="font-size:0.85rem; font-weight:700; color: var(--navy);"></span>
+      </div>
     </div>
 
-    <h3>Selecione uma mesa ocupada para finalizar:</h3>
-    <div id="grid-caixa" class="grid-mesas">Carregando mesas...</div>
+    <div class="page-body">
+      <div class="page-intro">
+        <h1>Caixa Central</h1>
+        <p>Clique em uma mesa ocupada para finalizar o pagamento.</p>
+      </div>
 
- <script type="module">
-    import { db, auth } from './firebase.js';
-    import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+      <div class="resumo-topo">
+        <div class="stat-card" style="flex:1; min-width:140px;">
+          <div class="stat-label">Mesas abertas</div>
+          <div class="stat-value" id="cnt-abertas" style="color:var(--ocupada);">0</div>
+        </div>
+        <div class="stat-card" style="flex:1; min-width:140px;">
+          <div class="stat-label">Em aberto</div>
+          <div class="stat-value green" id="total-aberto">R$ 0,00</div>
+        </div>
+      </div>
 
-    auth.onAuthStateChanged(user => {
-        if (!user) return;
-        const mesasRef = collection(db, `mesas_${user.uid}`);
+      <div id="grid-caixa" class="caixa-grid">
+        <div style="color:var(--text-muted);">Carregando mesas...</div>
+      </div>
+    </div>
+  </div>
 
-        onSnapshot(mesasRef, snap => {
-            const grid = document.getElementById('grid-caixa');
-            grid.innerHTML = "";
-            
-            // CRIAR UM MAPA DOS DADOS ATUAIS
-            const dadosDasMesas = {};
-            snap.forEach(doc => {
-                dadosDasMesas[doc.id] = doc.data();
-            });
+  <!-- BOTTOM NAV MOBILE -->
+  <nav class="bottom-nav">
+    <div class="bottom-nav-inner">
+      <a href="salao.html"     class="bnav-item"><span class="bnav-icon">🪑</span>Salão</a>
+      <a href="caixa.html"     class="bnav-item active"><span class="bnav-icon">💰</span>Caixa</a>
+      <a href="dashboard.html" class="bnav-item"><span class="bnav-icon">📊</span>Dados</a>
+      <a href="produtos.html"  class="bnav-item"><span class="bnav-icon">🛍️</span>Cardápio</a>
+    </div>
+  </nav>
+</div>
 
-            // FORÇAR A EXIBIÇÃO DAS 11 MESAS (Igual você fez no Salão)
-            for (let i = 1; i <= 11; i++) {
-                const idMesa = `mesa_${i}`;
-                const mesa = dadosDasMesas[idMesa] || { ocupada: false, total: 0 };
-                
-                const card = document.createElement('div');
-                card.className = `mesa-card ${mesa.ocupada ? 'ocupada' : 'livre'}`;
-                card.innerHTML = `MESA ${i}<br>${mesa.ocupada ? 'R$ ' + mesa.total.toFixed(2) : 'LIVRE'}`;
-                
-                if (mesa.ocupada) {
-                    card.onclick = () => location.href = `detalhe-caixa.html?mesa=${i}`;
-                }
-                
-                grid.appendChild(card);
-            }
-        });
+<script type="module">
+  import { db, auth } from './firebase.js';
+  import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  auth.onAuthStateChanged(user => {
+    // BUG CORRIGIDO: redirecionamento explícito se não logado
+    if (!user) { location.href = 'index.html'; return; }
+
+    const mesasRef = collection(db, `mesas_${user.uid}`);
+
+    onSnapshot(mesasRef, snap => {
+      const grid = document.getElementById('grid-caixa');
+      grid.innerHTML = '';
+
+      const dados = {};
+      snap.forEach(d => { dados[d.id] = d.data(); });
+
+      let cntAbertas = 0;
+      let totalAberto = 0;
+
+      for (let i = 1; i <= 11; i++) {
+        // BUG CORRIGIDO: total com fallback para 0
+        const mesa = dados[`mesa_${i}`] || { ocupada: false, total: 0 };
+        const total = mesa.total || 0; // EVITA null.toFixed crash
+
+        if (mesa.ocupada) {
+          cntAbertas++;
+          totalAberto = Math.round((totalAberto + total) * 100) / 100;
+        }
+
+        const card = document.createElement('div');
+        card.className = `caixa-card ${mesa.ocupada ? 'ocupada' : 'livre'}`;
+
+        card.innerHTML = `
+          <div class="caixa-card-header">
+            <span class="caixa-mesa-num">Mesa ${i}</span>
+            ${mesa.ocupada
+              ? '<span class="badge badge-ocupada">Ocupada</span>'
+              : '<span class="badge badge-livre">Livre</span>'}
+          </div>
+          <div class="caixa-total">
+            ${mesa.ocupada ? 'R$ ' + total.toFixed(2) : '—'}
+          </div>
+          ${mesa.ocupada
+            ? '<div class="caixa-action">Finalizar pagamento →</div>'
+            : '<div style="font-size:0.75rem;color:var(--text-muted);">Mesa disponível</div>'}
+        `;
+
+        if (mesa.ocupada) {
+          card.onclick = () => location.href = `detalhe-caixa.html?mesa=${i}`;
+        }
+
+        grid.appendChild(card);
+      }
+
+      document.getElementById('cnt-abertas').textContent = cntAbertas;
+      document.getElementById('total-aberto').textContent = `R$ ${totalAberto.toFixed(2)}`;
     });
+  });
 </script>
 </body>
 </html>
