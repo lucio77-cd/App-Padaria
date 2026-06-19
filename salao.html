@@ -11,8 +11,8 @@
     /* GRID DE MESAS */
     .mesas-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 14px;
     }
 
     .mesa-card {
@@ -23,86 +23,133 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      border: 2px solid transparent;
+      border: 2.5px solid transparent;
       transition: transform 0.15s, box-shadow 0.15s;
       position: relative;
-      overflow: hidden;
       gap: 6px;
+      user-select: none;
     }
 
-    .mesa-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
-    .mesa-card:active { transform: scale(0.97); }
+    .mesa-card:hover  { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+    .mesa-card:active { transform: scale(0.96); }
 
     .mesa-card.livre {
       background: var(--livre-bg);
-      border-color: #A7F3D0;
+      border-color: #6EE7B7;
     }
 
     .mesa-card.ocupada {
       background: var(--ocupada-bg);
-      border-color: #FECACA;
+      border-color: #FCA5A5;
       animation: pulse-ring 2.5s infinite;
     }
 
     .mesa-num {
-      font-size: 0.65rem;
+      font-size: 0.62rem;
       font-weight: 700;
       letter-spacing: 0.1em;
       text-transform: uppercase;
     }
-
-    .mesa-card.livre  .mesa-num { color: #065F46; }
+    .mesa-card.livre   .mesa-num { color: #065F46; }
     .mesa-card.ocupada .mesa-num { color: #991B1B; }
 
-    .mesa-icon { font-size: 2rem; line-height: 1; }
+    .mesa-icon { font-size: 1.9rem; line-height: 1; }
 
     .mesa-valor {
-      font-size: 1rem;
+      font-size: 0.95rem;
       font-weight: 800;
       line-height: 1;
     }
-
-    .mesa-card.livre  .mesa-valor { color: #065F46; font-size: 0.75rem; font-weight: 500; }
+    .mesa-card.livre   .mesa-valor { font-size: 0.72rem; font-weight: 500; color: #065F46; }
     .mesa-card.ocupada .mesa-valor { color: #991B1B; }
 
-    /* STATUS BAR */
-    .status-bar {
-      display: flex;
-      gap: 16px;
-      margin-bottom: 24px;
-      flex-wrap: wrap;
-    }
-
+    /* STATUS PILLS */
+    .status-bar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
     .status-pill {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      padding: 7px 16px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--text);
+      display: flex; align-items: center; gap: 8px;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 999px; padding: 6px 14px;
+      font-size: 0.8rem; font-weight: 600;
       box-shadow: var(--shadow-sm);
     }
-
-    .status-dot {
-      width: 9px; height: 9px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-
+    .status-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
     .dot-livre   { background: var(--livre); }
     .dot-ocupada { background: var(--ocupada); }
+
+    /* MODAL CONFIG MESAS */
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal-box {
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      padding: 28px 24px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .modal-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--navy);
+      margin-bottom: 6px;
+    }
+
+    .modal-sub {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    .qty-control {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+
+    .qty-btn {
+      width: 52px; height: 52px;
+      font-size: 1.4rem;
+      font-weight: 700;
+      border: none;
+      background: none;
+      cursor: pointer;
+      color: var(--navy);
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+    .qty-btn:hover { background: var(--border); }
+
+    .qty-val {
+      flex: 1;
+      text-align: center;
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--navy);
+    }
+
+    .modal-actions { display: flex; gap: 10px; }
+    .modal-actions button { flex: 1; }
 
     @media (max-width: 768px) {
       .mesas-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
       .mesa-icon { font-size: 1.5rem; }
-      .mesa-valor { font-size: 0.85rem; }
     }
-
-    @media (max-width: 380px) {
+    @media (max-width: 360px) {
       .mesas-grid { grid-template-columns: repeat(2, 1fr); }
     }
   </style>
@@ -121,11 +168,10 @@
       </div>
     </div>
     <nav class="sidebar-nav">
-      <a href="salao.html"    class="nav-item active"><span class="nav-icon">🪑</span> Salão</a>
-      <a href="pedido.html"   class="nav-item"><span class="nav-icon">📋</span> Pedidos</a>
-      <a href="caixa.html"    class="nav-item"><span class="nav-icon">💰</span> Caixa</a>
+      <a href="salao.html"     class="nav-item active"><span class="nav-icon">🪑</span> Salão</a>
+      <a href="caixa.html"     class="nav-item"><span class="nav-icon">💰</span> Caixa</a>
       <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
-      <a href="produtos.html" class="nav-item"><span class="nav-icon">🛍️</span> Cardápio</a>
+      <a href="produtos.html"  class="nav-item"><span class="nav-icon">🛍️</span> Cardápio</a>
     </nav>
     <div class="sidebar-bottom">
       <button id="btn-sair" class="nav-item" style="color:rgba(255,255,255,0.5);">
@@ -139,19 +185,25 @@
     <div class="topbar">
       <span class="topbar-title">🪑 Salão</span>
       <div class="topbar-right">
-        <div id="status-resumo" style="font-size:0.8rem; color:var(--text-muted); font-weight:500;"></div>
+        <button id="btn-config-mesas" class="btn btn-ghost" style="font-size:0.8rem; padding:7px 12px;">
+          ⚙️ Mesas
+        </button>
       </div>
     </div>
 
     <div class="page-body">
       <div class="status-bar">
-        <div class="status-pill"><div class="status-dot dot-ocupada"></div><span id="cnt-ocupadas">0 ocupadas</span></div>
-        <div class="status-pill"><div class="status-dot dot-livre"></div><span id="cnt-livres">11 livres</span></div>
+        <div class="status-pill">
+          <div class="status-dot dot-ocupada"></div>
+          <span id="cnt-ocupadas">0 ocupadas</span>
+        </div>
+        <div class="status-pill">
+          <div class="status-dot dot-livre"></div>
+          <span id="cnt-livres">— livres</span>
+        </div>
       </div>
 
-      <div id="container-mesas" class="mesas-grid">
-        <!-- Mesas geradas via JS -->
-      </div>
+      <div id="container-mesas" class="mesas-grid"></div>
     </div>
   </div>
 
@@ -166,14 +218,35 @@
   </nav>
 </div>
 
-<!-- TOAST CONTAINER -->
+<!-- MODAL CONFIG MESAS -->
+<div class="modal-overlay" id="modal-mesas">
+  <div class="modal-box">
+    <div class="modal-title">⚙️ Configurar Mesas</div>
+    <div class="modal-sub">Quantas mesas tem o seu salão?</div>
+
+    <div class="qty-control">
+      <button class="qty-btn" id="qty-menos">−</button>
+      <div class="qty-val" id="qty-num">11</div>
+      <button class="qty-btn" id="qty-mais">+</button>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="modal-cancelar">Cancelar</button>
+      <button class="btn btn-primary" id="modal-salvar">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast-container" id="toast-container"></div>
 
 <script type="module">
   import { db, auth } from './firebase.js';
-  import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-  import { signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { collection, onSnapshot, doc, getDoc, setDoc } from
+    "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { signOut } from
+    "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
+  // ─── UTILITÁRIOS ────────────────────────────────────────────────
   function showToast(msg, type = '') {
     const el = document.createElement('div');
     el.className = `toast ${type}`;
@@ -182,28 +255,87 @@
     setTimeout(() => el.remove(), 3000);
   }
 
-  document.getElementById('btn-sair').onclick = async () => {
-    if (confirm('Deseja sair do sistema?')) {
-      await signOut(auth);
-      location.href = 'index.html';
-    }
+  // ─── MODAL ──────────────────────────────────────────────────────
+  let qtdMesas = 11;
+
+  document.getElementById('btn-config-mesas').onclick = () => {
+    document.getElementById('qty-num').textContent = qtdMesas;
+    document.getElementById('modal-mesas').classList.add('open');
   };
 
-  auth.onAuthStateChanged(user => {
+  document.getElementById('modal-cancelar').onclick = () =>
+    document.getElementById('modal-mesas').classList.remove('open');
+
+  document.getElementById('qty-menos').onclick = () => {
+    const v = parseInt(document.getElementById('qty-num').textContent);
+    if (v > 1) document.getElementById('qty-num').textContent = v - 1;
+  };
+
+  document.getElementById('qty-mais').onclick = () => {
+    const v = parseInt(document.getElementById('qty-num').textContent);
+    if (v < 50) document.getElementById('qty-num').textContent = v + 1;
+  };
+
+  // ─── FIREBASE ───────────────────────────────────────────────────
+  auth.onAuthStateChanged(async user => {
     if (!user) { location.href = 'index.html'; return; }
 
+    document.getElementById('btn-sair').onclick = async () => {
+      if (confirm('Deseja sair?')) { await signOut(auth); location.href = 'index.html'; }
+    };
+
+    // Referência de configuração do usuário
+    const configRef = doc(db, `config_${user.uid}`, 'salao');
+
+    // Carrega número de mesas salvo
+    const configSnap = await getDoc(configRef);
+    if (configSnap.exists()) {
+      qtdMesas = configSnap.data().totalMesas || 11;
+    } else {
+      // Primeira vez: salva 11 como padrão
+      await setDoc(configRef, { totalMesas: 11 });
+      qtdMesas = 11;
+    }
+
+    // Salvar configuração de mesas
+    document.getElementById('modal-salvar').onclick = async () => {
+      const novoTotal = parseInt(document.getElementById('qty-num').textContent);
+      await setDoc(configRef, { totalMesas: novoTotal });
+      qtdMesas = novoTotal;
+      document.getElementById('modal-mesas').classList.remove('open');
+      showToast(`✅ Salão configurado com ${novoTotal} mesas.`, 'success');
+    };
+
+    // Escuta de mesas em tempo real
     const mesasRef = collection(db, `mesas_${user.uid}`);
 
     onSnapshot(mesasRef, snap => {
+      // Monta mapa com dados do Firestore
+      const dados = {};
+      snap.forEach(d => { dados[d.id] = d.data(); });
+
+      renderMesas(dados);
+    });
+
+    // Escuta mudanças na config (ex: outra aba mudou o nº de mesas)
+    onSnapshot(configRef, snap => {
+      if (snap.exists()) {
+        qtdMesas = snap.data().totalMesas || 11;
+        // Força re-render com dados actuais (sem novo fetch)
+        // O onSnapshot de mesas vai disparar naturalmente
+      }
+    });
+
+    function renderMesas(dados) {
       const container = document.getElementById('container-mesas');
       container.innerHTML = '';
       let ocupadas = 0;
 
-      const dados = {};
-      snap.forEach(d => { dados[d.id] = d.data(); });
-
-      for (let i = 1; i <= 11; i++) {
+      for (let i = 1; i <= qtdMesas; i++) {
+        // ← AQUI ESTÁ O FIX: usa objeto padrão se mesa não existe no Firestore
         const mesa = dados[`mesa_${i}`] || { ocupada: false, total: 0 };
+        const total = mesa.total || 0;
+
         if (mesa.ocupada) ocupadas++;
 
         const card = document.createElement('div');
@@ -211,11 +343,9 @@
 
         card.innerHTML = `
           <div class="mesa-num">Mesa ${i}</div>
-          <div class="mesa-icon">${mesa.ocupada ? '🔴' : '🪑'}</div>
+          <div class="mesa-icon">${mesa.ocupada ? '🔴' : '🟢'}</div>
           <div class="mesa-valor">
-            ${mesa.ocupada
-              ? 'R$ ' + (mesa.total || 0).toFixed(2)
-              : 'Livre'}
+            ${mesa.ocupada ? 'R$ ' + total.toFixed(2) : 'Livre'}
           </div>
         `;
 
@@ -223,11 +353,12 @@
         container.appendChild(card);
       }
 
-      const livres = 11 - ocupadas;
-      document.getElementById('cnt-ocupadas').textContent = `${ocupadas} ocupada${ocupadas !== 1 ? 's' : ''}`;
-      document.getElementById('cnt-livres').textContent = `${livres} livre${livres !== 1 ? 's' : ''}`;
-      document.getElementById('status-resumo').textContent = `${ocupadas}/11 mesas`;
-    });
+      const livres = qtdMesas - ocupadas;
+      document.getElementById('cnt-ocupadas').textContent =
+        `${ocupadas} ocupada${ocupadas !== 1 ? 's' : ''}`;
+      document.getElementById('cnt-livres').textContent =
+        `${livres} livre${livres !== 1 ? 's' : ''}`;
+    }
   });
 </script>
 </body>
