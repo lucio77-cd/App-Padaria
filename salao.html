@@ -249,7 +249,11 @@
   import { signOut } from
     "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-  // ─── UTILITÁRIOS ────────────────────────────────────────────────
+  // ─── ESTADO GLOBAL ──────────────────────────────────────────────
+  let qtdMesas   = 11;       // número de mesas configurado
+  let dadosMesas = {};       // último snapshot das mesas do Firestore
+
+  // ─── TOAST ──────────────────────────────────────────────────────
   function showToast(msg, type = '') {
     const el = document.createElement('div');
     el.className = `toast ${type}`;
@@ -258,22 +262,49 @@
     setTimeout(() => el.remove(), 3000);
   }
 
-  // ─── MODAL ──────────────────────────────────────────────────────
-  let qtdMesas = 11;
+  // ─── RENDER — chamado sempre que mesas ou config mudam ──────────
+  function renderMesas() {
+    const container = document.getElementById('container-mesas');
+    container.innerHTML = '';
+    let ocupadas = 0;
 
+    for (let i = 1; i <= qtdMesas; i++) {
+      const mesa  = dadosMesas[`mesa_${i}`] || { ocupada: false, total: 0 };
+      const total = mesa.total || 0;
+
+      if (mesa.ocupada) ocupadas++;
+
+      const card = document.createElement('div');
+      card.className = `mesa-card ${mesa.ocupada ? 'ocupada' : 'livre'}`;
+      card.innerHTML = `
+        <div class="mesa-num">Mesa ${i}</div>
+        <div class="mesa-icon">${mesa.ocupada ? '🔴' : '🟢'}</div>
+        <div class="mesa-valor">
+          ${mesa.ocupada ? 'R$ ' + total.toFixed(2) : 'Livre'}
+        </div>
+      `;
+      card.onclick = () => { window.location.href = `pedido.html?mesa=${i}`; };
+      container.appendChild(card);
+    }
+
+    const livres = qtdMesas - ocupadas;
+    document.getElementById('cnt-ocupadas').textContent =
+      `${ocupadas} ocupada${ocupadas !== 1 ? 's' : ''}`;
+    document.getElementById('cnt-livres').textContent =
+      `${livres} livre${livres !== 1 ? 's' : ''}`;
+  }
+
+  // ─── MODAL ──────────────────────────────────────────────────────
   document.getElementById('btn-config-mesas').onclick = () => {
     document.getElementById('qty-num').textContent = qtdMesas;
     document.getElementById('modal-mesas').classList.add('open');
   };
-
   document.getElementById('modal-cancelar').onclick = () =>
     document.getElementById('modal-mesas').classList.remove('open');
-
   document.getElementById('qty-menos').onclick = () => {
     const v = parseInt(document.getElementById('qty-num').textContent);
     if (v > 1) document.getElementById('qty-num').textContent = v - 1;
   };
-
   document.getElementById('qty-mais').onclick = () => {
     const v = parseInt(document.getElementById('qty-num').textContent);
     if (v < 50) document.getElementById('qty-num').textContent = v + 1;
@@ -283,87 +314,58 @@
   auth.onAuthStateChanged(async user => {
     if (!user) { location.href = 'index.html'; return; }
 
+    // Botão Sair (sidebar desktop + topbar mobile)
     const fnSair = async () => {
-      if (confirm('Deseja sair do sistema?')) { await signOut(auth); location.href = 'index.html'; }
+      if (confirm('Deseja sair do sistema?')) {
+        await signOut(auth);
+        location.href = 'index.html';
+      }
     };
-    document.getElementById('btn-sair').onclick = fnSair;
+    document.getElementById('btn-sair').onclick        = fnSair;
     document.getElementById('btn-sair-mobile').onclick = fnSair;
 
-    // Referência de configuração do usuário
     const configRef = doc(db, `config_${user.uid}`, 'salao');
+    const mesasRef  = collection(db, `mesas_${user.uid}`);
 
-    // Carrega número de mesas salvo
-    const configSnap = await getDoc(configRef);
-    if (configSnap.exists()) {
-      qtdMesas = configSnap.data().totalMesas || 11;
-    } else {
-      // Primeira vez: salva 11 como padrão
-      await setDoc(configRef, { totalMesas: 11 });
+    // 1. Carrega config salva (aguarda antes de qualquer render)
+    try {
+      const snap = await getDoc(configRef);
+      qtdMesas = snap.exists() ? (snap.data().totalMesas || 11) : 11;
+      if (!snap.exists()) await setDoc(configRef, { totalMesas: 11 });
+    } catch(e) {
       qtdMesas = 11;
     }
 
-    // Salvar configuração de mesas
+    // 2. Primeira renderização imediata (sem esperar Firestore de mesas)
+    renderMesas();
+
+    // 3. Listener de mesas — atualiza dadosMesas e re-renderiza
+    onSnapshot(mesasRef, snap => {
+      dadosMesas = {};
+      snap.forEach(d => { dadosMesas[d.id] = d.data(); });
+      renderMesas();
+    });
+
+    // 4. Botão Salvar do modal — grava no Firestore e re-renderiza na hora
     document.getElementById('modal-salvar').onclick = async () => {
       const novoTotal = parseInt(document.getElementById('qty-num').textContent);
-      await setDoc(configRef, { totalMesas: novoTotal });
-      qtdMesas = novoTotal;
-      document.getElementById('modal-mesas').classList.remove('open');
-      showToast(`✅ Salão configurado com ${novoTotal} mesas.`, 'success');
+      const btn = document.getElementById('modal-salvar');
+      btn.disabled = true;
+      btn.textContent = 'Salvando...';
+
+      try {
+        await setDoc(configRef, { totalMesas: novoTotal });
+        qtdMesas = novoTotal;              // atualiza estado local
+        renderMesas();                     // re-renderiza IMEDIATAMENTE
+        document.getElementById('modal-mesas').classList.remove('open');
+        showToast(`✅ ${novoTotal} mesas configuradas!`, 'success');
+      } catch(e) {
+        showToast('Erro ao salvar. Tente novamente.', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Salvar';
+      }
     };
-
-    // Escuta de mesas em tempo real
-    const mesasRef = collection(db, `mesas_${user.uid}`);
-
-    // Guarda último snapshot de mesas para poder re-renderizar sem novo fetch
-    let ultimosDados = {};
-
-    onSnapshot(mesasRef, snap => {
-      ultimosDados = {};
-      snap.forEach(d => { ultimosDados[d.id] = d.data(); });
-      renderMesas(ultimosDados);
-    });
-
-    // Escuta mudanças na config — RE-RENDERIZA com os dados já em memória
-    onSnapshot(configRef, snap => {
-      if (snap.exists()) {
-        qtdMesas = snap.data().totalMesas || 11;
-        renderMesas(ultimosDados); // ← FIX: força re-render com novo qtdMesas
-      }
-    });
-
-    function renderMesas(dados) {
-      const container = document.getElementById('container-mesas');
-      container.innerHTML = '';
-      let ocupadas = 0;
-
-      for (let i = 1; i <= qtdMesas; i++) {
-        // ← AQUI ESTÁ O FIX: usa objeto padrão se mesa não existe no Firestore
-        const mesa = dados[`mesa_${i}`] || { ocupada: false, total: 0 };
-        const total = mesa.total || 0;
-
-        if (mesa.ocupada) ocupadas++;
-
-        const card = document.createElement('div');
-        card.className = `mesa-card ${mesa.ocupada ? 'ocupada' : 'livre'}`;
-
-        card.innerHTML = `
-          <div class="mesa-num">Mesa ${i}</div>
-          <div class="mesa-icon">${mesa.ocupada ? '🔴' : '🟢'}</div>
-          <div class="mesa-valor">
-            ${mesa.ocupada ? 'R$ ' + total.toFixed(2) : 'Livre'}
-          </div>
-        `;
-
-        card.onclick = () => { window.location.href = `pedido.html?mesa=${i}`; };
-        container.appendChild(card);
-      }
-
-      const livres = qtdMesas - ocupadas;
-      document.getElementById('cnt-ocupadas').textContent =
-        `${ocupadas} ocupada${ocupadas !== 1 ? 's' : ''}`;
-      document.getElementById('cnt-livres').textContent =
-        `${livres} livre${livres !== 1 ? 's' : ''}`;
-    }
   });
 </script>
 </body>
