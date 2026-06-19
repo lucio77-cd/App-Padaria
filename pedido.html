@@ -1,105 +1,356 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pedido - Sistema Cris</title>
-    <style>
-        body { font-family: sans-serif; background: #f4f7f6; margin: 0; }
-        .nav { background: #2c3e50; color: white; padding: 15px; display: flex; align-items: center; gap: 10px; }
-        .container { padding: 15px; }
-        .total-card { background: #34495e; color: white; padding: 20px; border-radius: 15px; margin-bottom: 20px; text-align: center; }
-        .grid-produtos { display: grid; grid-template-columns: 1fr; gap: 10px; }
-        .item-btn { background: white; border: 1px solid #ddd; padding: 15px; border-radius: 12px; display: flex; justify-content: space-between; font-weight: bold; cursor: pointer; }
-        .btn-voltar { background: #7f8c8d; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pedido — Sistema Cris</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* TOTAL HERO */
+    .total-hero {
+      background: linear-gradient(135deg, var(--navy) 0%, #0F3460 100%);
+      border-radius: var(--radius-lg);
+      padding: 28px 24px;
+      text-align: center;
+      margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .total-hero::before {
+      content: '🍞';
+      position: absolute;
+      font-size: 6rem;
+      opacity: 0.06;
+      right: -10px;
+      bottom: -10px;
+      line-height: 1;
+    }
+
+    .total-hero .label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.55);
+      margin-bottom: 8px;
+    }
+
+    .total-hero .valor {
+      font-size: 2.4rem;
+      font-weight: 800;
+      color: #FFFFFF;
+      line-height: 1;
+    }
+
+    .total-hero .mesa-tag {
+      display: inline-block;
+      margin-top: 10px;
+      background: rgba(232,168,124,0.18);
+      border: 1px solid rgba(232,168,124,0.35);
+      color: var(--amber);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      padding: 4px 12px;
+      border-radius: 999px;
+    }
+
+    /* SECOES */
+    .section-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    /* GRID CARDÁPIO */
+    .cardapio-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .produto-btn {
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: border-color 0.15s, transform 0.1s, box-shadow 0.15s;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .produto-btn:hover {
+      border-color: var(--amber);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+
+    .produto-btn:active { transform: scale(0.96); }
+
+    .produto-btn.adding {
+      border-color: var(--livre);
+      background: var(--livre-bg);
+      animation: addFlash 0.4s ease;
+    }
+
+    @keyframes addFlash {
+      0%   { transform: scale(0.96); }
+      60%  { transform: scale(1.04); }
+      100% { transform: scale(1); }
+    }
+
+    .produto-nome {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text);
+      text-align: center;
+      line-height: 1.3;
+    }
+
+    .produto-preco {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--amber-dark);
+    }
+
+    /* ITENS DA MESA */
+    .itens-lista {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .item-linha {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+    }
+
+    .item-nome { font-size: 0.9rem; font-weight: 500; color: var(--text); }
+    .item-hora { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+    .item-preco { font-size: 0.9rem; font-weight: 700; color: var(--navy); }
+
+    .empty-itens {
+      text-align: center;
+      padding: 24px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      background: var(--card);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-md);
+    }
+
+    @media (max-width: 768px) {
+      .cardapio-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    }
+  </style>
 </head>
 <body>
 
-<div class="nav">
-    <button class="btn-voltar" onclick="location.href='salao.html'">⬅ VOLTAR</button>
-    <h2 style="margin:0">Mesa <span id="num-mesa">?</span></h2>
-</div>
+<div class="app-shell">
 
-<div class="container">
-    <div class="total-card">
-        <small>VALOR DA CONTA</small>
-        <h1 id="total-val" style="margin:0">R$ 0,00</h1>
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <span class="logo-icon">🍞</span>
+      <div>
+        <div class="logo-text">Sistema Cris</div>
+        <span class="logo-sub">Padaria</span>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="salao.html"     class="nav-item active"><span class="nav-icon">🪑</span> Salão</a>
+      <a href="caixa.html"     class="nav-item"><span class="nav-icon">💰</span> Caixa</a>
+      <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="produtos.html"  class="nav-item"><span class="nav-icon">🛍️</span> Cardápio</a>
+    </nav>
+  </aside>
+
+  <!-- CONTEÚDO -->
+  <div class="main-content">
+    <div class="topbar">
+      <a href="salao.html" class="btn btn-ghost" style="padding:7px 12px; font-size:0.8rem;">← Voltar</a>
+      <span class="topbar-title" id="topbar-title">Pedido</span>
+      <div style="width:80px;"></div>
     </div>
 
-    <h4>Adicionar Produtos:</h4>
-    <div id="lista-cardapio" class="grid-produtos">Carregando cardápio...</div>
+    <div class="page-body">
+
+      <!-- TOTAL HERO -->
+      <div class="total-hero">
+        <div class="label">Conta da mesa</div>
+        <div class="valor" id="total-val">R$ 0,00</div>
+        <div class="mesa-tag" id="mesa-tag">Mesa —</div>
+      </div>
+
+      <!-- ITENS JÁ ADICIONADOS -->
+      <div style="margin-bottom: 24px;">
+        <div class="section-title">Itens consumidos</div>
+        <div id="lista-itens" class="itens-lista">
+          <div class="empty-itens">Nenhum item adicionado ainda.</div>
+        </div>
+      </div>
+
+      <!-- CARDÁPIO -->
+      <div class="section-title">Adicionar ao pedido</div>
+      <div id="lista-cardapio" class="cardapio-grid">
+        <div style="color:var(--text-muted); font-size:0.85rem; grid-column:1/-1;">Carregando cardápio...</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV MOBILE -->
+  <nav class="bottom-nav">
+    <div class="bottom-nav-inner">
+      <a href="salao.html"     class="bnav-item active"><span class="bnav-icon">🪑</span>Salão</a>
+      <a href="caixa.html"     class="bnav-item"><span class="bnav-icon">💰</span>Caixa</a>
+      <a href="dashboard.html" class="bnav-item"><span class="bnav-icon">📊</span>Dados</a>
+      <a href="produtos.html"  class="bnav-item"><span class="bnav-icon">🛍️</span>Cardápio</a>
+    </div>
+  </nav>
 </div>
 
-<script type="module">
-    import { db, auth } from './firebase.js';
-    import { doc, onSnapshot, updateDoc, arrayUnion, collection, getDocs, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+<div class="toast-container" id="toast-container"></div>
 
-    // 1. PEGA O ID DA MESA DA URL
-    const params = new URLSearchParams(window.location.search);
-    const mesaId = params.get('mesa'); 
-    
-    if (mesaId) {
-        document.getElementById('num-mesa').innerText = mesaId;
+<script type="module">
+  import { db, auth } from './firebase.js';
+  import {
+    doc, onSnapshot, updateDoc, arrayUnion,
+    collection, getDocs, getDoc, setDoc
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const params = new URLSearchParams(window.location.search);
+  const mesaId = params.get('mesa');
+
+  document.getElementById('mesa-tag').innerText  = `Mesa ${mesaId || '—'}`;
+  document.getElementById('topbar-title').innerText = `Mesa ${mesaId || '—'}`;
+
+  function showToast(msg, type = '') {
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.textContent = msg;
+    document.getElementById('toast-container').appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+  }
+
+  function fmtHora(ts) {
+    return new Date(ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  // CORRIGE ponto flutuante
+  function somarPreco(total, preco) {
+    return Math.round((total + preco) * 100) / 100;
+  }
+
+  auth.onAuthStateChanged(async user => {
+    if (!user) { location.href = 'index.html'; return; }
+    if (!mesaId) { showToast('Mesa não identificada!', 'error'); return; }
+
+    const mesaRef = doc(db, `mesas_${user.uid}`, `mesa_${mesaId}`);
+
+    // TOTAL EM TEMPO REAL + ITENS
+    onSnapshot(mesaRef, snap => {
+      const data = snap.exists() ? snap.data() : { total: 0, itens: [] };
+      const total = data.total || 0;
+      document.getElementById('total-val').innerText = `R$ ${total.toFixed(2)}`;
+
+      const itens = data.itens || [];
+      const listaItens = document.getElementById('lista-itens');
+
+      if (itens.length === 0) {
+        listaItens.innerHTML = '<div class="empty-itens">Nenhum item adicionado ainda.</div>';
+      } else {
+        listaItens.innerHTML = [...itens].reverse().map(i => `
+          <div class="item-linha">
+            <div>
+              <div class="item-nome">${i.nome}</div>
+              <div class="item-hora">${i.hora ? fmtHora(i.hora) : ''}</div>
+            </div>
+            <div class="item-preco">R$ ${parseFloat(i.preco).toFixed(2)}</div>
+          </div>
+        `).join('');
+      }
+    });
+
+    // CARDÁPIO
+    const pSnap = await getDocs(collection(db, `produtos_${user.uid}`));
+    const cardapioDiv = document.getElementById('lista-cardapio');
+    cardapioDiv.innerHTML = '';
+
+    if (pSnap.empty) {
+      cardapioDiv.innerHTML = '<div style="color:var(--text-muted); font-size:0.85rem; grid-column:1/-1;">Nenhum produto cadastrado. <a href="produtos.html">Cadastrar →</a></div>';
+      return;
     }
 
-    auth.onAuthStateChanged(async user => {
-        if (!user) return;
+    pSnap.forEach(pDoc => {
+      const p = pDoc.data();
+      if (isNaN(p.preco)) return;
+      const preco = parseFloat(p.preco);
 
-        // Referência da mesa baseada no clique (ex: mesa_2)
-        const mesaRef = doc(db, `mesas_${user.uid}`, `mesa_${mesaId}`);
+      const btn = document.createElement('button');
+      btn.className = 'produto-btn';
+      btn.innerHTML = `
+        <div class="produto-nome">${p.nome}</div>
+        <div class="produto-preco">R$ ${preco.toFixed(2)}</div>
+      `;
 
-        // 2. MOSTRA O TOTAL DA MESA EM TEMPO REAL
-        onSnapshot(mesaRef, (snap) => {
-            if (snap.exists()) {
-                const total = snap.data().total || 0;
-                document.getElementById('total-val').innerText = `R$ ${total.toFixed(2)}`;
-            } else {
-                document.getElementById('total-val').innerText = `R$ 0,00`;
-            }
-        });
+      let adicionando = false;
 
-        // 3. CARREGA O CARDÁPIO
-        const pSnap = await getDocs(collection(db, `produtos_${user.uid}`));
-        const cardapioDiv = document.getElementById('lista-cardapio');
-        cardapioDiv.innerHTML = '';
+      btn.onclick = async () => {
+        if (adicionando) return; // evita clique duplo
+        adicionando = true;
+        btn.classList.add('adding');
+        btn.disabled = true;
 
-        pSnap.forEach(pDoc => {
-            const p = pDoc.data();
-            if (isNaN(p.preco)) return;
+        try {
+          const mesaSnap = await getDoc(mesaRef);
+          const novoItem = { nome: p.nome, preco: preco, hora: Date.now() };
 
-            const btn = document.createElement('div');
-            btn.className = 'item-btn';
-            btn.innerHTML = `<span>${p.nome}</span> <span>R$ ${parseFloat(p.preco).toFixed(2)}</span>`;
-            
-            btn.onclick = async () => {
-                if (!mesaId) {
-                    alert("Erro: Mesa não identificada!");
-                    return;
-                }
+          if (mesaSnap.exists()) {
+            const totalAtual = mesaSnap.data().total || 0;
+            await updateDoc(mesaRef, {
+              ocupada: true,
+              total: somarPreco(totalAtual, preco),
+              itens: arrayUnion(novoItem)
+            });
+          } else {
+            await setDoc(mesaRef, {
+              ocupada: true,
+              total: preco,
+              itens: [novoItem]
+            });
+          }
+          showToast(`✅ ${p.nome} adicionado`, 'success');
+        } catch (e) {
+          showToast('Erro ao adicionar item.', 'error');
+        } finally {
+          setTimeout(() => {
+            btn.classList.remove('adding');
+            btn.disabled = false;
+            adicionando = false;
+          }, 500);
+        }
+      };
 
-                const mesaSnap = await getDoc(mesaRef);
-                const precoProduto = parseFloat(p.preco);
-
-                if (mesaSnap.exists()) {
-                    // Atualiza mesa existente
-                    await updateDoc(mesaRef, {
-                        ocupada: true,
-                        total: (mesaSnap.data().total || 0) + precoProduto,
-                        itens: arrayUnion({ nome: p.nome, preco: precoProduto, hora: Date.now() })
-                    });
-                } else {
-                    // Cria mesa nova (Mesa 2, 3, etc)
-                    await setDoc(mesaRef, {
-                        ocupada: true,
-                        total: precoProduto,
-                        itens: [{ nome: p.nome, preco: precoProduto, hora: Date.now() }]
-                    });
-                }
-            };
-            cardapioDiv.appendChild(btn);
-        });
+      cardapioDiv.appendChild(btn);
     });
+  });
 </script>
 </body>
 </html>
