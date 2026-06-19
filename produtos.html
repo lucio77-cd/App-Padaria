@@ -1,74 +1,275 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Produtos - Sistema Cris</title>
-    <style>
-        body { font-family: sans-serif; padding: 15px; background: #f4f7f6; }
-        .card-add { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        .btn-add { background: #3498db; color: white; border: none; width: 100%; padding: 15px; font-weight: bold; border-radius: 8px; cursor: pointer; }
-        .item { display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px; margin-bottom: 8px; border-radius: 8px; border: 1px solid #eee; }
-        .btn-del { background: #ff4757; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; }
-        .voltar { margin-bottom: 15px; cursor: pointer; border: none; background: #95a5a6; color: white; padding: 8px 15px; border-radius: 5px; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cardápio — Sistema Cris</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .add-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .add-card-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+
+    .add-row {
+      display: flex;
+      gap: 12px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .add-row .form-group { flex: 2; min-width: 140px; margin-bottom: 0; }
+    .add-row .form-group:last-of-type { flex: 1; min-width: 100px; }
+
+    /* LISTA DE PRODUTOS */
+    .produtos-lista {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .produto-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow 0.15s;
+    }
+
+    .produto-item:hover { box-shadow: var(--shadow-md); }
+
+    .produto-item .info { flex: 1; }
+    .produto-item .info .nome {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--navy);
+    }
+    .produto-item .info .preco {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+      font-weight: 500;
+    }
+
+    .produto-item .preco-destaque {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--amber-dark);
+      white-space: nowrap;
+    }
+
+    /* Contagem */
+    .lista-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .lista-header .section-title { margin-bottom: 0; }
+    .lista-header .count-badge {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 3px 10px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 768px) {
+      .add-row { flex-direction: column; }
+      .add-row .form-group { min-width: 100%; }
+    }
+  </style>
 </head>
 <body>
-    <button class="voltar" onclick="location.href='salao.html'">⬅ VOLTAR</button>
-    <h2>Gerenciar Cardápio</h2>
 
-    <div class="card-add">
-        <input type="text" id="nome" placeholder="Nome (Ex: Pão de Queijo)">
-        <input type="number" id="preco" step="0.01" placeholder="Preço (Ex: 5.50)">
-        <button class="btn-add" id="salvar">CADASTRAR PRODUTO</button>
+<div class="app-shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <span class="logo-icon">🍞</span>
+      <div>
+        <div class="logo-text">Sistema Cris</div>
+        <span class="logo-sub">Padaria</span>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="salao.html"     class="nav-item"><span class="nav-icon">🪑</span> Salão</a>
+      <a href="caixa.html"     class="nav-item"><span class="nav-icon">💰</span> Caixa</a>
+      <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="produtos.html"  class="nav-item active"><span class="nav-icon">🛍️</span> Cardápio</a>
+    </nav>
+  </aside>
+
+  <!-- CONTEÚDO -->
+  <div class="main-content">
+    <div class="topbar">
+      <span class="topbar-title">🛍️ Cardápio</span>
     </div>
 
-    <h3>Lista de Produtos</h3>
-    <div id="lista">Carregando...</div>
+    <div class="page-body">
+
+      <!-- ADICIONAR PRODUTO -->
+      <div class="add-card">
+        <div class="add-card-title">Adicionar produto</div>
+        <div class="add-row">
+          <div class="form-group">
+            <label class="form-label" for="nome">Nome do produto</label>
+            <input type="text" id="nome" class="form-input" placeholder="Ex: Pão de Queijo">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="preco">Preço (R$)</label>
+            <input type="number" id="preco" class="form-input" step="0.01" min="0" placeholder="5.50">
+          </div>
+          <button id="btn-salvar" class="btn btn-primary btn-lg" style="padding:11px 24px; align-self:flex-end;">
+            + Cadastrar
+          </button>
+        </div>
+        <p id="msg-form" style="color:var(--ocupada); font-size:0.82rem; margin-top:10px; min-height:18px;"></p>
+      </div>
+
+      <!-- LISTA -->
+      <div class="lista-header">
+        <div class="section-title" style="margin-bottom:0;">Produtos cadastrados</div>
+        <div class="count-badge" id="count-badge">0 itens</div>
+      </div>
+
+      <div id="lista" class="produtos-lista">
+        <div style="color:var(--text-muted); font-size:0.85rem; text-align:center; padding:32px;">
+          Carregando...
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV MOBILE -->
+  <nav class="bottom-nav">
+    <div class="bottom-nav-inner">
+      <a href="salao.html"     class="bnav-item"><span class="bnav-icon">🪑</span>Salão</a>
+      <a href="caixa.html"     class="bnav-item"><span class="bnav-icon">💰</span>Caixa</a>
+      <a href="dashboard.html" class="bnav-item"><span class="bnav-icon">📊</span>Dados</a>
+      <a href="produtos.html"  class="bnav-item active"><span class="bnav-icon">🛍️</span>Cardápio</a>
+    </div>
+  </nav>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
 
 <script type="module">
-    import { db, auth } from './firebase.js';
-    import { collection, addDoc, onSnapshot, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { db, auth } from './firebase.js';
+  import {
+    collection, addDoc, onSnapshot, doc, deleteDoc
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    auth.onAuthStateChanged(user => {
-        if (!user) return;
-        const colRef = collection(db, `produtos_${user.uid}`);
+  function showToast(msg, type = '') {
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.textContent = msg;
+    document.getElementById('toast-container').appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+  }
 
-        // Salvar com validação para evitar NaN
-        document.getElementById('salvar').onclick = async () => {
-            const n = document.getElementById('nome').value;
-            const p = parseFloat(document.getElementById('preco').value);
-            if (n && !isNaN(p)) {
-                await addDoc(colRef, { nome: n, preco: p });
-                document.getElementById('nome').value = '';
-                document.getElementById('preco').value = '';
-            } else { alert("Preencha nome e preço (use ponto para centavos)!"); }
+  function setMsg(msg) {
+    document.getElementById('msg-form').textContent = msg;
+  }
+
+  auth.onAuthStateChanged(user => {
+    if (!user) { location.href = 'index.html'; return; }
+
+    const colRef = collection(db, `produtos_${user.uid}`);
+
+    // SALVAR
+    document.getElementById('btn-salvar').onclick = async () => {
+      const nome  = document.getElementById('nome').value.trim();
+      const preco = parseFloat(document.getElementById('preco').value);
+
+      if (!nome) { setMsg('⚠️ Digite o nome do produto.'); return; }
+      if (isNaN(preco) || preco <= 0) { setMsg('⚠️ Preço inválido. Use ponto para centavos: 5.50'); return; }
+
+      setMsg('');
+      const btn = document.getElementById('btn-salvar');
+      btn.disabled = true;
+      btn.textContent = 'Salvando...';
+
+      try {
+        await addDoc(colRef, { nome, preco });
+        document.getElementById('nome').value  = '';
+        document.getElementById('preco').value = '';
+        showToast(`✅ "${nome}" cadastrado!`, 'success');
+      } catch (e) {
+        showToast('Erro ao salvar. Tente novamente.', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '+ Cadastrar';
+      }
+    };
+
+    // LISTAR
+    onSnapshot(colRef, snap => {
+      const lista = document.getElementById('lista');
+      const total = snap.size;
+      document.getElementById('count-badge').textContent = `${total} ${total === 1 ? 'item' : 'itens'}`;
+
+      if (snap.empty) {
+        lista.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">🛍️</div>
+            <p>Nenhum produto cadastrado ainda.<br>Adicione o primeiro produto acima.</p>
+          </div>
+        `;
+        return;
+      }
+
+      lista.innerHTML = '';
+      snap.forEach(pDoc => {
+        const p = pDoc.data();
+        const preco = parseFloat(p.preco || 0);
+        const div = document.createElement('div');
+        div.className = 'produto-item';
+        div.innerHTML = `
+          <div class="info">
+            <div class="nome">${p.nome}</div>
+          </div>
+          <div class="preco-destaque">R$ ${preco.toFixed(2)}</div>
+          <button class="btn btn-danger" style="padding:8px 14px; font-size:0.8rem;" data-id="${pDoc.id}">
+            Excluir
+          </button>
+        `;
+
+        div.querySelector('button').onclick = async () => {
+          if (confirm(`Excluir "${p.nome}" do cardápio?`)) {
+            await deleteDoc(doc(db, `produtos_${user.uid}`, pDoc.id));
+            showToast(`"${p.nome}" removido.`, '');
+          }
         };
 
-        // Listar com opção de excluir
-        onSnapshot(colRef, snap => {
-            const lista = document.getElementById('lista');
-            lista.innerHTML = snap.empty ? 'Nenhum produto cadastrado.' : '';
-            snap.forEach(pDoc => {
-                const p = pDoc.data();
-                const precoVal = parseFloat(p.preco || 0).toFixed(2);
-                const div = document.createElement('div');
-                div.className = 'item';
-                div.innerHTML = `
-                    <div><strong>${p.nome}</strong><br><small>R$ ${precoVal}</small></div>
-                    <button class="btn-del" onclick="apagar('${pDoc.id}')">Excluir</button>
-                `;
-                lista.appendChild(div);
-            });
-        });
-
-        window.apagar = async (id) => {
-            if (confirm("Deseja excluir este produto do cardápio?")) {
-                await deleteDoc(doc(db, `produtos_${user.uid}`, id));
-            }
-        };
+        lista.appendChild(div);
+      });
     });
+  });
 </script>
 </body>
 </html>
