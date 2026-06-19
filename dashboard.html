@@ -1,159 +1,365 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Sistema Cris</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body { font-family: sans-serif; background: #f4f7f6; padding: 15px; margin:0; }
-        .nav { background: #2c3e50; color: white; padding: 15px; margin-bottom: 20px; }
-        .card-metrica { background: white; padding: 15px; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .valor { font-size: 1.5rem; font-weight: bold; color: #27ae60; margin-top: 5px; }
-        .filtro { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
-        input[type="date"] { padding: 10px; border-radius: 8px; border: 1px solid #ddd; flex: 1; }
-        button#btn-filtrar { background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Sistema Cris</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .filtro-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 18px 20px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .filtro-row {
+      display: flex;
+      gap: 12px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .filtro-row .form-group { margin-bottom: 0; flex: 1; min-width: 140px; }
+
+    .chart-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+      margin-top: 24px;
+    }
+
+    .chart-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .empty-dashboard {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-dashboard .empty-icon { font-size: 3rem; margin-bottom: 12px; }
+    .empty-dashboard p { font-size: 0.9rem; }
+
+    /* TOP PRODUTOS */
+    .top-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .top-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: var(--bg);
+      border-radius: var(--radius-sm);
+    }
+
+    .top-item .rank {
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: var(--amber-dark);
+      width: 20px;
+    }
+
+    .top-item .nome { flex: 1; font-size: 0.88rem; font-weight: 600; padding: 0 10px; }
+    .top-item .qtd  { font-size: 0.85rem; font-weight: 700; color: var(--text-muted); }
+
+    @media (max-width: 768px) {
+      .filtro-row { flex-direction: column; }
+      .filtro-row .form-group { min-width: 100%; }
+    }
+  </style>
 </head>
 <body>
 
-<div class="nav">
-    <button onclick="location.href='salao.html'" style="background:none; border:1px solid white; color:white; padding:5px 10px; border-radius:5px; cursor:pointer;">⬅ VOLTAR</button>
-    <h2 style="margin: 10px 0 0 0;">Relatórios</h2>
+<div class="app-shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <span class="logo-icon">🍞</span>
+      <div>
+        <div class="logo-text">Sistema Cris</div>
+        <span class="logo-sub">Padaria</span>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="salao.html"     class="nav-item"><span class="nav-icon">🪑</span> Salão</a>
+      <a href="caixa.html"     class="nav-item"><span class="nav-icon">💰</span> Caixa</a>
+      <a href="dashboard.html" class="nav-item active"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="produtos.html"  class="nav-item"><span class="nav-icon">🛍️</span> Cardápio</a>
+    </nav>
+  </aside>
+
+  <!-- CONTEÚDO -->
+  <div class="main-content">
+    <div class="topbar">
+      <span class="topbar-title">📊 Dashboard</span>
+    </div>
+
+    <div class="page-body">
+
+      <!-- FILTRO -->
+      <div class="filtro-card">
+        <div class="filtro-row">
+          <div class="form-group">
+            <label class="form-label" for="data-inicio">De</label>
+            <input type="date" id="data-inicio" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="data-fim">Até</label>
+            <input type="date" id="data-fim" class="form-input">
+          </div>
+          <button id="btn-filtrar" class="btn btn-primary btn-lg" style="padding:11px 24px; align-self:flex-end;">
+            Filtrar
+          </button>
+        </div>
+      </div>
+
+      <!-- MÉTRICAS -->
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total no período</div>
+          <div class="stat-value green" id="total-periodo">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Média diária</div>
+          <div class="stat-value purple" id="previsao-venda">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Horário de pico</div>
+          <div class="stat-value amber" id="horario-pico">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Fechamentos</div>
+          <div class="stat-value blue" id="cnt-fechamentos">—</div>
+        </div>
+      </div>
+
+      <!-- GRÁFICO -->
+      <div class="chart-card" id="chart-wrapper" style="display:none;">
+        <div class="chart-title">Vendas por horário (R$)</div>
+        <canvas id="graficoVendas" style="max-height: 280px;"></canvas>
+      </div>
+
+      <!-- TOP PRODUTOS -->
+      <div class="chart-card" id="top-wrapper" style="display:none; margin-top:16px;">
+        <div class="chart-title">Produtos mais pedidos</div>
+        <div id="top-list" class="top-list"></div>
+      </div>
+
+      <!-- EMPTY STATE INICIAL -->
+      <div class="empty-dashboard" id="empty-state">
+        <div class="empty-icon">📈</div>
+        <p>Selecione um período e clique em <strong>Filtrar</strong> para ver os relatórios.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV MOBILE -->
+  <nav class="bottom-nav">
+    <div class="bottom-nav-inner">
+      <a href="salao.html"     class="bnav-item"><span class="bnav-icon">🪑</span>Salão</a>
+      <a href="caixa.html"     class="bnav-item"><span class="bnav-icon">💰</span>Caixa</a>
+      <a href="dashboard.html" class="bnav-item active"><span class="bnav-icon">📊</span>Dados</a>
+      <a href="produtos.html"  class="bnav-item"><span class="bnav-icon">🛍️</span>Cardápio</a>
+    </div>
+  </nav>
 </div>
 
-<div class="container" style="padding: 0 15px;">
-    <div class="filtro">
-        <input type="date" id="data-inicio">
-        <input type="date" id="data-fim">
-        <button id="btn-filtrar">FILTRAR</button>
-    </div>
-
-    <div class="card-metrica">
-        <small>TOTAL NO PERÍODO</small>
-        <div class="valor" id="total-periodo">R$ 0,00</div>
-    </div>
-
-    <div class="card-metrica">
-        <small>PRODUTO MAIS VENDIDO</small>
-        <div class="valor" id="produto-top" style="color: #2980b9;">-</div>
-    </div>
-
-    <div class="card-metrica">
-        <small>HORÁRIO DE PICO</small>
-        <div class="valor" id="horario-pico" style="color: #e67e22;">-</div>
-    </div>
-
-    <div class="card-metrica">
-        <small>PREVISÃO/MÉDIA DIÁRIA</small>
-        <div class="valor" id="previsao-venda" style="color: #9b59b6;">R$ 0,00</div>
-    </div>
-
-    <canvas id="graficoVendas" style="max-height: 300px; margin-top: 20px;"></canvas>
-</div>
+<div class="toast-container" id="toast-container"></div>
 
 <script type="module">
-    import { db, auth } from './firebase.js';
-    import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { db, auth } from './firebase.js';
+  import {
+    collection, query, where, getDocs, orderBy
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    let chart;
+  let chart;
 
-    auth.onAuthStateChanged(user => {
-        if (!user) return;
+  function showToast(msg, type = '') {
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.textContent = msg;
+    document.getElementById('toast-container').appendChild(el);
+    setTimeout(() => el.remove(), 3500);
+  }
 
-        document.getElementById('btn-filtrar').onclick = async () => {
-            const d1 = document.getElementById('data-inicio').value;
-            const d2 = document.getElementById('data-fim').value;
-            if(!d1 || !d2) return alert("Selecione as datas!");
+  auth.onAuthStateChanged(user => {
+    // BUG CORRIGIDO: proteção de rota
+    if (!user) { location.href = 'index.html'; return; }
 
-            // Correção do fuso horário para pegar o dia inteiro
-            const inicio = new Date(d1 + "T00:00:00");
-            const fim = new Date(d2 + "T23:59:59");
+    document.getElementById('btn-filtrar').onclick = async () => {
+      const d1 = document.getElementById('data-inicio').value;
+      const d2 = document.getElementById('data-fim').value;
 
-            const q = query(collection(db, `vendas_${user.uid}`), 
-                        where("data", ">=", inicio), 
-                        where("data", "<=", fim),
-                        orderBy("data", "asc"));
-            
-            try {
-                const snap = await getDocs(q);
-                processarDados(snap);
-            } catch (e) {
-                console.error("Erro ao filtrar:", e);
-                alert("Erro ao buscar dados. Verifique sua conexão.");
-            }
-        };
+      if (!d1 || !d2) { showToast('⚠️ Selecione as datas.', 'error'); return; }
+      if (d1 > d2) { showToast('⚠️ Data inicial maior que final.', 'error'); return; }
+
+      const btn = document.getElementById('btn-filtrar');
+      btn.disabled = true;
+      btn.textContent = 'Buscando...';
+
+      const inicio = new Date(d1 + 'T00:00:00');
+      const fim    = new Date(d2 + 'T23:59:59');
+
+      try {
+        const q = query(
+          collection(db, `vendas_${user.uid}`),
+          where('data', '>=', inicio),
+          where('data', '<=', fim),
+          orderBy('data', 'asc')
+        );
+        const snap = await getDocs(q);
+
+        if (snap.empty) {
+          showToast('Nenhuma venda encontrada nesse período.', '');
+          resetMetricas();
+        } else {
+          processarDados(snap);
+        }
+      } catch (e) {
+        console.error(e);
+        if (e.code === 'failed-precondition') {
+          showToast('Índice Firestore necessário. Verifique o console do Firebase.', 'error');
+        } else {
+          showToast('Erro ao buscar dados. Verifique sua conexão.', 'error');
+        }
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Filtrar';
+      }
+    };
+  });
+
+  function resetMetricas() {
+    document.getElementById('total-periodo').textContent = 'R$ 0,00';
+    document.getElementById('previsao-venda').textContent = 'R$ 0,00';
+    document.getElementById('horario-pico').textContent = '—';
+    document.getElementById('cnt-fechamentos').textContent = '0';
+    document.getElementById('chart-wrapper').style.display = 'none';
+    document.getElementById('top-wrapper').style.display = 'none';
+    document.getElementById('empty-state').style.display = '';
+  }
+
+  function processarDados(snap) {
+    let total = 0, produtos = {}, horas = {}, diasUnicos = new Set(), fechamentos = 0;
+
+    for (let i = 6; i <= 22; i++) horas[`${i}:00`] = 0;
+
+    snap.forEach(d => {
+      const v = d.data();
+      if (!v.data) return;
+      fechamentos++;
+
+      const dataObj = v.data.toDate();
+      total += v.valor;
+      diasUnicos.add(dataObj.toLocaleDateString());
+
+      const h = dataObj.getHours() + ':00';
+      horas[h] = (horas[h] || 0) + v.valor;
+
+      if (v.itens) {
+        v.itens.forEach(i => {
+          produtos[i.nome] = (produtos[i.nome] || 0) + 1;
+        });
+      }
     });
 
-    function processarDados(snap) {
-        let total = 0, produtos = {}, horas = {}, diasUnicos = new Set();
+    // MÉTRICAS
+    document.getElementById('total-periodo').textContent  = `R$ ${total.toFixed(2)}`;
+    document.getElementById('cnt-fechamentos').textContent = fechamentos;
 
-        // Inicia horas das 06:00 às 22:00 para o gráfico não ter buracos
-        for (let i = 6; i <= 22; i++) {
-            horas[`${i}:00`] = 0;
+    const media = total / (diasUnicos.size || 1);
+    document.getElementById('previsao-venda').textContent = `R$ ${media.toFixed(2)}`;
+
+    const pico = Object.entries(horas).sort((a, b) => b[1] - a[1])[0];
+    document.getElementById('horario-pico').textContent = pico && pico[1] > 0 ? pico[0] : '—';
+
+    // GRÁFICO
+    document.getElementById('chart-wrapper').style.display = '';
+    document.getElementById('empty-state').style.display  = 'none';
+    renderGrafico(horas);
+
+    // TOP PRODUTOS
+    const topProdutos = Object.entries(produtos).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    if (topProdutos.length > 0) {
+      document.getElementById('top-wrapper').style.display = '';
+      document.getElementById('top-list').innerHTML = topProdutos.map(([nome, qtd], idx) => `
+        <div class="top-item">
+          <span class="rank">#${idx + 1}</span>
+          <span class="nome">${nome}</span>
+          <span class="qtd">${qtd}×</span>
+        </div>
+      `).join('');
+    }
+  }
+
+  function renderGrafico(dados) {
+    const ctx = document.getElementById('graficoVendas').getContext('2d');
+    if (chart) chart.destroy();
+
+    const labels = Object.keys(dados).sort((a, b) => parseInt(a) - parseInt(b));
+    const values = labels.map(h => dados[h]);
+
+    chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Vendas (R$)',
+          data: values,
+          backgroundColor: labels.map(h => {
+            const hr = parseInt(h);
+            // horário de pico fica em âmbar, resto em azul suave
+            const maxVal = Math.max(...values);
+            return dados[h] === maxVal && maxVal > 0
+              ? '#E8A87C'
+              : 'rgba(59, 130, 246, 0.6)';
+          }),
+          borderRadius: 6,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(0,0,0,0.04)' },
+            ticks: { font: { size: 11 }, callback: v => 'R$' + v }
+          },
+          x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => `R$ ${ctx.parsed.y.toFixed(2)}`
+            }
+          }
         }
-
-        snap.forEach(doc => {
-            const v = doc.data();
-            if (!v.data) return;
-
-            const dataObj = v.data.toDate();
-            total += v.valor;
-            diasUnicos.add(dataObj.toLocaleDateString());
-
-            const h = dataObj.getHours() + ":00";
-            if (horas[h] !== undefined) {
-                horas[h] += v.valor;
-            } else {
-                horas[h] = v.valor;
-            }
-
-            if(v.itens) {
-                v.itens.forEach(i => { produtos[i.nome] = (produtos[i.nome] || 0) + 1; });
-            }
-        });
-
-        // Atualização dos Cards
-        document.getElementById('total-periodo').innerText = `R$ ${total.toFixed(2)}`;
-        
-        const top = Object.entries(produtos).sort((a,b)=>b[1]-a[1])[0];
-        document.getElementById('produto-top').innerText = top ? `${top[0]} (${top[1]}x)` : "-";
-
-        const pico = Object.entries(horas).sort((a,b)=>b[1]-a[1])[0];
-        document.getElementById('horario-pico').innerText = pico && pico[1] > 0 ? pico[0] : "-";
-
-        const media = total / (diasUnicos.size || 1);
-        document.getElementById('previsao-venda').innerText = `R$ ${media.toFixed(2)}`;
-
-        renderGrafico(horas);
-    }
-
-    function renderGrafico(dados) {
-        const ctx = document.getElementById('graficoVendas').getContext('2d');
-        if(chart) chart.destroy();
-
-        // Ordenação correta das horas para o gráfico de barras
-        const labelsOrdenadas = Object.keys(dados).sort((a, b) => parseInt(a) - parseInt(b));
-        const valoresOrdenados = labelsOrdenadas.map(h => dados[h]);
-
-        chart = new Chart(ctx, {
-            type: 'bar', 
-            data: {
-                labels: labelsOrdenadas,
-                datasets: [{
-                    label: 'Vendas R$',
-                    data: valoresOrdenados,
-                    backgroundColor: '#3498db',
-                    borderRadius: 5
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: { y: { beginAtZero: true } },
-                plugins: { legend: { display: false } }
-            }
-        });
-    }
+      }
+    });
+  }
 </script>
 </body>
 </html>
