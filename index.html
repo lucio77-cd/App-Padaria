@@ -1,92 +1,323 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css">
-    <title>Login - Sistema Padaria</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema Cris — Entrar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <style>
+    :root {
+      --navy: #1A1A2E; --navy-mid: #16213E;
+      --amber: #E8A87C; --amber-dark: #C8845A;
+      --bg: #F0F4F8; --card: #FFFFFF;
+      --text: #1A1A2E; --text-muted: #6B7280;
+      --border: #E5E7EB; --ocupada: #EF4444;
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--navy);
+      min-height: 100vh;
+      display: flex;
+      -webkit-font-smoothing: antialiased;
+    }
 
+    /* PAINEL ESQUERDO — desktop */
+    .login-left {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 60px;
+      background: linear-gradient(145deg, var(--navy) 0%, #0F3460 100%);
+    }
+
+    .brand-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(232,168,124,0.12);
+      border: 1px solid rgba(232,168,124,0.3);
+      border-radius: 999px;
+      padding: 6px 14px;
+      margin-bottom: 28px;
+    }
+    .brand-badge span { font-size: 1rem; }
+    .brand-badge p {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--amber);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .login-left h1 {
+      font-size: clamp(2rem, 4vw, 3.2rem);
+      font-weight: 800;
+      color: #FFFFFF;
+      line-height: 1.15;
+      margin-bottom: 16px;
+    }
+
+    .login-left h1 em {
+      font-style: normal;
+      color: var(--amber);
+    }
+
+    .login-left p {
+      font-size: 0.95rem;
+      color: rgba(255,255,255,0.55);
+      max-width: 360px;
+      line-height: 1.6;
+    }
+
+    .features {
+      margin-top: 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: rgba(255,255,255,0.7);
+      font-size: 0.875rem;
+    }
+
+    .feature-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--amber);
+      flex-shrink: 0;
+    }
+
+    /* PAINEL DIREITO — formulário */
+    .login-right {
+      width: 440px;
+      background: var(--card);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 48px 40px;
+    }
+
+    .login-header { margin-bottom: 32px; }
+    .login-header h2 { font-size: 1.5rem; font-weight: 800; color: var(--navy); margin-bottom: 6px; }
+    .login-header p  { font-size: 0.875rem; color: var(--text-muted); }
+
+    .btn-google {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 13px;
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      margin-bottom: 24px;
+    }
+    .btn-google:hover { background: var(--bg); border-color: var(--amber); }
+    .btn-google img { width: 18px; height: 18px; }
+
+    .divider-or {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .divider-or::before,
+    .divider-or::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .form-group { margin-bottom: 14px; }
+    .form-label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .form-input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      color: var(--text);
+      transition: border-color 0.15s, box-shadow 0.15s;
+      outline: none;
+    }
+    .form-input:focus {
+      border-color: var(--amber);
+      box-shadow: 0 0 0 3px rgba(232,168,124,0.2);
+    }
+
+    .btn-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+
+    .btn-primary {
+      width: 100%; padding: 13px;
+      background: var(--navy); color: white;
+      border: none; border-radius: 10px;
+      font-family: inherit; font-weight: 700;
+      font-size: 0.95rem; cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn-primary:hover { background: var(--navy-mid); }
+    .btn-primary:active { transform: scale(0.98); }
+
+    .btn-outline {
+      width: 100%; padding: 13px;
+      background: transparent; color: var(--navy);
+      border: 1.5px solid var(--navy); border-radius: 10px;
+      font-family: inherit; font-weight: 600;
+      font-size: 0.95rem; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-outline:hover { background: var(--bg); }
+
+    .msg-erro {
+      color: var(--ocupada);
+      font-size: 0.82rem;
+      font-weight: 500;
+      text-align: center;
+      margin-top: 14px;
+      min-height: 20px;
+    }
+
+    /* MOBILE: oculta painel esquerdo */
+    @media (max-width: 768px) {
+      .login-left { display: none; }
+      .login-right {
+        width: 100%;
+        padding: 40px 24px;
+        justify-content: center;
+      }
+    }
+  </style>
 </head>
 <body>
 
-    <div class="card-auth">
-        <div style="text-align: center; margin-bottom: 20px;">
-            <h1 style="font-size: 2.5rem;">🍞</h1>
-            <h2 style="color: var(--dark);">Sistema Cris</h2>
-        </div>
+  <!-- PAINEL ESQUERDO -->
+  <div class="login-left">
+    <div class="brand-badge">
+      <span>🍞</span>
+      <p>Sistema Cris</p>
+    </div>
+    <h1>Gestão de mesas<br>na palma da <em>mão.</em></h1>
+    <p>Controle pedidos, finalize contas e acompanhe as vendas do seu estabelecimento em tempo real.</p>
+    <div class="features">
+      <div class="feature-item"><div class="feature-dot"></div>Mesas em tempo real, sem atualizar a página</div>
+      <div class="feature-item"><div class="feature-dot"></div>Cardápio digital e pedidos por mesa</div>
+      <div class="feature-item"><div class="feature-dot"></div>Dashboard com relatórios de vendas</div>
+    </div>
+  </div>
 
-        <button id="btn-google" class="btn-principal" style="background: white; color: #444; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 20px;">
-            <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" width="20" alt="G">
-            ENTRAR COM GOOGLE
-        </button>
-
-        <div style="text-align: center; margin-bottom: 20px; color: #999; font-size: 0.7rem; letter-spacing: 1px;">OU E-MAIL E SENHA</div>
-
-        <input type="email" id="email" placeholder="E-mail" class="input-padrao">
-        <input type="password" id="senha" placeholder="Senha" class="input-padrao">
-        
-        <button id="btn-entrar" class="btn-principal">ENTRAR</button>
-        <button id="btn-cadastro" class="btn-principal" style="background: transparent; color: var(--dark); border: 1.5px solid var(--dark); margin-top: 10px;">CRIAR CONTA</button>
-
-        <p id="msg-erro" style="color: #e74c3c; text-align: center; margin-top: 15px; font-size: 0.85rem; min-height: 20px;"></p>
+  <!-- PAINEL DIREITO -->
+  <div class="login-right">
+    <div class="login-header">
+      <h2>Bem-vinda, Cris 👋</h2>
+      <p>Entre na sua conta para continuar.</p>
     </div>
 
-    <script type="module">
-        import { auth } from './firebase.js';
-        import { 
-            signInWithEmailAndPassword, 
-            createUserWithEmailAndPassword,
-            onAuthStateChanged,
-            GoogleAuthProvider,
-            signInWithPopup
-        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    <button id="btn-google" class="btn-google">
+      <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" alt="G">
+      Entrar com Google
+    </button>
 
-        const msgErro = document.getElementById('msg-erro');
-        const campoEmail = document.getElementById('email');
-        const campoSenha = document.getElementById('senha');
+    <div class="divider-or">ou e-mail e senha</div>
 
-        // Função para validar campos antes de chamar o Firebase
-        function camposValidos() {
-            if (campoEmail.value.trim() === "" || campoSenha.value === "") {
-                msgErro.innerText = "⚠️ Digite e-mail e senha primeiro!";
-                return false;
-            }
-            return true;
-        }
+    <div class="form-group">
+      <label class="form-label" for="email">E-mail</label>
+      <input type="email" id="email" class="form-input" placeholder="seu@email.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="senha">Senha</label>
+      <input type="password" id="senha" class="form-input" placeholder="••••••••">
+    </div>
 
-        // Login Google
-        document.getElementById('btn-google').onclick = () => {
-            const provider = new GoogleAuthProvider();
-            signInWithPopup(auth, provider)
-                .catch((error) => msgErro.innerText = "Erro Google: " + error.message);
-        };
+    <div class="btn-actions">
+      <button id="btn-entrar" class="btn-primary">Entrar</button>
+      <button id="btn-cadastro" class="btn-outline">Criar conta</button>
+    </div>
 
-        // Login E-mail
-        document.getElementById('btn-entrar').onclick = () => {
-            if (!camposValidos()) return;
-            signInWithEmailAndPassword(auth, campoEmail.value.trim(), campoSenha.value)
-                .catch(() => msgErro.innerText = "E-mail ou senha incorretos.");
-        };
+    <p class="msg-erro" id="msg-erro"></p>
+  </div>
 
-        // Criar Conta
-        document.getElementById('btn-cadastro').onclick = () => {
-            if (!camposValidos()) return;
-            if (campoSenha.value.length < 6) {
-                msgErro.innerText = "A senha deve ter 6 ou mais dígitos.";
-                return;
-            }
-            createUserWithEmailAndPassword(auth, campoEmail.value.trim(), campoSenha.value)
-                .catch((error) => {
-                    if(error.code === 'auth/invalid-email') msgErro.innerText = "E-mail inválido!";
-                    else msgErro.innerText = "Erro: " + error.message;
-                });
-        };
+  <script type="module">
+    import { auth } from './firebase.js';
+    import {
+      signInWithEmailAndPassword,
+      createUserWithEmailAndPassword,
+      onAuthStateChanged,
+      GoogleAuthProvider,
+      signInWithPopup
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-        onAuthStateChanged(auth, (user) => {
-            if (user) window.location.href = 'salao.html';
+    const msgErro   = document.getElementById('msg-erro');
+    const campoEmail = document.getElementById('email');
+    const campoSenha = document.getElementById('senha');
+
+    function setErro(msg) { msgErro.innerText = msg || ''; }
+
+    function camposValidos() {
+      if (!campoEmail.value.trim() || !campoSenha.value) {
+        setErro('⚠️ Digite e-mail e senha primeiro.');
+        return false;
+      }
+      return true;
+    }
+
+    document.getElementById('btn-google').onclick = () => {
+      setErro('');
+      signInWithPopup(auth, new GoogleAuthProvider())
+        .catch(e => setErro('Erro Google: ' + e.message));
+    };
+
+    document.getElementById('btn-entrar').onclick = () => {
+      if (!camposValidos()) return;
+      setErro('');
+      signInWithEmailAndPassword(auth, campoEmail.value.trim(), campoSenha.value)
+        .catch(() => setErro('E-mail ou senha incorretos.'));
+    };
+
+    document.getElementById('btn-cadastro').onclick = () => {
+      if (!camposValidos()) return;
+      if (campoSenha.value.length < 6) { setErro('A senha deve ter 6 ou mais dígitos.'); return; }
+      setErro('');
+      createUserWithEmailAndPassword(auth, campoEmail.value.trim(), campoSenha.value)
+        .catch(e => {
+          if (e.code === 'auth/invalid-email') setErro('E-mail inválido!');
+          else if (e.code === 'auth/email-already-in-use') setErro('E-mail já cadastrado.');
+          else setErro('Erro: ' + e.message);
         });
-    </script>
+    };
+
+    onAuthStateChanged(auth, user => {
+      if (user) window.location.href = 'salao.html';
+    });
+  </script>
 </body>
 </html>
-
