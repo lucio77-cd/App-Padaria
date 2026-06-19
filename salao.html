@@ -184,9 +184,12 @@
   <div class="main-content">
     <div class="topbar">
       <span class="topbar-title">🪑 Salão</span>
-      <div class="topbar-right">
+      <div class="topbar-right" style="gap:8px; display:flex; align-items:center;">
         <button id="btn-config-mesas" class="btn btn-ghost" style="font-size:0.8rem; padding:7px 12px;">
           ⚙️ Mesas
+        </button>
+        <button id="btn-sair-mobile" class="btn btn-ghost" style="font-size:0.8rem; padding:7px 12px; color:#EF4444; border-color:#EF4444;">
+          🚪 Sair
         </button>
       </div>
     </div>
@@ -280,9 +283,11 @@
   auth.onAuthStateChanged(async user => {
     if (!user) { location.href = 'index.html'; return; }
 
-    document.getElementById('btn-sair').onclick = async () => {
-      if (confirm('Deseja sair?')) { await signOut(auth); location.href = 'index.html'; }
+    const fnSair = async () => {
+      if (confirm('Deseja sair do sistema?')) { await signOut(auth); location.href = 'index.html'; }
     };
+    document.getElementById('btn-sair').onclick = fnSair;
+    document.getElementById('btn-sair-mobile').onclick = fnSair;
 
     // Referência de configuração do usuário
     const configRef = doc(db, `config_${user.uid}`, 'salao');
@@ -309,20 +314,20 @@
     // Escuta de mesas em tempo real
     const mesasRef = collection(db, `mesas_${user.uid}`);
 
-    onSnapshot(mesasRef, snap => {
-      // Monta mapa com dados do Firestore
-      const dados = {};
-      snap.forEach(d => { dados[d.id] = d.data(); });
+    // Guarda último snapshot de mesas para poder re-renderizar sem novo fetch
+    let ultimosDados = {};
 
-      renderMesas(dados);
+    onSnapshot(mesasRef, snap => {
+      ultimosDados = {};
+      snap.forEach(d => { ultimosDados[d.id] = d.data(); });
+      renderMesas(ultimosDados);
     });
 
-    // Escuta mudanças na config (ex: outra aba mudou o nº de mesas)
+    // Escuta mudanças na config — RE-RENDERIZA com os dados já em memória
     onSnapshot(configRef, snap => {
       if (snap.exists()) {
         qtdMesas = snap.data().totalMesas || 11;
-        // Força re-render com dados actuais (sem novo fetch)
-        // O onSnapshot de mesas vai disparar naturalmente
+        renderMesas(ultimosDados); // ← FIX: força re-render com novo qtdMesas
       }
     });
 
