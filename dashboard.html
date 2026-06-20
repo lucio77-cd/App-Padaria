@@ -7,83 +7,240 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
+    /* FILTRO */
     .filtro-card {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: var(--radius-md);
-      padding: 18px 20px;
-      margin-bottom: 24px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
       box-shadow: var(--shadow-sm);
     }
 
     .filtro-row {
       display: flex;
-      gap: 12px;
+      gap: 10px;
       align-items: flex-end;
       flex-wrap: wrap;
     }
 
-    .filtro-row .form-group { margin-bottom: 0; flex: 1; min-width: 140px; }
+    .filtro-row .form-group { margin-bottom: 0; flex: 1; min-width: 130px; }
 
+    /* FIX: input date no mobile */
+    input[type="date"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: 0.95rem;
+      color: var(--text);
+      background: var(--card);
+      outline: none;
+    }
+    input[type="date"]:focus {
+      border-color: var(--amber);
+      box-shadow: 0 0 0 3px rgba(232,168,124,0.2);
+    }
+
+    /* ATALHOS DE PERÍODO */
+    .periodo-chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .chip {
+      padding: 5px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .chip:hover, .chip.active {
+      background: var(--navy);
+      color: white;
+      border-color: var(--navy);
+    }
+
+    /* GRID MÉTRICAS */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .metric-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .metric-card::before {
+      content: attr(data-icon);
+      position: absolute;
+      right: 10px; bottom: 6px;
+      font-size: 2.2rem;
+      opacity: 0.08;
+      line-height: 1;
+    }
+
+    .metric-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .metric-val {
+      font-size: 1.3rem;
+      font-weight: 800;
+      line-height: 1;
+      color: var(--navy);
+    }
+
+    .metric-val.green  { color: #059669; }
+    .metric-val.amber  { color: var(--amber-dark); }
+    .metric-val.blue   { color: #2563EB; }
+    .metric-val.purple { color: #7C3AED; }
+    .metric-val.teal   { color: #0D9488; }
+    .metric-val.rose   { color: #E11D48; }
+
+    .metric-sub {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+      font-weight: 500;
+    }
+
+    /* CHART CARDS */
     .chart-card {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: var(--radius-md);
-      padding: 20px;
+      padding: 18px 20px;
       box-shadow: var(--shadow-sm);
-      margin-top: 24px;
+      margin-bottom: 14px;
+    }
+
+    .chart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
     }
 
     .chart-title {
-      font-size: 0.78rem;
+      font-size: 0.72rem;
       font-weight: 700;
       letter-spacing: 0.07em;
       text-transform: uppercase;
       color: var(--text-muted);
-      margin-bottom: 16px;
     }
 
-    .empty-dashboard {
-      text-align: center;
-      padding: 48px 20px;
+    .chart-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: var(--bg);
+      border: 1px solid var(--border);
       color: var(--text-muted);
     }
 
-    .empty-dashboard .empty-icon { font-size: 3rem; margin-bottom: 12px; }
-    .empty-dashboard p { font-size: 0.9rem; }
+    canvas { max-height: 220px; }
 
     /* TOP PRODUTOS */
-    .top-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-top: 8px;
-    }
+    .top-list { display: flex; flex-direction: column; gap: 8px; }
 
     .top-item {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 10px 14px;
-      background: var(--bg);
+      gap: 10px;
+      padding: 10px 12px;
       border-radius: var(--radius-sm);
+      background: var(--bg);
     }
 
-    .top-item .rank {
-      font-size: 0.75rem;
+    .top-rank {
+      font-size: 0.7rem;
       font-weight: 800;
       color: var(--amber-dark);
-      width: 20px;
+      width: 22px;
+      text-align: center;
     }
 
-    .top-item .nome { flex: 1; font-size: 0.88rem; font-weight: 600; padding: 0 10px; }
-    .top-item .qtd  { font-size: 0.85rem; font-weight: 700; color: var(--text-muted); }
+    .top-nome { flex: 1; font-size: 0.85rem; font-weight: 600; color: var(--text); }
+    .top-bar-wrap { width: 80px; background: var(--border); border-radius: 999px; height: 6px; }
+    .top-bar { height: 6px; border-radius: 999px; background: var(--amber); }
+    .top-qtd { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); min-width: 28px; text-align: right; }
 
-    @media (max-width: 768px) {
-      .filtro-row { flex-direction: column; }
-      .filtro-row .form-group { min-width: 100%; }
+    /* PERMANÊNCIA */
+    .perm-lista { display: flex; flex-direction: column; gap: 8px; }
+
+    .perm-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+    }
+
+    .perm-mesa { font-size: 0.78rem; font-weight: 700; color: var(--navy); }
+    .perm-hora { font-size: 0.72rem; color: var(--text-muted); }
+    .perm-tempo {
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: var(--teal, #0D9488);
+    }
+    .perm-valor { font-size: 0.78rem; color: var(--text-muted); font-weight: 600; }
+
+    /* EMPTY */
+    .empty-dash {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--text-muted);
+    }
+    .empty-dash .ei { font-size: 3rem; margin-bottom: 12px; }
+    .empty-dash p   { font-size: 0.88rem; line-height: 1.6; }
+
+    /* SEÇÃO TITLE */
+    .section-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 20px 0 12px;
+    }
+    .section-row h3 {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 480px) {
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .metric-val   { font-size: 1.1rem; }
+    }
+    @media (min-width: 769px) {
+      .metrics-grid { grid-template-columns: repeat(3, 1fr); }
     }
   </style>
 </head>
@@ -118,59 +275,108 @@
 
       <!-- FILTRO -->
       <div class="filtro-card">
-        <div class="filtro-row">
+        <!-- Atalhos rápidos -->
+        <div class="periodo-chips">
+          <div class="chip active" data-d="0">Hoje</div>
+          <div class="chip" data-d="6">7 dias</div>
+          <div class="chip" data-d="29">30 dias</div>
+          <div class="chip" data-d="custom">Personalizado</div>
+        </div>
+
+        <div class="filtro-row" id="filtro-custom" style="display:none;">
           <div class="form-group">
-            <label class="form-label" for="data-inicio">De</label>
-            <input type="date" id="data-inicio" class="form-input">
+            <label class="form-label">De</label>
+            <input type="date" id="data-inicio">
           </div>
           <div class="form-group">
-            <label class="form-label" for="data-fim">Até</label>
-            <input type="date" id="data-fim" class="form-input">
+            <label class="form-label">Até</label>
+            <input type="date" id="data-fim">
           </div>
-          <button id="btn-filtrar" class="btn btn-primary btn-lg" style="padding:11px 24px; align-self:flex-end;">
+          <button id="btn-filtrar" class="btn btn-primary" style="padding:11px 20px; align-self:flex-end;">
             Filtrar
           </button>
         </div>
       </div>
 
-      <!-- MÉTRICAS -->
-      <div class="stat-grid">
-        <div class="stat-card">
-          <div class="stat-label">Total no período</div>
-          <div class="stat-value green" id="total-periodo">—</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Média diária</div>
-          <div class="stat-value purple" id="previsao-venda">—</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Horário de pico</div>
-          <div class="stat-value amber" id="horario-pico">—</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Fechamentos</div>
-          <div class="stat-value blue" id="cnt-fechamentos">—</div>
-        </div>
+      <!-- EMPTY STATE -->
+      <div class="empty-dash" id="empty-state">
+        <div class="ei">📈</div>
+        <p>Selecione um período acima<br>para ver os relatórios.</p>
       </div>
 
-      <!-- GRÁFICO -->
-      <div class="chart-card" id="chart-wrapper" style="display:none;">
-        <div class="chart-title">Vendas por horário (R$)</div>
-        <canvas id="graficoVendas" style="max-height: 280px;"></canvas>
-      </div>
+      <!-- RESULTADOS (ocultos até filtrar) -->
+      <div id="resultados" style="display:none;">
 
-      <!-- TOP PRODUTOS -->
-      <div class="chart-card" id="top-wrapper" style="display:none; margin-top:16px;">
-        <div class="chart-title">Produtos mais pedidos</div>
-        <div id="top-list" class="top-list"></div>
-      </div>
+        <!-- MÉTRICAS PRINCIPAIS -->
+        <div class="metrics-grid">
+          <div class="metric-card" data-icon="💰">
+            <div class="metric-label">Total no período</div>
+            <div class="metric-val green" id="m-total">—</div>
+            <div class="metric-sub" id="m-total-sub"></div>
+          </div>
+          <div class="metric-card" data-icon="🧾">
+            <div class="metric-label">Fechamentos</div>
+            <div class="metric-val blue" id="m-fechamentos">—</div>
+            <div class="metric-sub" id="m-fech-sub"></div>
+          </div>
+          <div class="metric-card" data-icon="📅">
+            <div class="metric-label">Média diária</div>
+            <div class="metric-val purple" id="m-media">—</div>
+            <div class="metric-sub" id="m-media-sub"></div>
+          </div>
+          <div class="metric-card" data-icon="🕐">
+            <div class="metric-label">Horário de pico</div>
+            <div class="metric-val amber" id="m-pico">—</div>
+            <div class="metric-sub" id="m-pico-sub"></div>
+          </div>
+          <div class="metric-card" data-icon="⏱️">
+            <div class="metric-label">Permanência média</div>
+            <div class="metric-val teal" id="m-perm">—</div>
+            <div class="metric-sub" id="m-perm-sub"></div>
+          </div>
+          <div class="metric-card" data-icon="🏆">
+            <div class="metric-label">Ticket médio</div>
+            <div class="metric-val rose" id="m-ticket">—</div>
+            <div class="metric-sub" id="m-ticket-sub"></div>
+          </div>
+        </div>
 
-      <!-- EMPTY STATE INICIAL -->
-      <div class="empty-dashboard" id="empty-state">
-        <div class="empty-icon">📈</div>
-        <p>Selecione um período e clique em <strong>Filtrar</strong> para ver os relatórios.</p>
-      </div>
+        <!-- GRÁFICO VENDAS POR HORA -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <span class="chart-title">💹 Vendas por horário</span>
+            <span class="chart-badge" id="badge-hora">—</span>
+          </div>
+          <canvas id="grafico-hora"></canvas>
+        </div>
 
+        <!-- GRÁFICO VENDAS POR DIA -->
+        <div class="chart-card" id="wrap-dia" style="display:none;">
+          <div class="chart-header">
+            <span class="chart-title">📆 Vendas por dia</span>
+            <span class="chart-badge" id="badge-dia">—</span>
+          </div>
+          <canvas id="grafico-dia"></canvas>
+        </div>
+
+        <!-- TOP PRODUTOS -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <span class="chart-title">🏆 Produtos mais pedidos</span>
+          </div>
+          <div id="top-list" class="top-list"></div>
+        </div>
+
+        <!-- PERMANÊNCIA POR ATENDIMENTO -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <span class="chart-title">⏱️ Permanência por atendimento</span>
+            <span class="chart-badge" id="badge-perm">últimos 10</span>
+          </div>
+          <div id="perm-lista" class="perm-lista"></div>
+        </div>
+
+      </div><!-- /resultados -->
     </div>
   </div>
 
@@ -189,12 +395,18 @@
 
 <script type="module">
   import { db, auth } from './firebase.js';
-  import {
-    collection, query, where, getDocs, orderBy
-  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { collection, query, where, getDocs, orderBy, Timestamp }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  let chart;
+  // ─── CHARTS ───────────────────────────────────────────────────
+  let chartHora, chartDia;
 
+  function destroyCharts() {
+    if (chartHora) { chartHora.destroy(); chartHora = null; }
+    if (chartDia)  { chartDia.destroy();  chartDia  = null; }
+  }
+
+  // ─── TOAST ────────────────────────────────────────────────────
   function showToast(msg, type = '') {
     const el = document.createElement('div');
     el.className = `toast ${type}`;
@@ -203,162 +415,275 @@
     setTimeout(() => el.remove(), 3500);
   }
 
-  auth.onAuthStateChanged(user => {
-    // BUG CORRIGIDO: proteção de rota
-    if (!user) { location.href = 'index.html'; return; }
+  // ─── CHIPS DE PERÍODO ─────────────────────────────────────────
+  function setDatas(dias) {
+    const hoje = new Date();
+    const ini  = new Date();
+    ini.setDate(hoje.getDate() - dias);
 
-    document.getElementById('btn-filtrar').onclick = async () => {
-      const d1 = document.getElementById('data-inicio').value;
-      const d2 = document.getElementById('data-fim').value;
+    const fmt = d => d.toISOString().split('T')[0];
+    document.getElementById('data-inicio').value = fmt(ini);
+    document.getElementById('data-fim').value    = fmt(hoje);
+  }
 
-      if (!d1 || !d2) { showToast('⚠️ Selecione as datas.', 'error'); return; }
-      if (d1 > d2) { showToast('⚠️ Data inicial maior que final.', 'error'); return; }
+  document.querySelectorAll('.chip').forEach(chip => {
+    chip.onclick = () => {
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
 
-      const btn = document.getElementById('btn-filtrar');
-      btn.disabled = true;
-      btn.textContent = 'Buscando...';
-
-      const inicio = new Date(d1 + 'T00:00:00');
-      const fim    = new Date(d2 + 'T23:59:59');
-
-      try {
-        const q = query(
-          collection(db, `vendas_${user.uid}`),
-          where('data', '>=', inicio),
-          where('data', '<=', fim),
-          orderBy('data', 'asc')
-        );
-        const snap = await getDocs(q);
-
-        if (snap.empty) {
-          showToast('Nenhuma venda encontrada nesse período.', '');
-          resetMetricas();
-        } else {
-          processarDados(snap);
-        }
-      } catch (e) {
-        console.error(e);
-        if (e.code === 'failed-precondition') {
-          showToast('Índice Firestore necessário. Verifique o console do Firebase.', 'error');
-        } else {
-          showToast('Erro ao buscar dados. Verifique sua conexão.', 'error');
-        }
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Filtrar';
+      const d = chip.dataset.d;
+      if (d === 'custom') {
+        document.getElementById('filtro-custom').style.display = 'flex';
+      } else {
+        document.getElementById('filtro-custom').style.display = 'none';
+        setDatas(parseInt(d));
+        buscarDados();
       }
     };
   });
 
-  function resetMetricas() {
-    document.getElementById('total-periodo').textContent = 'R$ 0,00';
-    document.getElementById('previsao-venda').textContent = 'R$ 0,00';
-    document.getElementById('horario-pico').textContent = '—';
-    document.getElementById('cnt-fechamentos').textContent = '0';
-    document.getElementById('chart-wrapper').style.display = 'none';
-    document.getElementById('top-wrapper').style.display = 'none';
-    document.getElementById('empty-state').style.display = '';
+  document.getElementById('btn-filtrar').onclick = buscarDados;
+
+  // ─── FIREBASE ─────────────────────────────────────────────────
+  let currentUser = null;
+
+  auth.onAuthStateChanged(user => {
+    if (!user) { location.href = 'index.html'; return; }
+    currentUser = user;
+    // Carrega "Hoje" ao abrir
+    setDatas(0);
+    buscarDados();
+  });
+
+  async function buscarDados() {
+    if (!currentUser) return;
+
+    const d1 = document.getElementById('data-inicio').value;
+    const d2 = document.getElementById('data-fim').value;
+    if (!d1 || !d2) return;
+
+    const inicio = new Date(d1 + 'T00:00:00');
+    const fim    = new Date(d2 + 'T23:59:59');
+
+    try {
+      const q = query(
+        collection(db, `vendas_${currentUser.uid}`),
+        where('data', '>=', Timestamp.fromDate(inicio)),
+        where('data', '<=', Timestamp.fromDate(fim)),
+        orderBy('data', 'asc')
+      );
+      const snap = await getDocs(q);
+      document.getElementById('empty-state').style.display   = snap.empty ? '' : 'none';
+      document.getElementById('resultados').style.display    = snap.empty ? 'none' : '';
+
+      if (!snap.empty) processarDados(snap, inicio, fim);
+    } catch(e) {
+      console.error(e);
+      if (e.code === 'failed-precondition') {
+        showToast('Crie o índice composto no Firebase Console (data ASC).', 'error');
+      } else {
+        showToast(`Erro: ${e.message}`, 'error');
+      }
+    }
   }
 
-  function processarDados(snap) {
-    let total = 0, produtos = {}, horas = {}, diasUnicos = new Set(), fechamentos = 0;
+  // ─── PROCESSAR ────────────────────────────────────────────────
+  function processarDados(snap, inicio, fim) {
+    destroyCharts();
 
-    for (let i = 6; i <= 22; i++) horas[`${i}:00`] = 0;
+    let totalGeral = 0;
+    let fechamentos = 0;
+    const produtos  = {};
+    const horas     = {};
+    const dias      = {};
+    const diasSet   = new Set();
+    const permanencias = []; // [{mesa, duracaoMin, valor, hora}]
+
+    // Init horas 6h–23h
+    for (let i = 6; i <= 23; i++) horas[`${String(i).padStart(2,'0')}h`] = 0;
 
     snap.forEach(d => {
       const v = d.data();
       if (!v.data) return;
       fechamentos++;
 
-      const dataObj = v.data.toDate();
-      total += v.valor;
-      diasUnicos.add(dataObj.toLocaleDateString());
+      const dt    = v.data.toDate();
+      const valor = v.valor || 0;
+      totalGeral += valor;
+      diasSet.add(dt.toLocaleDateString('pt-BR'));
 
-      const h = dataObj.getHours() + ':00';
-      horas[h] = (horas[h] || 0) + v.valor;
+      // Por hora
+      const hKey = `${String(dt.getHours()).padStart(2,'0')}h`;
+      horas[hKey] = (horas[hKey] || 0) + valor;
 
-      if (v.itens) {
-        v.itens.forEach(i => {
-          produtos[i.nome] = (produtos[i.nome] || 0) + 1;
+      // Por dia
+      const dKey = dt.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' });
+      dias[dKey] = (dias[dKey] || 0) + valor;
+
+      // Produtos
+      (v.itens || []).forEach(i => {
+        produtos[i.nome] = (produtos[i.nome] || 0) + 1;
+      });
+
+      // Permanência
+      if (v.duracaoMin != null && v.duracaoMin >= 0) {
+        permanencias.push({
+          mesa:       v.mesa,
+          duracaoMin: v.duracaoMin,
+          valor:      valor,
+          hora:       dt.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' }),
+          dia:        dKey
         });
       }
     });
 
-    // MÉTRICAS
-    document.getElementById('total-periodo').textContent  = `R$ ${total.toFixed(2)}`;
-    document.getElementById('cnt-fechamentos').textContent = fechamentos;
+    // ── MÉTRICAS ──────────────────────────────────────────────
+    const numDias  = diasSet.size || 1;
+    const media    = totalGeral / numDias;
+    const ticket   = totalGeral / (fechamentos || 1);
+    const permMedia = permanencias.length > 0
+      ? permanencias.reduce((s, p) => s + p.duracaoMin, 0) / permanencias.length
+      : null;
 
-    const media = total / (diasUnicos.size || 1);
-    document.getElementById('previsao-venda').textContent = `R$ ${media.toFixed(2)}`;
+    // Pico de hora
+    const picoEntry = Object.entries(horas).sort((a,b) => b[1]-a[1])[0];
+    const picoHora  = picoEntry && picoEntry[1] > 0 ? picoEntry[0] : null;
 
-    const pico = Object.entries(horas).sort((a, b) => b[1] - a[1])[0];
-    document.getElementById('horario-pico').textContent = pico && pico[1] > 0 ? pico[0] : '—';
+    // Preenche cards
+    document.getElementById('m-total').textContent       = `R$ ${totalGeral.toFixed(2)}`;
+    document.getElementById('m-total-sub').textContent   = `em ${numDias} dia${numDias>1?'s':''}`;
+    document.getElementById('m-fechamentos').textContent  = fechamentos;
+    document.getElementById('m-fech-sub').textContent    = `atendimentos`;
+    document.getElementById('m-media').textContent       = `R$ ${media.toFixed(2)}`;
+    document.getElementById('m-media-sub').textContent   = `por dia`;
+    document.getElementById('m-pico').textContent        = picoHora || '—';
+    document.getElementById('m-pico-sub').textContent    = picoHora
+      ? `R$ ${horas[picoHora].toFixed(2)} nesse horário` : 'sem dados';
+    document.getElementById('m-ticket').textContent      = `R$ ${ticket.toFixed(2)}`;
+    document.getElementById('m-ticket-sub').textContent  = `por atendimento`;
 
-    // GRÁFICO
-    document.getElementById('chart-wrapper').style.display = '';
-    document.getElementById('empty-state').style.display  = 'none';
-    renderGrafico(horas);
-
-    // TOP PRODUTOS
-    const topProdutos = Object.entries(produtos).sort((a, b) => b[1] - a[1]).slice(0, 5);
-    if (topProdutos.length > 0) {
-      document.getElementById('top-wrapper').style.display = '';
-      document.getElementById('top-list').innerHTML = topProdutos.map(([nome, qtd], idx) => `
-        <div class="top-item">
-          <span class="rank">#${idx + 1}</span>
-          <span class="nome">${nome}</span>
-          <span class="qtd">${qtd}×</span>
-        </div>
-      `).join('');
+    if (permMedia !== null) {
+      const h = Math.floor(permMedia / 60);
+      const m = Math.round(permMedia % 60);
+      document.getElementById('m-perm').textContent    = h > 0 ? `${h}h ${m}min` : `${m} min`;
+      document.getElementById('m-perm-sub').textContent = `média de ${permanencias.length} atend.`;
+    } else {
+      document.getElementById('m-perm').textContent    = '—';
+      document.getElementById('m-perm-sub').textContent = 'dados indisponíveis';
     }
-  }
 
-  function renderGrafico(dados) {
-    const ctx = document.getElementById('graficoVendas').getContext('2d');
-    if (chart) chart.destroy();
+    // ── GRÁFICO HORA ──────────────────────────────────────────
+    const hLabels = Object.keys(horas);
+    const hVals   = hLabels.map(h => horas[h]);
+    const maxH    = Math.max(...hVals);
 
-    const labels = Object.keys(dados).sort((a, b) => parseInt(a) - parseInt(b));
-    const values = labels.map(h => dados[h]);
-
-    chart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels,
-        datasets: [{
-          label: 'Vendas (R$)',
-          data: values,
-          backgroundColor: labels.map(h => {
-            const hr = parseInt(h);
-            // horário de pico fica em âmbar, resto em azul suave
-            const maxVal = Math.max(...values);
-            return dados[h] === maxVal && maxVal > 0
-              ? '#E8A87C'
-              : 'rgba(59, 130, 246, 0.6)';
-          }),
-          borderRadius: 6,
-          borderSkipped: false,
-        }]
-      },
-      options: {
-        responsive: true,
-        scales: {
-          y: {
-            beginAtZero: true,
-            grid: { color: 'rgba(0,0,0,0.04)' },
-            ticks: { font: { size: 11 }, callback: v => 'R$' + v }
-          },
-          x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    chartHora = new Chart(
+      document.getElementById('grafico-hora').getContext('2d'),
+      {
+        type: 'bar',
+        data: {
+          labels: hLabels,
+          datasets: [{
+            data: hVals,
+            backgroundColor: hVals.map(v =>
+              v === maxH && maxH > 0 ? '#E8A87C' : 'rgba(59,130,246,0.55)'
+            ),
+            borderRadius: 5,
+            borderSkipped: false,
+          }]
         },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: ctx => `R$ ${ctx.parsed.y.toFixed(2)}`
-            }
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false },
+            tooltip: { callbacks: { label: c => `R$ ${c.parsed.y.toFixed(2)}` } }
+          },
+          scales: {
+            y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' },
+                 ticks: { font:{size:10}, callback: v => 'R$'+v } },
+            x: { grid: { display: false }, ticks: { font:{size:10} } }
           }
         }
       }
-    });
+    );
+    document.getElementById('badge-hora').textContent = picoHora ? `Pico: ${picoHora}` : '—';
+
+    // ── GRÁFICO DIA (só se > 1 dia) ───────────────────────────
+    const dLabels = Object.keys(dias);
+    if (dLabels.length > 1) {
+      document.getElementById('wrap-dia').style.display = '';
+      const dVals = dLabels.map(d => dias[d]);
+      chartDia = new Chart(
+        document.getElementById('grafico-dia').getContext('2d'),
+        {
+          type: 'line',
+          data: {
+            labels: dLabels,
+            datasets: [{
+              data: dVals,
+              borderColor: '#1A1A2E',
+              backgroundColor: 'rgba(26,26,46,0.08)',
+              pointBackgroundColor: '#E8A87C',
+              pointRadius: 4,
+              fill: true,
+              tension: 0.35,
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: { legend: { display: false },
+              tooltip: { callbacks: { label: c => `R$ ${c.parsed.y.toFixed(2)}` } }
+            },
+            scales: {
+              y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' },
+                   ticks: { font:{size:10}, callback: v => 'R$'+v } },
+              x: { grid: { display: false }, ticks: { font:{size:10} } }
+            }
+          }
+        }
+      );
+      const melhorDia = dLabels[dVals.indexOf(Math.max(...dVals))];
+      document.getElementById('badge-dia').textContent = `Melhor: ${melhorDia}`;
+    } else {
+      document.getElementById('wrap-dia').style.display = 'none';
+    }
+
+    // ── TOP PRODUTOS ──────────────────────────────────────────
+    const topP  = Object.entries(produtos).sort((a,b) => b[1]-a[1]).slice(0,7);
+    const maxQtd = topP[0]?.[1] || 1;
+    document.getElementById('top-list').innerHTML = topP.length === 0
+      ? '<div style="color:var(--text-muted);font-size:0.85rem;text-align:center;padding:12px;">Sem dados de produtos.</div>'
+      : topP.map(([nome, qtd], i) => `
+          <div class="top-item">
+            <span class="top-rank">#${i+1}</span>
+            <span class="top-nome">${nome}</span>
+            <div class="top-bar-wrap">
+              <div class="top-bar" style="width:${Math.round(qtd/maxQtd*100)}%"></div>
+            </div>
+            <span class="top-qtd">${qtd}×</span>
+          </div>
+        `).join('');
+
+    // ── PERMANÊNCIA ───────────────────────────────────────────
+    const ultimos = [...permanencias].reverse().slice(0, 10);
+    document.getElementById('perm-lista').innerHTML = ultimos.length === 0
+      ? '<div style="color:var(--text-muted);font-size:0.85rem;text-align:center;padding:12px;">Dados de permanência disponíveis a partir do próximo atendimento.</div>'
+      : ultimos.map(p => {
+          const h = Math.floor(p.duracaoMin / 60);
+          const m = p.duracaoMin % 60;
+          const tempoStr = h > 0 ? `${h}h ${m}min` : `${p.duracaoMin} min`;
+          return `
+            <div class="perm-item">
+              <div>
+                <div class="perm-mesa">Mesa ${p.mesa} · ${p.dia}</div>
+                <div class="perm-hora">${p.hora}</div>
+              </div>
+              <div style="text-align:right;">
+                <div class="perm-tempo">${tempoStr}</div>
+                <div class="perm-valor">R$ ${p.valor.toFixed(2)}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
   }
 </script>
 </body>
