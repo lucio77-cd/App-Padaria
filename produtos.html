@@ -218,9 +218,19 @@
         await addDoc(colRef, { nome, preco });
         document.getElementById('nome').value  = '';
         document.getElementById('preco').value = '';
+        setMsg('');
         showToast(`✅ "${nome}" cadastrado!`, 'success');
       } catch (e) {
-        showToast('Erro ao salvar. Tente novamente.', 'error');
+        console.error('Erro Firestore:', e);
+        // Mostra o código de erro real para diagnóstico
+        if (e.code === 'permission-denied') {
+          setMsg('❌ Sem permissão. Verifique as regras do Firestore no Firebase Console.');
+        } else if (e.code === 'unavailable') {
+          setMsg('❌ Sem conexão com o servidor. Verifique sua internet.');
+        } else {
+          setMsg(`❌ Erro: ${e.code || e.message}`);
+        }
+        showToast('Erro ao salvar.', 'error');
       } finally {
         btn.disabled = false;
         btn.textContent = '+ Cadastrar';
