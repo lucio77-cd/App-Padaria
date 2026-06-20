@@ -277,9 +277,10 @@
       }
 
       const data = s.data();
-      // BUG CORRIGIDO: fallback para undefined
       const itens = data.itens || [];
-      totalAtual = data.total || 0;
+      totalAtual  = data.total || 0;
+      // Guarda hora de abertura da mesa (primeiro item adicionado)
+      window._abertoEm = data.abertoEm || (itens.length > 0 ? itens[0].hora : null);
 
       document.getElementById('valor-total').innerText = `R$ ${totalAtual.toFixed(2)}`;
       calcTroco();
@@ -321,17 +322,25 @@
       btn.textContent = 'Processando...';
 
       try {
-        // 1. Salva no histórico
+        const agora    = Date.now();
+        const abertoEm = window._abertoEm || agora;
+        const duracaoMin = Math.round((agora - abertoEm) / 60000); // minutos
+
+        // 1. Salva no histórico com permanência
+        const mesaSnap = await (await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js")
+          .then(m => m.getDoc(mesaRef)));
         await addDoc(collection(db, `vendas_${user.uid}`), {
-          valor: totalAtual,
-          mesa: mesaId,
-          data: serverTimestamp(),
-          itens: (await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js")
-            .then(m => m.getDoc(mesaRef))).data()?.itens || []
+          valor:       totalAtual,
+          mesa:        mesaId,
+          data:        serverTimestamp(),
+          abertoEm:    abertoEm,
+          fechadoEm:   agora,
+          duracaoMin:  duracaoMin,
+          itens:       mesaSnap.data()?.itens || []
         });
 
         // 2. Limpa a mesa
-        await updateDoc(mesaRef, { ocupada: false, total: 0, itens: [] });
+        await updateDoc(mesaRef, { ocupada: false, total: 0, itens: [], abertoEm: null });
 
         showToast('✅ Pagamento finalizado!', 'success');
         setTimeout(() => location.href = 'caixa.html', 1200);
