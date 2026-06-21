@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Financeiro — Sistema Cris</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    .periodo-chips { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+    .chip {
+      padding:5px 12px; border-radius:999px; border:1px solid var(--border);
+      background:var(--card); font-size:.75rem; font-weight:600;
+      color:var(--text-muted); cursor:pointer; transition:all .15s;
+    }
+    .chip.active { background:var(--navy); color:white; border-color:var(--navy); }
+
+    /* SALDO HERO */
+    .saldo-hero {
+      background:linear-gradient(135deg,var(--navy) 0%,#0F3460 100%);
+      border-radius:var(--radius-lg); padding:24px;
+      margin-bottom:20px; color:white;
+      display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;
+    }
+    .saldo-item .label { font-size:.65rem; opacity:.55; letter-spacing:.08em; text-transform:uppercase; }
+    .saldo-item .val   { font-size:1.4rem; font-weight:800; margin-top:4px; }
+    .saldo-item .val.verde  { color:#34D399; }
+    .saldo-item .val.vermelho { color:#F87171; }
+    .saldo-item .val.amarelo  { color:var(--amber); }
+
+    /* FORM DESPESA */
+    .form-card { background:var(--card); border:1px solid var(--border);
+      border-radius:var(--radius-md); padding:18px 20px;
+      margin-bottom:20px; box-shadow:var(--shadow-sm); }
+    .form-card-title { font-size:.72rem; font-weight:700; letter-spacing:.07em;
+      text-transform:uppercase; color:var(--text-muted); margin-bottom:14px; }
+    .form-grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .form-grid2 .full { grid-column:1/-1; }
+
+    /* LISTA LANÇAMENTOS */
+    .lancamentos { display:flex; flex-direction:column; gap:8px; margin-top:16px; }
+
+    .lanc-item {
+      background:var(--card); border:1px solid var(--border);
+      border-radius:var(--radius-md); padding:13px 16px;
+      display:flex; align-items:center; gap:12px;
+      box-shadow:var(--shadow-sm);
+    }
+    .lanc-icon { font-size:1.3rem; flex-shrink:0; }
+    .lanc-info { flex:1; }
+    .lanc-desc { font-size:.88rem; font-weight:600; color:var(--navy); }
+    .lanc-meta { font-size:.7rem; color:var(--text-muted); margin-top:2px; }
+    .lanc-val  { font-size:.95rem; font-weight:800; white-space:nowrap; }
+    .lanc-val.entrada  { color:#059669; }
+    .lanc-val.saida    { color:#DC2626; }
+
+    .cat-pill {
+      font-size:.65rem; font-weight:700; padding:2px 8px;
+      border-radius:999px; background:var(--bg);
+      border:1px solid var(--border); color:var(--text-muted);
+    }
+
+    .chart-card { background:var(--card); border:1px solid var(--border);
+      border-radius:var(--radius-md); padding:18px;
+      box-shadow:var(--shadow-sm); margin-bottom:16px; }
+    .chart-title { font-size:.72rem; font-weight:700; letter-spacing:.07em;
+      text-transform:uppercase; color:var(--text-muted); margin-bottom:12px; }
+    canvas { max-height:200px; }
+
+    .empty-lanc { text-align:center; padding:32px; color:var(--text-muted); font-size:.85rem; }
+
+    @media(max-width:768px){
+      .saldo-hero { grid-template-columns:1fr 1fr; }
+      .saldo-hero .saldo-item:last-child { grid-column:1/-1; }
+      .form-grid2 { grid-template-columns:1fr; }
+      .form-grid2 .full { grid-column:1; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <span class="logo-icon">🍞</span>
+      <div><div class="logo-text">Sistema Cris</div><span class="logo-sub">Padaria</span></div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="salao.html"      class="nav-item"><span class="nav-icon">🪑</span> Salão</a>
+      <a href="caixa.html"      class="nav-item"><span class="nav-icon">💰</span> Caixa</a>
+      <a href="estoque.html"    class="nav-item"><span class="nav-icon">📦</span> Estoque</a>
+      <a href="financeiro.html" class="nav-item active"><span class="nav-icon">💳</span> Financeiro</a>
+      <a href="dashboard.html"  class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="produtos.html"   class="nav-item"><span class="nav-icon">🛍️</span> Cardápio</a>
+    </nav>
+  </aside>
+
+  <div class="main-content">
+    <div class="topbar">
+      <span class="topbar-title">💳 Financeiro</span>
+    </div>
+
+    <div class="page-body">
+
+      <!-- CHIPS PERÍODO -->
+      <div class="periodo-chips">
+        <div class="chip active" data-d="0">Hoje</div>
+        <div class="chip" data-d="6">7 dias</div>
+        <div class="chip" data-d="29">30 dias</div>
+      </div>
+
+      <!-- SALDO HERO -->
+      <div class="saldo-hero">
+        <div class="saldo-item">
+          <div class="label">Receita (vendas)</div>
+          <div class="val verde" id="sh-receita">R$ 0,00</div>
+        </div>
+        <div class="saldo-item">
+          <div class="label">Despesas</div>
+          <div class="val vermelho" id="sh-despesas">R$ 0,00</div>
+        </div>
+        <div class="saldo-item">
+          <div class="label">Lucro Líquido</div>
+          <div class="val amarelo" id="sh-lucro">R$ 0,00</div>
+        </div>
+      </div>
+
+      <!-- GRÁFICO RECEITA vs DESPESA -->
+      <div class="chart-card">
+        <div class="chart-title">📊 Receita × Despesa por dia</div>
+        <canvas id="grafico-fluxo"></canvas>
+      </div>
+
+      <!-- FORM NOVA DESPESA -->
+      <div class="form-card">
+        <div class="form-card-title">+ Lançar Despesa / Conta</div>
+        <div class="form-grid2">
+          <div class="form-group full">
+            <label class="form-label">Descrição</label>
+            <input type="text" id="d-desc" class="form-input" placeholder="Ex: Conta de luz, Aluguel, Farinha...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Valor (R$)</label>
+            <input type="number" id="d-valor" class="form-input" placeholder="150.00" step="0.01" min="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Categoria</label>
+            <select id="d-categoria" class="form-input">
+              <option value="fixo">Custo Fixo</option>
+              <option value="insumo">Insumo / Matéria-prima</option>
+              <option value="compra_estoque">Compra de Estoque</option>
+              <option value="servico">Serviço / Manutenção</option>
+              <option value="salario">Salário / Pró-labore</option>
+              <option value="outro">Outro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Data</label>
+            <input type="date" id="d-data" class="form-input">
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Observação (opcional)</label>
+            <input type="text" id="d-obs" class="form-input" placeholder="Ex: Nota fiscal 1234">
+          </div>
+          <div class="full">
+            <button id="btn-lancar" class="btn btn-danger btn-lg btn-full">🧾 Lançar Despesa</button>
+          </div>
+        </div>
+        <p id="msg-desp" style="color:var(--ocupada);font-size:.82rem;margin-top:8px;min-height:18px;"></p>
+      </div>
+
+      <!-- LISTA DE LANÇAMENTOS -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Lançamentos do Período</span>
+          <div style="display:flex;gap:6px;">
+            <span class="cat-pill" id="badge-entradas" style="color:#059669;">R$ 0</span>
+            <span class="cat-pill" id="badge-saidas"   style="color:#DC2626;">R$ 0</span>
+          </div>
+        </div>
+        <div class="card-body" style="padding:12px;">
+          <div id="lista-lanc" class="lancamentos">
+            <div class="empty-lanc">Carregando...</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <div class="bottom-nav-inner">
+      <a href="salao.html"      class="bnav-item"><span class="bnav-icon">🪑</span>Salão</a>
+      <a href="caixa.html"      class="bnav-item"><span class="bnav-icon">💰</span>Caixa</a>
+      <a href="estoque.html"    class="bnav-item"><span class="bnav-icon">📦</span>Estoque</a>
+      <a href="financeiro.html" class="bnav-item active"><span class="bnav-icon">💳</span>Financeiro</a>
+      <a href="dashboard.html"  class="bnav-item"><span class="bnav-icon">📊</span>Dados</a>
+    </div>
+  </nav>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script type="module">
+import { db, auth } from './firebase.js';
+import {
+  collection, addDoc, deleteDoc, doc,
+  query, where, onSnapshot, orderBy, Timestamp, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+let chartFluxo = null;
+let currentUser = null;
+let periodoInicio, periodoFim;
+
+function toast(msg, type='') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`; el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// Set data padrão do form
+const hoje = new Date().toISOString().split('T')[0];
+document.getElementById('d-data').value = hoje;
+
+// ─── PERÍODO ────────────────────────────────────────────────────
+function setDatas(dias) {
+  const fim = new Date();
+  const ini = new Date(); ini.setDate(fim.getDate() - dias);
+  periodoInicio = new Date(ini.toISOString().split('T')[0] + 'T00:00:00');
+  periodoFim    = new Date(fim.toISOString().split('T')[0] + 'T23:59:59');
+}
+
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.onclick = () => {
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    setDatas(parseInt(chip.dataset.d));
+    if (currentUser) carregarDados();
+  };
+});
+
+// ─── FIREBASE ───────────────────────────────────────────────────
+auth.onAuthStateChanged(user => {
+  if (!user) { location.href = 'index.html'; return; }
+  currentUser = user;
+
+  // Lançar despesa
+  document.getElementById('btn-lancar').onclick = async () => {
+    const desc  = document.getElementById('d-desc').value.trim();
+    const valor = parseFloat(document.getElementById('d-valor').value);
+    const cat   = document.getElementById('d-categoria').value;
+    const data  = document.getElementById('d-data').value;
+    const obs   = document.getElementById('d-obs').value.trim();
+
+    if (!desc)           { document.getElementById('msg-desp').textContent='⚠️ Descrição obrigatória.'; return; }
+    if (isNaN(valor)||valor<=0){ document.getElementById('msg-desp').textContent='⚠️ Valor inválido.'; return; }
+    if (!data)           { document.getElementById('msg-desp').textContent='⚠️ Selecione a data.'; return; }
+
+    const btn = document.getElementById('btn-lancar');
+    btn.disabled = true;
+
+    try {
+      await addDoc(collection(db, `despesas_${user.uid}`), {
+        descricao:  desc,
+        valor:      valor,
+        categoria:  cat,
+        obs:        obs,
+        data:       Timestamp.fromDate(new Date(data + 'T12:00:00')),
+        createdAt:  serverTimestamp()
+      });
+      document.getElementById('d-desc').value  = '';
+      document.getElementById('d-valor').value = '';
+      document.getElementById('d-obs').value   = '';
+      document.getElementById('msg-desp').textContent = '';
+      toast('✅ Despesa lançada!', 'success');
+    } catch(e) {
+      document.getElementById('msg-desp').textContent = `❌ ${e.code||e.message}`;
+    } finally { btn.disabled = false; }
+  };
+
+  setDatas(0);
+  carregarDados();
+});
+
+// ─── CARREGAR DADOS ─────────────────────────────────────────────
+function carregarDados() {
+  if (!currentUser || !periodoInicio || !periodoFim) return;
+
+  const tsIni = Timestamp.fromDate(periodoInicio);
+  const tsFim = Timestamp.fromDate(periodoFim);
+
+  // Vendas do período
+  const qVendas = query(
+    collection(db, `vendas_${currentUser.uid}`),
+    where('data', '>=', tsIni), where('data', '<=', tsFim), orderBy('data','asc')
+  );
+
+  // Despesas do período
+  const qDesp = query(
+    collection(db, `despesas_${currentUser.uid}`),
+    where('data', '>=', tsIni), where('data', '<=', tsFim), orderBy('data','asc')
+  );
+
+  let vendas = [], despesas = [];
+
+  onSnapshot(qVendas, snap => {
+    vendas = [];
+    snap.forEach(d => vendas.push({ id:d.id, tipo:'entrada', ...d.data() }));
+    renderFinanceiro(vendas, despesas);
+  });
+
+  onSnapshot(qDesp, snap => {
+    despesas = [];
+    snap.forEach(d => despesas.push({ id:d.id, tipo:'saida', ...d.data() }));
+    renderFinanceiro(vendas, despesas);
+  });
+}
+
+// ─── RENDER ────────────────────────────────────────────────────
+const ICONS = {
+  entrada:'💵', fixo:'🏠', insumo:'🌾', compra_estoque:'📦',
+  servico:'🔧', salario:'👤', outro:'💳'
+};
+
+const CAT_LABELS = {
+  fixo:'Custo Fixo', insumo:'Insumo', compra_estoque:'Compra Estoque',
+  servico:'Serviço', salario:'Salário', outro:'Outro'
+};
+
+function renderFinanceiro(vendas, despesas) {
+  // Totais
+  const totalReceita  = vendas.reduce((s,v)   => s + (v.valor||0), 0);
+  const totalDespesas = despesas.reduce((s,d) => s + (d.valor||0), 0);
+  const lucro         = totalReceita - totalDespesas;
+
+  document.getElementById('sh-receita').textContent  = `R$ ${totalReceita.toFixed(2)}`;
+  document.getElementById('sh-despesas').textContent = `R$ ${totalDespesas.toFixed(2)}`;
+  document.getElementById('sh-lucro').textContent    = `R$ ${lucro.toFixed(2)}`;
+  document.getElementById('sh-lucro').className      = `val ${lucro >= 0 ? 'verde' : 'vermelho'}`;
+
+  document.getElementById('badge-entradas').textContent = `↑ R$ ${totalReceita.toFixed(2)}`;
+  document.getElementById('badge-saidas').textContent   = `↓ R$ ${totalDespesas.toFixed(2)}`;
+
+  // ── GRÁFICO FLUXO ─────────────────────────────────────────────
+  const dias = {};
+  [...vendas, ...despesas].forEach(l => {
+    const dt  = l.data?.toDate?.() || new Date();
+    const key = dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
+    if (!dias[key]) dias[key] = { entrada:0, saida:0 };
+    dias[key][l.tipo] += l.valor||0;
+  });
+
+  const labels  = Object.keys(dias).sort();
+  const entAr   = labels.map(d => dias[d].entrada);
+  const saidaAr = labels.map(d => dias[d].saida);
+
+  if (chartFluxo) chartFluxo.destroy();
+  chartFluxo = new Chart(
+    document.getElementById('grafico-fluxo').getContext('2d'),
+    {
+      type:'bar',
+      data:{
+        labels,
+        datasets:[
+          { label:'Receita', data:entAr,   backgroundColor:'rgba(52,211,153,.7)', borderRadius:4, borderSkipped:false },
+          { label:'Despesa', data:saidaAr, backgroundColor:'rgba(248,113,113,.7)', borderRadius:4, borderSkipped:false }
+        ]
+      },
+      options:{
+        responsive:true,
+        plugins:{ legend:{ position:'top', labels:{font:{size:11}} },
+          tooltip:{ callbacks:{ label: c=>`R$ ${c.parsed.y.toFixed(2)}` } }
+        },
+        scales:{
+          y:{ beginAtZero:true, grid:{color:'rgba(0,0,0,.04)'},
+              ticks:{font:{size:10}, callback:v=>'R$'+v} },
+          x:{ grid:{display:false}, ticks:{font:{size:10}} }
+        }
+      }
+    }
+  );
+
+  // ── LISTA LANÇAMENTOS ─────────────────────────────────────────
+  const todos = [
+    ...vendas.map(v=>({...v, tipo:'entrada'})),
+    ...despesas.map(d=>({...d, tipo:'saida'}))
+  ].sort((a,b) => {
+    const da = a.data?.toDate?.() || 0;
+    const db_ = b.data?.toDate?.() || 0;
+    return db_ - da; // mais recente primeiro
+  });
+
+  const lista = document.getElementById('lista-lanc');
+
+  if (todos.length === 0) {
+    lista.innerHTML = '<div class="empty-lanc">Nenhum lançamento no período.</div>';
+    return;
+  }
+
+  lista.innerHTML = todos.map(l => {
+    const dt     = l.data?.toDate?.();
+    const dtStr  = dt ? dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
+    const icon   = l.tipo==='entrada' ? '💵' : (ICONS[l.categoria]||'💳');
+    const catLbl = l.tipo==='entrada' ? `Mesa ${l.mesa||'—'}` : (CAT_LABELS[l.categoria]||'Outro');
+    const desc   = l.tipo==='entrada' ? `Venda Mesa ${l.mesa||'—'}` : l.descricao;
+
+    return `<div class="lanc-item">
+      <div class="lanc-icon">${icon}</div>
+      <div class="lanc-info">
+        <div class="lanc-desc">${desc}</div>
+        <div class="lanc-meta">
+          ${dtStr}
+          <span class="cat-pill" style="margin-left:4px;">${catLbl}</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+        <div class="lanc-val ${l.tipo}">${l.tipo==='entrada' ? '+' : '−'} R$ ${(l.valor||0).toFixed(2)}</div>
+        ${l.tipo==='saida' ? `<button onclick="excluirDesp('${l.id}')" class="btn btn-ghost" style="padding:3px 8px;font-size:.65rem;">🗑️</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.excluirDesp = async id => {
+  if (!confirm('Excluir este lançamento?')) return;
+  try {
+    await deleteDoc(doc(db, `despesas_${currentUser.uid}`, id));
+    toast('Lançamento removido.', '');
+  } catch(e) { toast('Erro ao excluir.', 'error'); }
+};
+</script>
+</body>
+</html>
