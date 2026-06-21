@@ -6,86 +6,86 @@
   <title>Estoque — Sistema Cris</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="style.css">
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <style>
-    /* FORM */
-    .form-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius-md); padding:18px 16px; margin-bottom:20px; box-shadow:var(--shadow-sm); }
-    .form-card-title { font-size:.72rem; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--text-muted); margin-bottom:14px; }
-    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-    .form-grid .full { grid-column:1/-1; }
+    .form-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;margin-bottom:18px;box-shadow:var(--shadow-sm);}
+    .form-card-title{font-size:.7rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);margin-bottom:14px;}
+    .f2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    .f2 .full{grid-column:1/-1;}
 
-    /* COMPRA EM LOTE */
-    .lote-box {
-      background: linear-gradient(135deg, #0F3460, var(--navy));
-      border-radius: var(--radius-md);
-      padding: 14px 16px;
-      margin-top: 4px;
-      color: white;
-    }
-    .lote-box .lote-title { font-size:.68rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:rgba(255,255,255,.55); margin-bottom:10px; }
-    .lote-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-    .lote-input { background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.2); border-radius:8px; padding:9px 12px; color:white; font-family:inherit; font-size:.9rem; width:100%; outline:none; }
-    .lote-input::placeholder { color:rgba(255,255,255,.4); }
-    .lote-input:focus { border-color:var(--amber); }
-    .lote-label { font-size:.65rem; color:rgba(255,255,255,.5); font-weight:600; letter-spacing:.05em; text-transform:uppercase; margin-bottom:4px; }
-    .lote-preview { margin-top:10px; display:flex; justify-content:space-between; align-items:center; padding-top:10px; border-top:1px solid rgba(255,255,255,.1); }
-    .lote-preview .lp-item .lp-label { font-size:.63rem; color:rgba(255,255,255,.5); }
-    .lote-preview .lp-item .lp-val   { font-size:1.1rem; font-weight:800; color:white; }
-    .lote-preview .lp-item .lp-val.amber { color:var(--amber); }
+    /* CATEGORIA CHIPS */
+    .cat-wrap{margin-bottom:14px;}
+    .cat-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
+    .cat-chip{padding:6px 12px;border-radius:999px;border:1.5px solid var(--border);font-size:.75rem;font-weight:600;cursor:pointer;background:var(--card);color:var(--text-muted);transition:all .15s;white-space:nowrap;user-select:none;}
+    .cat-chip.ativo{background:var(--navy);color:#fff;border-color:var(--navy);}
+    .nova-cat-row{display:flex;gap:8px;}
+
+    /* LOTE */
+    .lote-box{background:linear-gradient(135deg,#0F3460,var(--navy));border-radius:var(--radius-md);padding:14px;color:#fff;margin-top:6px;}
+    .lote-title{font-size:.65rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:10px;}
+    .lote-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+    .lote-label{font-size:.63rem;color:rgba(255,255,255,.5);font-weight:600;margin-bottom:3px;}
+    .lote-input{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:9px 12px;color:#fff;font-family:inherit;font-size:.9rem;width:100%;outline:none;}
+    .lote-input:focus{border-color:var(--amber);}
+    .lote-preview{display:flex;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.1);}
+    .lp-val{font-size:1.05rem;font-weight:800;color:#fff;}
+    .lp-val.am{color:var(--amber);}
+    .lp-label{font-size:.62rem;color:rgba(255,255,255,.5);}
 
     /* PREVIEW PREÇO */
-    .preco-preview { background:linear-gradient(135deg,var(--navy),#0F3460); border-radius:var(--radius-md); padding:14px 16px; display:flex; justify-content:space-between; align-items:center; color:white; }
-    .preco-preview .label { font-size:.63rem; opacity:.55; margin-bottom:3px; }
-    .preco-preview .val   { font-size:1.25rem; font-weight:800; }
-    .preco-preview .lucro { font-size:.8rem; color:var(--amber); font-weight:700; }
+    .preco-prev{background:linear-gradient(135deg,var(--navy),#0F3460);border-radius:var(--radius-md);padding:14px 16px;display:flex;justify-content:space-between;color:#fff;}
+    .preco-prev .pp-label{font-size:.62rem;opacity:.5;margin-bottom:3px;}
+    .preco-prev .pp-val{font-size:1.2rem;font-weight:800;}
+    .preco-prev .pp-lucro{font-size:.78rem;color:var(--amber);font-weight:700;}
 
-    /* SCANNER */
-    .scanner-wrap { background:var(--navy); border-radius:var(--radius-md); overflow:hidden; margin-bottom:10px; display:none; position:relative; }
-    .scanner-close { position:absolute; top:8px; right:8px; background:rgba(0,0,0,.5); color:white; border:none; border-radius:50%; width:30px; height:30px; font-size:1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:10; }
+    /* SCAN */
+    .scan-area{border-radius:var(--radius-md);overflow:hidden;margin-bottom:10px;display:none;position:relative;background:#000;min-height:160px;align-items:center;justify-content:center;}
+    .scan-area.aberto{display:flex;flex-direction:column;}
+    .scan-area video{width:100%;max-height:220px;object-fit:cover;}
+    .scan-close{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:32px;height:32px;font-size:1.1rem;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;}
+    .scan-line{position:absolute;left:10%;right:10%;height:2px;background:var(--amber);animation:scan-move 2s ease-in-out infinite;z-index:5;}
+    @keyframes scan-move{0%{top:30%}50%{top:70%}100%{top:30%}}
+    .scan-hint{color:rgba(255,255,255,.7);font-size:.75rem;text-align:center;padding:8px;}
 
     /* TABELA */
-    .table-wrap { overflow-x:auto; }
-    .estoque-table { width:100%; border-collapse:collapse; }
-    .estoque-table th { text-align:left; font-size:.63rem; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--text-muted); padding:8px 12px; border-bottom:2px solid var(--border); white-space:nowrap; }
-    .estoque-table td { padding:11px 12px; border-bottom:1px solid var(--border); font-size:.83rem; vertical-align:middle; }
-    .estoque-table tr:last-child td { border-bottom:none; }
-    .estoque-table tr:hover td { background:var(--bg); }
+    .table-wrap{overflow-x:auto;}
+    .tbl{width:100%;border-collapse:collapse;}
+    .tbl th{text-align:left;font-size:.62rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);padding:8px 10px;border-bottom:2px solid var(--border);white-space:nowrap;}
+    .tbl td{padding:10px;border-bottom:1px solid var(--border);font-size:.82rem;vertical-align:middle;}
+    .tbl tr:last-child td{border-bottom:none;}
+    .tbl tr:hover td{background:var(--bg);}
 
-    .cod-badge { font-family:monospace; font-size:.72rem; font-weight:700; background:var(--bg); border:1px solid var(--border); padding:2px 7px; border-radius:4px; color:var(--navy); }
-    .qty-badge { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:999px; font-size:.73rem; font-weight:700; }
-    .qty-ok     { background:#D1FAE5; color:#065F46; }
-    .qty-baixo  { background:#FEF3C7; color:#92400E; }
-    .qty-zerado { background:#FEE2E2; color:#991B1B; }
+    .cod{font-family:monospace;font-size:.7rem;font-weight:700;background:var(--bg);border:1px solid var(--border);padding:2px 6px;border-radius:4px;}
+    .qbadge{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:999px;font-size:.72rem;font-weight:700;}
+    .qok{background:#D1FAE5;color:#065F46;}
+    .qbaixo{background:#FEF3C7;color:#92400E;}
+    .qzero{background:#FEE2E2;color:#991B1B;}
+
+    /* +/- inline */
+    .qctrl{display:flex;align-items:center;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;overflow:hidden;width:90px;}
+    .qbtn{width:30px;height:32px;border:none;background:none;font-size:1rem;font-weight:700;cursor:pointer;color:var(--navy);}
+    .qbtn:hover{background:var(--border);}
+    .qnum{flex:1;text-align:center;font-size:.85rem;font-weight:700;}
 
     /* MODAL */
-    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:200; align-items:center; justify-content:center; padding:20px; }
-    .modal-overlay.open { display:flex; }
-    .modal-box { background:var(--card); border-radius:var(--radius-lg); padding:22px 20px; width:100%; max-width:380px; box-shadow:var(--shadow-lg); }
-    .modal-title { font-size:1rem; font-weight:800; color:var(--navy); margin-bottom:4px; }
-    .modal-sub   { font-size:.78rem; color:var(--text-muted); margin-bottom:16px; }
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;align-items:center;justify-content:center;padding:16px;}
+    .modal-overlay.open{display:flex;}
+    .modal-box{background:var(--card);border-radius:var(--radius-lg);padding:20px;width:100%;max-width:380px;box-shadow:var(--shadow-lg);max-height:90vh;overflow-y:auto;}
+    .modal-title{font-size:.98rem;font-weight:800;color:var(--navy);margin-bottom:4px;}
+    .modal-sub{font-size:.75rem;color:var(--text-muted);margin-bottom:14px;}
+    .tab-row{display:flex;gap:6px;margin-bottom:14px;}
+    .tab-btn{flex:1;padding:8px;border-radius:8px;border:1.5px solid var(--border);font-size:.75rem;font-weight:700;cursor:pointer;background:var(--card);color:var(--text-muted);transition:all .15s;}
+    .tab-btn.ativo{background:var(--navy);color:#fff;border-color:var(--navy);}
 
-    /* CATEGORIAS CHIP */
-    .cat-chips { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:14px; }
-    .cat-chip  { padding:5px 12px; border-radius:999px; border:1.5px solid var(--border); font-size:.75rem; font-weight:600; cursor:pointer; background:var(--card); color:var(--text-muted); transition:all .15s; white-space:nowrap; }
-    .cat-chip.active { background:var(--navy); color:white; border-color:var(--navy); }
-
-    /* QTD INLINE */
-    .qty-control-inline { display:flex; align-items:center; gap:0; background:var(--bg); border:1.5px solid var(--border); border-radius:8px; overflow:hidden; width:120px; }
-    .qty-btn-sm { width:36px; height:36px; border:none; background:none; font-size:1.1rem; font-weight:700; cursor:pointer; color:var(--navy); }
-    .qty-btn-sm:hover { background:var(--border); }
-    .qty-num-sm { flex:1; text-align:center; font-size:.95rem; font-weight:700; color:var(--navy); }
-
-    @media(max-width:768px) {
-      .form-grid { grid-template-columns:1fr; }
-      .form-grid .full { grid-column:1; }
-      .lote-row { grid-template-columns:1fr; }
-      .estoque-table th:nth-child(3), .estoque-table td:nth-child(3) { display:none; }
+    @media(max-width:600px){
+      .f2{grid-template-columns:1fr;}
+      .f2 .full{grid-column:1;}
+      .lote-grid{grid-template-columns:1fr;}
+      .tbl th:nth-child(3),.tbl td:nth-child(3){display:none;}
     }
   </style>
 </head>
 <body>
 <div class="app-shell">
-
   <aside class="sidebar">
     <div class="sidebar-logo">
       <span class="logo-icon">🍞</span>
@@ -104,31 +104,33 @@
   <div class="main-content">
     <div class="topbar">
       <span class="topbar-title">📦 Estoque</span>
-      <div class="topbar-right">
-        <span id="resumo-top" style="font-size:.78rem;color:var(--text-muted);font-weight:500;"></span>
-      </div>
+      <span id="resumo-top" style="font-size:.75rem;color:var(--text-muted);font-weight:500;"></span>
     </div>
 
     <div class="page-body">
 
-      <!-- SCANNER -->
-      <div class="scanner-wrap" id="scanner-wrap">
-        <button class="scanner-close" id="fechar-scanner">✕</button>
-        <div id="reader"></div>
+      <!-- SCANNER (câmera nativa via input) -->
+      <div class="scan-area" id="scan-area">
+        <button class="scan-close" id="scan-close">✕</button>
+        <video id="scan-video" playsinline autoplay muted></video>
+        <div class="scan-line"></div>
+        <div class="scan-hint">Aponte o código de barras para a câmera</div>
       </div>
 
-      <!-- FORM CADASTRO -->
+      <!-- FORM -->
       <div class="form-card">
         <div class="form-card-title" id="form-titulo">Cadastrar Produto</div>
-        <div class="form-grid">
+        <div class="f2">
 
-          <!-- Código -->
+          <!-- Código + Scan -->
           <div class="form-group full">
             <label class="form-label">Código de Barras</label>
             <div style="display:flex;gap:8px;">
-              <input type="text" id="f-codigo" class="form-input" placeholder="Ex: 7891234567890" style="font-family:monospace;flex:1;">
-              <button id="btn-scan" class="btn btn-dark" style="padding:10px 14px;white-space:nowrap;">📷 Scan</button>
+              <input type="text" id="f-codigo" class="form-input" placeholder="Ex: 7891234567890" style="flex:1;font-family:monospace;" inputmode="numeric">
+              <button id="btn-scan" class="btn btn-dark" style="padding:10px 14px;white-space:nowrap;min-width:80px;">📷 Scan</button>
             </div>
+            <!-- Fallback: input file câmera para Android -->
+            <input type="file" id="scan-file" accept="image/*" capture="environment" style="display:none;">
           </div>
 
           <!-- Nome -->
@@ -137,145 +139,120 @@
             <input type="text" id="f-nome" class="form-input" placeholder="Ex: Coca-Cola 350ml">
           </div>
 
-          <!-- Categoria com chips + criar -->
-          <div class="full">
+          <!-- CATEGORIA CHIPS -->
+          <div class="full cat-wrap">
             <label class="form-label">Categoria</label>
-            <div id="cat-chips" class="cat-chips"></div>
-            <div style="display:flex;gap:8px;margin-top:6px;">
+            <div id="cat-chips" class="cat-chips"><!-- gerado por JS --></div>
+            <div class="nova-cat-row">
               <input type="text" id="nova-cat" class="form-input" placeholder="+ Nova categoria..." style="flex:1;">
               <button id="btn-add-cat" class="btn btn-ghost" style="padding:10px 12px;white-space:nowrap;">+ Criar</button>
             </div>
-            <input type="hidden" id="f-categoria" value="bebida">
+            <input type="hidden" id="f-categoria" value="">
           </div>
 
           <!-- Unidade -->
           <div class="form-group full">
-            <label class="form-label">Como é vendido / comprado</label>
+            <label class="form-label">Como chega / é vendido</label>
             <select id="f-unidade" class="form-input">
               <option value="un">Unidade (un)</option>
-              <option value="cx">Caixa (cx) — ex: caixa de salgadinho</option>
-              <option value="fardo">Fardo — ex: fardo de água/refrigerante</option>
-              <option value="kg">Quilo (kg)</option>
-              <option value="L">Litro (L)</option>
+              <option value="fardo">Fardo (ex: água, refrigerante)</option>
+              <option value="cx">Caixa (ex: salgadinho, biscoito)</option>
               <option value="pacote">Pacote</option>
               <option value="duzia">Dúzia</option>
+              <option value="kg">Quilo (kg)</option>
+              <option value="L">Litro (L)</option>
             </select>
           </div>
 
-          <!-- LOTE: se unidade for caixa/fardo -->
-          <div class="full" id="lote-section" style="display:none;">
+          <!-- LOTE (caixa/fardo) -->
+          <div class="full" id="lote-box" style="display:none;">
             <div class="lote-box">
-              <div class="lote-title">📦 Detalhes do Lote / Embalagem</div>
-              <div class="lote-row">
+              <div class="lote-title">📦 Detalhes do Lote</div>
+              <div class="lote-grid">
                 <div>
                   <div class="lote-label">Unidades por embalagem</div>
-                  <input type="number" id="f-qtd-lote" class="lote-input" placeholder="Ex: 12" min="1" value="1">
+                  <input type="number" id="f-lote-qtd" class="lote-input" placeholder="Ex: 12" min="1" value="1">
                 </div>
                 <div>
-                  <div class="lote-label">Custo do lote (R$)</div>
-                  <input type="number" id="f-custo-lote" class="lote-input" placeholder="Ex: 36.00" step="0.01">
+                  <div class="lote-label">Custo total do lote (R$)</div>
+                  <input type="number" id="f-lote-custo" class="lote-input" placeholder="Ex: 36.00" step="0.01">
                 </div>
               </div>
               <div class="lote-preview">
-                <div class="lp-item">
-                  <div class="lp-label">Custo por unidade</div>
-                  <div class="lp-val" id="prev-custo-un">R$ —</div>
-                </div>
-                <div class="lp-item" style="text-align:right;">
-                  <div class="lp-label">Total de unidades</div>
-                  <div class="lp-val amber" id="prev-total-un">— un</div>
-                </div>
+                <div><div class="lp-label">Custo por unidade</div><div class="lp-val" id="lp-custo">R$ —</div></div>
+                <div style="text-align:right;"><div class="lp-label">Total no lote</div><div class="lp-val am" id="lp-total">— un</div></div>
               </div>
             </div>
           </div>
 
-          <!-- Custo unitário -->
+          <!-- Custo un -->
           <div class="form-group">
-            <label class="form-label">Custo por Unidade (R$)</label>
+            <label class="form-label">Custo por unidade (R$)</label>
             <input type="number" id="f-custo" class="form-input" placeholder="3.50" step="0.01" min="0">
           </div>
 
           <!-- Margem -->
           <div class="form-group">
-            <label class="form-label">Margem de Lucro (%)</label>
+            <label class="form-label">Margem de lucro (%)</label>
             <input type="number" id="f-margem" class="form-input" placeholder="40" step="1" min="0">
           </div>
 
-          <!-- Preview preço -->
+          <!-- Preview -->
           <div class="full">
-            <div class="preco-preview">
-              <div>
-                <div class="label">Preço de venda</div>
-                <div class="val" id="prev-venda">R$ —</div>
-              </div>
-              <div style="text-align:right;">
-                <div class="label">Lucro por unidade</div>
-                <div class="lucro" id="prev-lucro">R$ —</div>
-              </div>
+            <div class="preco-prev" id="preco-prev">
+              <div><div class="pp-label">Preço de venda</div><div class="pp-val" id="pp-venda">R$ —</div></div>
+              <div style="text-align:right;"><div class="pp-label">Lucro / un</div><div class="pp-lucro" id="pp-lucro">R$ —</div></div>
             </div>
           </div>
 
-          <!-- Qtd estoque -->
+          <!-- Qtd + Mínimo -->
           <div class="form-group">
-            <label class="form-label">Qtd em Estoque</label>
-            <input type="number" id="f-qtd" class="form-input" placeholder="0" step="1" min="0" value="0">
+            <label class="form-label">Qtd em estoque</label>
+            <input type="number" id="f-qtd" class="form-input" value="0" min="0" step="1">
           </div>
-
-          <!-- Estoque mínimo -->
           <div class="form-group">
-            <label class="form-label">Estoque Mínimo</label>
-            <input type="number" id="f-min" class="form-input" placeholder="5" step="1" min="0" value="5">
+            <label class="form-label">Estoque mínimo</label>
+            <input type="number" id="f-min" class="form-input" value="5" min="0" step="1">
           </div>
 
           <!-- Botões -->
-          <div class="full" style="display:flex;gap:10px;margin-top:4px;">
+          <div class="full" style="display:flex;gap:8px;margin-top:4px;">
             <button id="btn-salvar" class="btn btn-primary btn-lg" style="flex:1;">+ Cadastrar</button>
-            <button id="btn-limpar" class="btn btn-ghost" style="padding:14px 16px;">✕</button>
+            <button id="btn-limpar" class="btn btn-ghost" style="padding:14px;">✕</button>
           </div>
         </div>
-        <p id="msg-form" style="color:var(--ocupada);font-size:.82rem;margin-top:10px;min-height:18px;"></p>
+        <p id="msg-form" style="color:var(--ocupada);font-size:.8rem;margin-top:8px;min-height:18px;"></p>
       </div>
 
       <!-- FILTROS -->
-      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
-        <input type="text" id="busca" class="form-input" placeholder="🔍 Buscar..." style="flex:1;min-width:160px;">
-        <select id="filtro-cat" class="form-input" style="width:130px;">
-          <option value="">Todas cats</option>
-        </select>
-        <select id="filtro-status" class="form-input" style="width:120px;">
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+        <input type="text" id="busca" class="form-input" placeholder="🔍 Buscar produto ou código..." style="flex:1;min-width:140px;">
+        <select id="f-filtro-cat" class="form-input" style="width:130px;"></select>
+        <select id="f-filtro-st" class="form-input" style="width:110px;">
           <option value="">Todos</option>
           <option value="baixo">Estoque baixo</option>
-          <option value="zerado">Zerado</option>
+          <option value="zero">Zerado</option>
         </select>
       </div>
 
       <!-- TABELA -->
       <div class="card">
         <div class="card-header">
-          <span class="card-title">Produtos em Estoque</span>
-          <span id="count-badge" class="badge" style="background:var(--bg);color:var(--text-muted);border:1px solid var(--border);">0 itens</span>
+          <span class="card-title">Produtos</span>
+          <span id="count-badge" style="font-size:.72rem;font-weight:700;color:var(--text-muted);">0 itens</span>
         </div>
         <div class="table-wrap">
-          <table class="estoque-table">
-            <thead>
-              <tr>
-                <th>Produto</th>
-                <th>Código</th>
-                <th>Custo / Venda</th>
-                <th>Estoque</th>
-                <th>Qtd</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="tabela-corpo">
-              <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted);">Carregando...</td></tr>
-            </tbody>
+          <table class="tbl">
+            <thead><tr>
+              <th>Produto</th><th>Código</th><th>Custo/Venda</th><th>Estoque</th><th>Qtd</th><th></th>
+            </tr></thead>
+            <tbody id="tbl-body"><tr><td colspan="6" style="text-align:center;padding:28px;color:var(--text-muted);">Carregando...</td></tr></tbody>
           </table>
         </div>
       </div>
 
-    </div>
-  </div>
+    </div><!-- /page-body -->
+  </div><!-- /main-content -->
 
   <nav class="bottom-nav">
     <div class="bottom-nav-inner">
@@ -288,38 +265,34 @@
   </nav>
 </div>
 
-<!-- MODAL AJUSTE DE QUANTIDADE -->
+<!-- MODAL AJUSTE QUANTIDADE -->
 <div class="modal-overlay" id="modal-qtd">
   <div class="modal-box">
-    <div class="modal-title" id="modal-qtd-nome">Ajustar Quantidade</div>
-    <div class="modal-sub" id="modal-qtd-sub">Estoque atual: 0 unidades</div>
-
-    <!-- Tabs: Entrada / Saída / Definir -->
-    <div style="display:flex;gap:6px;margin-bottom:16px;">
-      <button class="btn btn-dark"  id="tab-entrada" style="flex:1;font-size:.8rem;" onclick="setTabQtd('entrada')">+ Entrada</button>
-      <button class="btn btn-ghost" id="tab-saida"   style="flex:1;font-size:.8rem;" onclick="setTabQtd('saida')">− Saída</button>
-      <button class="btn btn-ghost" id="tab-definir" style="flex:1;font-size:.8rem;" onclick="setTabQtd('definir')">= Definir</button>
+    <div class="modal-title" id="mq-nome">Ajustar Quantidade</div>
+    <div class="modal-sub"  id="mq-atual">Estoque atual: —</div>
+    <div class="tab-row">
+      <button class="tab-btn ativo" id="tab-ent" onclick="setTab('ent')">+ Entrada</button>
+      <button class="tab-btn"       id="tab-sai" onclick="setTab('sai')">− Saída</button>
+      <button class="tab-btn"       id="tab-def" onclick="setTab('def')">= Definir</button>
     </div>
-
-    <div id="tab-desc" style="font-size:.78rem;color:var(--text-muted);margin-bottom:12px;"></div>
-
+    <div id="tab-desc" style="font-size:.75rem;color:var(--text-muted);margin-bottom:10px;"></div>
     <div class="form-group">
-      <label class="form-label" id="qtd-label">Quantidade</label>
-      <input type="number" id="modal-qtd-val" class="form-input" placeholder="0" min="0" step="1">
+      <label class="form-label" id="mq-label">Quantidade</label>
+      <input type="number" id="mq-val" class="form-input" placeholder="0" min="0" step="1">
     </div>
-
-    <div class="form-group" id="custo-entrada-wrap">
-      <label class="form-label">Custo da compra (R$) — opcional</label>
-      <input type="number" id="modal-custo-entrada" class="form-input" placeholder="Ex: 84.00" step="0.01" min="0">
+    <div id="mq-compra-wrap">
+      <div class="form-group">
+        <label class="form-label">Custo da compra R$ (opcional)</label>
+        <input type="number" id="mq-custo" class="form-input" placeholder="84.00" step="0.01" min="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Fornecedor (opcional)</label>
+        <input type="text" id="mq-fornec" class="form-input" placeholder="Ex: Distribuidora XYZ">
+      </div>
     </div>
-    <div class="form-group" id="fornec-wrap">
-      <label class="form-label">Fornecedor — opcional</label>
-      <input type="text" id="modal-fornec" class="form-input" placeholder="Ex: Distribuidora XYZ">
-    </div>
-
-    <div style="display:flex;gap:10px;margin-top:4px;">
-      <button class="btn btn-ghost" id="modal-qtd-cancelar" style="flex:1;">Cancelar</button>
-      <button class="btn btn-success" id="modal-qtd-confirmar" style="flex:1;">✅ Confirmar</button>
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <button class="btn btn-ghost" id="mq-cancelar" style="flex:1;">Cancelar</button>
+      <button class="btn btn-success" id="mq-confirmar" style="flex:1;">✅ Confirmar</button>
     </div>
   </div>
 </div>
@@ -329,446 +302,507 @@
 <script type="module">
 import { db, auth } from './firebase.js';
 import {
-  collection, doc, addDoc, setDoc, updateDoc, deleteDoc,
-  onSnapshot, getDoc, getDocs, query, where,
-  increment, serverTimestamp, Timestamp
+  collection, doc, addDoc, updateDoc, deleteDoc,
+  onSnapshot, getDoc, setDoc, increment,
+  serverTimestamp, Timestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// ─── ESTADO ─────────────────────────────────────────────────────
-let todosItens  = [];
-let categorias  = ['bebida','padaria','salgado','doce','limpeza','higiene','frios','hortifruti','mercearia','outro'];
-let catAtiva    = 'bebida';
-let editandoId  = null;
-let ajusteId    = null;
-let ajusteTipo  = 'entrada';
-let currentUser = null;
+// ══════════════════════════════════════════════
+// CONSTANTES — definidas UMA VEZ no topo
+// ══════════════════════════════════════════════
+const CAT_ICONS = {
+  bebida:'🥤', padaria:'🍞', salgado:'🥨', doce:'🍰',
+  limpeza:'🧹', higiene:'🧴', frios:'❄️', hortifruti:'🥦',
+  mercearia:'🛒', cigarro:'🚬', farmacia:'💊', outro:'📦'
+};
 
-// ─── TOAST ──────────────────────────────────────────────────────
-function toast(msg, type='') {
+const UNIDADE_LOTE = ['fardo','cx','pacote','duzia'];
+
+// ══════════════════════════════════════════════
+// ESTADO
+// ══════════════════════════════════════════════
+let itens       = [];
+let categorias  = Object.keys(CAT_ICONS);
+let catAtiva    = categorias[0];
+let editId      = null;
+let ajusteId    = null;
+let ajusteTipo  = 'ent';
+let currentUser = null;
+let scanStream  = null;
+let barcodeReader = null;
+
+// ══════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════
+function toast(msg, type=''){
   const el = document.createElement('div');
   el.className = `toast ${type}`; el.textContent = msg;
   document.getElementById('toast-container').appendChild(el);
-  setTimeout(() => el.remove(), 3000);
+  setTimeout(()=>el.remove(), 3200);
 }
 
-// ─── CATEGORIAS CHIPS ───────────────────────────────────────────
-const CAT_ICONS = {
-  bebida:'🥤',padaria:'🍞',salgado:'🥨',doce:'🍰',limpeza:'🧹',
-  higiene:'🧴',frios:'❄️',hortifruti:'🥦',mercearia:'🛒',outro:'📦'
-};
-
-function renderCatChips() {
-  const wrap = document.getElementById('cat-chips');
-  wrap.innerHTML = categorias.map(c => `
-    <div class="cat-chip ${c===catAtiva?'active':''}" onclick="selecionarCat('${c}')">
+// ══════════════════════════════════════════════
+// CATEGORIAS CHIPS
+// ══════════════════════════════════════════════
+function renderChips(){
+  // Chips seletores
+  document.getElementById('cat-chips').innerHTML = categorias.map(c=>`
+    <div class="cat-chip${c===catAtiva?' ativo':''}" data-cat="${c}">
       ${CAT_ICONS[c]||'📦'} ${c.charAt(0).toUpperCase()+c.slice(1)}
-    </div>
-  `).join('');
+    </div>`).join('');
 
-  // Atualiza select do filtro
-  const filtro = document.getElementById('filtro-cat');
-  const valAtual = filtro.value;
-  filtro.innerHTML = '<option value="">Todas cats</option>' +
-    categorias.map(c => `<option value="${c}" ${c===valAtual?'selected':''}>${CAT_ICONS[c]||'📦'} ${c.charAt(0).toUpperCase()+c.slice(1)}</option>`).join('');
+  document.querySelectorAll('.cat-chip').forEach(chip=>{
+    chip.onclick = ()=>{
+      catAtiva = chip.dataset.cat;
+      document.getElementById('f-categoria').value = catAtiva;
+      renderChips();
+    };
+  });
+
+  // Filtro de categoria
+  const sel = document.getElementById('f-filtro-cat');
+  const ant = sel.value;
+  sel.innerHTML = '<option value="">Todas cats</option>' +
+    categorias.map(c=>`<option value="${c}"${c===ant?' selected':''}>${CAT_ICONS[c]||'📦'} ${c.charAt(0).toUpperCase()+c.slice(1)}</option>`).join('');
 }
 
-window.selecionarCat = c => {
-  catAtiva = c;
-  document.getElementById('f-categoria').value = c;
-  renderCatChips();
-};
-
-// Criar nova categoria
-document.getElementById('btn-add-cat').onclick = () => {
-  const val = document.getElementById('nova-cat').value.trim().toLowerCase();
-  if (!val) return;
-  if (categorias.includes(val)) { toast('Categoria já existe.', 'error'); return; }
-  categorias.push(val);
-  catAtiva = val;
-  document.getElementById('f-categoria').value = val;
+document.getElementById('btn-add-cat').onclick = ()=>{
+  const v = document.getElementById('nova-cat').value.trim().toLowerCase();
+  if(!v){ toast('Digite um nome de categoria.','error'); return; }
+  if(categorias.includes(v)){ toast('Categoria já existe.','error'); return; }
+  categorias.push(v);
+  catAtiva = v;
+  document.getElementById('f-categoria').value = v;
   document.getElementById('nova-cat').value = '';
-  renderCatChips();
-  toast(`✅ Categoria "${val}" criada!`, 'success');
-  // Salvar no Firestore se logado
-  if (currentUser) {
-    setDoc(doc(db, `config_${currentUser.uid}`, 'categorias'), { lista: categorias });
-  }
+  renderChips();
+  toast(`✅ Categoria "${v}" criada!`,'success');
+  if(currentUser) setDoc(doc(db,`config_${currentUser.uid}`,'categorias'),{lista:categorias});
 };
 
-// ─── LOTE ───────────────────────────────────────────────────────
-const UNIDADE_LOTE = ['cx','fardo','pacote','duzia'];
+// Inicializa chips imediatamente
+renderChips();
+document.getElementById('f-categoria').value = catAtiva;
 
-document.getElementById('f-unidade').addEventListener('change', e => {
-  const usaLote = UNIDADE_LOTE.includes(e.target.value);
-  document.getElementById('lote-section').style.display = usaLote ? '' : 'none';
+// ══════════════════════════════════════════════
+// SCANNER — usa BarcodeDetector API (nativo Android Chrome)
+// com fallback para input de câmera
+// ══════════════════════════════════════════════
+const scanArea  = document.getElementById('scan-area');
+const scanVideo = document.getElementById('scan-video');
+const scanFile  = document.getElementById('scan-file');
+const btnScan   = document.getElementById('btn-scan');
+
+function fecharScanner(){
+  if(scanStream){ scanStream.getTracks().forEach(t=>t.stop()); scanStream=null; }
+  if(barcodeReader) clearInterval(barcodeReader);
+  scanArea.classList.remove('aberto');
+}
+
+document.getElementById('scan-close').onclick = fecharScanner;
+
+async function iniciarScanner(){
+  // Tenta BarcodeDetector (Chrome Android 83+)
+  if('BarcodeDetector' in window){
+    try{
+      scanStream = await navigator.mediaDevices.getUserMedia({
+        video:{ facingMode:'environment', width:{ideal:1280}, height:{ideal:720} }
+      });
+      scanVideo.srcObject = scanStream;
+      scanArea.classList.add('aberto');
+
+      const detector = new BarcodeDetector({ formats:['ean_13','ean_8','code_128','code_39','upc_a','upc_e','qr_code'] });
+
+      barcodeReader = setInterval(async()=>{
+        if(scanVideo.readyState === scanVideo.HAVE_ENOUGH_DATA){
+          try{
+            const codes = await detector.detect(scanVideo);
+            if(codes.length>0){
+              const code = codes[0].rawValue;
+              document.getElementById('f-codigo').value = code;
+              fecharScanner();
+              toast(`✅ Código: ${code}`,'success');
+              buscarPorCodigo(code);
+            }
+          }catch(e){}
+        }
+      }, 300);
+      return;
+    }catch(e){
+      fecharScanner();
+    }
+  }
+
+  // Fallback: abre câmera via input file (funciona em qualquer Android)
+  toast('Abrindo câmera...','');
+  scanFile.click();
+}
+
+// Fallback: lê imagem e tenta ZXing via CDN
+scanFile.onchange = async (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+
+  // Tenta ler o código com BarcodeDetector na imagem
+  if('BarcodeDetector' in window){
+    try{
+      const img = await createImageBitmap(file);
+      const det = new BarcodeDetector({ formats:['ean_13','ean_8','code_128','upc_a','upc_e'] });
+      const codes = await det.detect(img);
+      if(codes.length>0){
+        const code = codes[0].rawValue;
+        document.getElementById('f-codigo').value = code;
+        toast(`✅ Código: ${code}`,'success');
+        buscarPorCodigo(code);
+        scanFile.value='';
+        return;
+      }
+    }catch(e){}
+  }
+
+  // Último fallback: mostra imagem para o usuário digitar
+  toast('Não foi possível ler automaticamente. Digite o código manualmente.','error');
+  scanFile.value='';
+};
+
+btnScan.onclick = iniciarScanner;
+
+// Busca produto existente pelo código
+function buscarPorCodigo(codigo){
+  const found = itens.find(i=>i.codigo===codigo);
+  if(found){ preencherForm(found); toast(`Produto encontrado: ${found.nome}`,'success'); }
+}
+
+// Enter no campo código também busca
+document.getElementById('f-codigo').addEventListener('keydown', e=>{
+  if(e.key==='Enter') buscarPorCodigo(e.target.value.trim());
 });
 
-function calcLote() {
-  const qtdLote  = parseFloat(document.getElementById('f-qtd-lote').value) || 0;
-  const custoLot = parseFloat(document.getElementById('f-custo-lote').value) || 0;
-  const custoUn  = qtdLote > 0 ? custoLot / qtdLote : 0;
+// ══════════════════════════════════════════════
+// LOTE
+// ══════════════════════════════════════════════
+document.getElementById('f-unidade').addEventListener('change', e=>{
+  const usa = UNIDADE_LOTE.includes(e.target.value);
+  document.getElementById('lote-box').style.display = usa ? '' : 'none';
+  if(!usa) calcPreco();
+});
 
-  document.getElementById('prev-custo-un').textContent = custoUn > 0 ? `R$ ${custoUn.toFixed(2)}` : 'R$ —';
-  document.getElementById('prev-total-un').textContent = qtdLote > 0 ? `${qtdLote} un` : '— un';
-
-  // Preenche custo unitário automaticamente
-  if (custoUn > 0) {
-    document.getElementById('f-custo').value = custoUn.toFixed(4);
-    calcPreview();
-  }
+function calcLote(){
+  const qtd  = parseFloat(document.getElementById('f-lote-qtd').value)||0;
+  const cust = parseFloat(document.getElementById('f-lote-custo').value)||0;
+  const un   = qtd>0 ? cust/qtd : 0;
+  document.getElementById('lp-custo').textContent = un>0 ? `R$ ${un.toFixed(2)}` : 'R$ —';
+  document.getElementById('lp-total').textContent = qtd>0 ? `${qtd} un` : '— un';
+  if(un>0){ document.getElementById('f-custo').value = un.toFixed(4); calcPreco(); }
 }
 
-['f-qtd-lote','f-custo-lote'].forEach(id =>
-  document.getElementById(id).addEventListener('input', calcLote)
-);
+['f-lote-qtd','f-lote-custo'].forEach(id=>
+  document.getElementById(id).addEventListener('input', calcLote));
 
-// ─── PREVIEW PREÇO ─────────────────────────────────────────────
-function calcPreview() {
-  const custo  = parseFloat(document.getElementById('f-custo').value)  || 0;
-  const margem = parseFloat(document.getElementById('f-margem').value) || 0;
-
-  if (custo <= 0) {
-    document.getElementById('prev-venda').textContent = 'R$ —';
-    document.getElementById('prev-lucro').textContent = 'R$ —';
+// ══════════════════════════════════════════════
+// PREVIEW PREÇO
+// ══════════════════════════════════════════════
+function calcPreco(){
+  const custo  = parseFloat(document.getElementById('f-custo').value)||0;
+  const margem = parseFloat(document.getElementById('f-margem').value)||0;
+  if(custo<=0){
+    document.getElementById('pp-venda').textContent = 'R$ —';
+    document.getElementById('pp-lucro').textContent = 'R$ —';
     return 0;
   }
-  const venda = custo * (1 + margem / 100);
-  const lucro = venda - custo;
-  document.getElementById('prev-venda').textContent = `R$ ${venda.toFixed(2)}`;
-  document.getElementById('prev-lucro').textContent = `R$ ${lucro.toFixed(2)}`;
+  const venda = custo*(1+margem/100);
+  const lucro = venda-custo;
+  document.getElementById('pp-venda').textContent = `R$ ${venda.toFixed(2)}`;
+  document.getElementById('pp-lucro').textContent = `R$ ${lucro.toFixed(2)}`;
   return venda;
 }
 
-// ← FIX: event listeners nos campos de custo e margem
-document.getElementById('f-custo').addEventListener('input', calcPreview);
-document.getElementById('f-margem').addEventListener('input', calcPreview);
+document.getElementById('f-custo').addEventListener('input', calcPreco);
+document.getElementById('f-margem').addEventListener('input', calcPreco);
 
-// ─── SCANNER ────────────────────────────────────────────────────
-let scanner = null;
-
-document.getElementById('btn-scan').onclick = () => {
-  const wrap = document.getElementById('scanner-wrap');
-  wrap.style.display = 'block';
-  scanner = new Html5Qrcode('reader');
-  scanner.start(
-    { facingMode:'environment' },
-    { fps:10, qrbox:{ width:280, height:100 } },
-    code => {
-      document.getElementById('f-codigo').value = code;
-      pararScanner();
-      const found = todosItens.find(i => i.codigo === code);
-      if (found) { preencherForm(found); toast(`Produto: ${found.nome}`, 'success'); }
-    },
-    () => {}
-  ).catch(() => { toast('Câmera indisponível.','error'); pararScanner(); });
-};
-
-function pararScanner() {
-  if (scanner) { scanner.stop().catch(()=>{}); scanner=null; }
-  document.getElementById('scanner-wrap').style.display = 'none';
-}
-document.getElementById('fechar-scanner').onclick = pararScanner;
-
-// ─── FORM EDIÇÃO ────────────────────────────────────────────────
-function preencherForm(item) {
-  editandoId = item.id;
-  document.getElementById('form-titulo').textContent   = '✏️ Editar Produto';
-  document.getElementById('f-codigo').value    = item.codigo    || '';
-  document.getElementById('f-nome').value      = item.nome      || '';
-  document.getElementById('f-unidade').value   = item.unidade   || 'un';
-  document.getElementById('f-custo').value     = item.custo     || '';
-  document.getElementById('f-margem').value    = item.margem    || '';
-  document.getElementById('f-qtd').value       = item.qtd       || 0;
-  document.getElementById('f-min').value       = item.minimo    || 5;
-  catAtiva = item.categoria || 'outro';
+// ══════════════════════════════════════════════
+// FORM — preencher / limpar
+// ══════════════════════════════════════════════
+function preencherForm(item){
+  editId = item.id;
+  document.getElementById('form-titulo').textContent = '✏️ Editar Produto';
+  document.getElementById('f-codigo').value  = item.codigo||'';
+  document.getElementById('f-nome').value    = item.nome||'';
+  document.getElementById('f-unidade').value = item.unidade||'un';
+  document.getElementById('f-custo').value   = item.custo||'';
+  document.getElementById('f-margem').value  = item.margem||'';
+  document.getElementById('f-qtd').value     = item.qtd||0;
+  document.getElementById('f-min').value     = item.minimo||5;
+  catAtiva = item.categoria||categorias[0];
   document.getElementById('f-categoria').value = catAtiva;
-  renderCatChips();
-
-  const usaLote = UNIDADE_LOTE.includes(item.unidade);
-  document.getElementById('lote-section').style.display = usaLote ? '' : 'none';
-
-  calcPreview();
+  renderChips();
+  document.getElementById('lote-box').style.display =
+    UNIDADE_LOTE.includes(item.unidade) ? '' : 'none';
+  calcPreco();
   document.getElementById('btn-salvar').textContent = '💾 Salvar';
-  window.scrollTo({ top:0, behavior:'smooth' });
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
-function limparForm() {
-  editandoId = null;
+function limparForm(){
+  editId = null;
   document.getElementById('form-titulo').textContent = 'Cadastrar Produto';
-  ['f-codigo','f-nome','f-custo','f-margem'].forEach(id => document.getElementById(id).value='');
-  document.getElementById('f-qtd').value = '0';
-  document.getElementById('f-min').value = '5';
+  ['f-codigo','f-nome','f-custo','f-margem'].forEach(id=>
+    document.getElementById(id).value='');
+  document.getElementById('f-qtd').value  = '0';
+  document.getElementById('f-min').value  = '5';
   document.getElementById('f-unidade').value = 'un';
-  document.getElementById('lote-section').style.display = 'none';
-  document.getElementById('prev-venda').textContent = 'R$ —';
-  document.getElementById('prev-lucro').textContent = 'R$ —';
+  document.getElementById('lote-box').style.display = 'none';
+  document.getElementById('pp-venda').textContent = 'R$ —';
+  document.getElementById('pp-lucro').textContent = 'R$ —';
   document.getElementById('btn-salvar').textContent = '+ Cadastrar';
   document.getElementById('msg-form').textContent   = '';
 }
 
 document.getElementById('btn-limpar').onclick = limparForm;
 
-// ─── MODAL AJUSTE QTD ───────────────────────────────────────────
-window.setTabQtd = tipo => {
-  ajusteTipo = tipo;
-  ['entrada','saida','definir'].forEach(t => {
-    const btn = document.getElementById(`tab-${t}`);
-    btn.className = `btn ${t===tipo?'btn-dark':'btn-ghost'}`;
-    btn.style.flex = '1';
-    btn.style.fontSize = '.8rem';
-  });
-
-  const descs = {
-    entrada: '➕ Adiciona ao estoque atual (ex: chegou mercadoria)',
-    saida:   '➖ Remove do estoque atual (ex: quebra, perda)',
-    definir: '= Define o estoque exato (ex: após contagem física)'
-  };
-  const labels = { entrada:'Quantidade a adicionar', saida:'Quantidade a remover', definir:'Nova quantidade total' };
-
-  document.getElementById('tab-desc').textContent    = descs[tipo];
-  document.getElementById('qtd-label').textContent   = labels[tipo];
-  document.getElementById('custo-entrada-wrap').style.display = tipo==='entrada' ? '' : 'none';
-  document.getElementById('fornec-wrap').style.display        = tipo==='entrada' ? '' : 'none';
+// ══════════════════════════════════════════════
+// MODAL AJUSTE
+// ══════════════════════════════════════════════
+const TABS = {
+  ent:{ label:'Qtd a adicionar',  desc:'➕ Chegou mercadoria — adiciona ao estoque atual', ativo:true  },
+  sai:{ label:'Qtd a remover',    desc:'➖ Quebra ou perda — remove do estoque atual',     ativo:false },
+  def:{ label:'Nova qtd total',   desc:'= Contagem física — define o número exato',        ativo:false }
 };
 
-window.abrirAjusteQtd = (id, nome, qtdAtual) => {
+window.setTab = tipo=>{
+  ajusteTipo = tipo;
+  Object.keys(TABS).forEach(t=>{
+    document.getElementById(`tab-${t}`).className = `tab-btn${t===tipo?' ativo':''}`;
+  });
+  document.getElementById('mq-label').textContent = TABS[tipo].label;
+  document.getElementById('tab-desc').textContent = TABS[tipo].desc;
+  document.getElementById('mq-compra-wrap').style.display = tipo==='ent' ? '' : 'none';
+};
+
+window.abrirAjuste = (id, nome, qtd)=>{
   ajusteId = id;
-  document.getElementById('modal-qtd-nome').textContent = nome;
-  document.getElementById('modal-qtd-sub').textContent  = `Estoque atual: ${qtdAtual} unidades`;
-  document.getElementById('modal-qtd-val').value         = '';
-  document.getElementById('modal-custo-entrada').value   = '';
-  document.getElementById('modal-fornec').value          = '';
-  setTabQtd('entrada');
+  document.getElementById('mq-nome').textContent  = nome;
+  document.getElementById('mq-atual').textContent = `Estoque atual: ${qtd} unidades`;
+  document.getElementById('mq-val').value   = '';
+  document.getElementById('mq-custo').value = '';
+  document.getElementById('mq-fornec').value= '';
+  setTab('ent');
   document.getElementById('modal-qtd').classList.add('open');
 };
 
-document.getElementById('modal-qtd-cancelar').onclick = () => {
+document.getElementById('mq-cancelar').onclick = ()=>{
   document.getElementById('modal-qtd').classList.remove('open');
   ajusteId = null;
 };
 
-// ─── FIREBASE ───────────────────────────────────────────────────
-auth.onAuthStateChanged(async user => {
-  if (!user) { location.href='index.html'; return; }
+// ══════════════════════════════════════════════
+// FIREBASE
+// ══════════════════════════════════════════════
+auth.onAuthStateChanged(async user=>{
+  if(!user){ location.href='index.html'; return; }
   currentUser = user;
 
   // Carrega categorias salvas
-  try {
-    const cSnap = await getDoc(doc(db, `config_${user.uid}`, 'categorias'));
-    if (cSnap.exists() && cSnap.data().lista?.length) {
-      categorias = cSnap.data().lista;
+  try{
+    const snap = await getDoc(doc(db,`config_${user.uid}`,'categorias'));
+    if(snap.exists() && snap.data().lista?.length){
+      const extra = snap.data().lista.filter(c=>!categorias.includes(c));
+      categorias.push(...extra);
+      renderChips();
     }
-  } catch(e) {}
-  renderCatChips();
+  }catch(e){}
 
-  const colRef = collection(db, `estoque_${user.uid}`);
+  const colRef = collection(db,`estoque_${user.uid}`);
 
-  // CONFIRMAR AJUSTE QTD
-  document.getElementById('modal-qtd-confirmar').onclick = async () => {
-    const val    = parseInt(document.getElementById('modal-qtd-val').value) || 0;
-    const custo  = parseFloat(document.getElementById('modal-custo-entrada').value) || 0;
-    const fornec = document.getElementById('modal-fornec').value.trim();
-
-    if (val <= 0 && ajusteTipo !== 'definir') { toast('Quantidade inválida.','error'); return; }
-    if (val < 0)  { toast('Quantidade inválida.','error'); return; }
-
-    const btn = document.getElementById('modal-qtd-confirmar');
-    btn.disabled = true;
-
-    try {
-      const item = todosItens.find(i => i.id === ajusteId);
-
-      let novaQtd;
-      if (ajusteTipo === 'entrada')  novaQtd = increment(val);
-      else if (ajusteTipo === 'saida') novaQtd = increment(-val);
-      else novaQtd = val;
-
-      await updateDoc(doc(db, `estoque_${user.uid}`, ajusteId), { qtd: novaQtd });
-
-      // Registra despesa se entrada com custo
-      if (ajusteTipo === 'entrada' && custo > 0) {
-        await addDoc(collection(db, `despesas_${user.uid}`), {
-          descricao:  `Entrada estoque: ${item?.nome||'?'} (${val} un)`,
-          valor:       custo,
-          categoria:  'compra_estoque',
-          fornecedor:  fornec,
-          data:        Timestamp.fromDate(new Date()),
-          produtoId:   ajusteId
-        });
-      }
-
-      const acao = ajusteTipo==='entrada' ? `+${val}` : ajusteTipo==='saida' ? `-${val}` : `=${val}`;
-      toast(`✅ Estoque atualizado (${acao} un)`, 'success');
-      document.getElementById('modal-qtd').classList.remove('open');
-      ajusteId = null;
-    } catch(e) {
-      toast(`Erro: ${e.message}`, 'error');
-    } finally { btn.disabled = false; }
-  };
-
-  // SALVAR PRODUTO
-  document.getElementById('btn-salvar').onclick = async () => {
+  // SALVAR
+  document.getElementById('btn-salvar').onclick = async()=>{
     const codigo   = document.getElementById('f-codigo').value.trim();
     const nome     = document.getElementById('f-nome').value.trim();
     const custo    = parseFloat(document.getElementById('f-custo').value);
     const margem   = parseFloat(document.getElementById('f-margem').value);
-    const qtd      = parseInt(document.getElementById('f-qtd').value)  || 0;
-    const minimo   = parseInt(document.getElementById('f-min').value)  || 5;
+    const qtd      = parseInt(document.getElementById('f-qtd').value)||0;
+    const minimo   = parseInt(document.getElementById('f-min').value)||5;
     const unidade  = document.getElementById('f-unidade').value;
     const categoria= document.getElementById('f-categoria').value || catAtiva;
 
-    if (!nome)             { document.getElementById('msg-form').textContent='⚠️ Nome obrigatório.'; return; }
-    if (!codigo)           { document.getElementById('msg-form').textContent='⚠️ Código obrigatório.'; return; }
-    if (isNaN(custo)||custo<=0) { document.getElementById('msg-form').textContent='⚠️ Custo inválido.'; return; }
-    if (isNaN(margem)||margem<0){ document.getElementById('msg-form').textContent='⚠️ Margem inválida.'; return; }
+    if(!nome)              { document.getElementById('msg-form').textContent='⚠️ Nome obrigatório.'; return; }
+    if(!codigo)            { document.getElementById('msg-form').textContent='⚠️ Código obrigatório.'; return; }
+    if(isNaN(custo)||custo<=0){ document.getElementById('msg-form').textContent='⚠️ Custo inválido.'; return; }
+    if(isNaN(margem)||margem<0){ document.getElementById('msg-form').textContent='⚠️ Margem inválida.'; return; }
 
-    const preco = Math.round(custo * (1 + margem/100) * 100) / 100;
+    const preco = Math.round(custo*(1+margem/100)*100)/100;
     const dados = { codigo, nome, custo, margem, preco, qtd, minimo, unidade, categoria, updatedAt:serverTimestamp() };
 
     const btn = document.getElementById('btn-salvar');
     btn.disabled = true;
-    document.getElementById('msg-form').textContent = '';
+    document.getElementById('msg-form').textContent='';
 
-    try {
-      if (editandoId) {
-        await updateDoc(doc(db, `estoque_${user.uid}`, editandoId), dados);
-        toast(`✅ "${nome}" atualizado!`, 'success');
+    try{
+      if(editId){
+        await updateDoc(doc(db,`estoque_${user.uid}`,editId), dados);
+        toast(`✅ "${nome}" atualizado!`,'success');
       } else {
-        const dup = todosItens.find(i => i.codigo === codigo);
-        if (dup) { document.getElementById('msg-form').textContent='⚠️ Código já cadastrado.'; btn.disabled=false; return; }
-        await addDoc(colRef, { ...dados, createdAt:serverTimestamp() });
-        toast(`✅ "${nome}" cadastrado!`, 'success');
+        if(itens.find(i=>i.codigo===codigo)){
+          document.getElementById('msg-form').textContent='⚠️ Código já cadastrado.';
+          btn.disabled=false; return;
+        }
+        await addDoc(colRef,{...dados,createdAt:serverTimestamp()});
+        toast(`✅ "${nome}" cadastrado!`,'success');
       }
       limparForm();
-    } catch(e) {
+    }catch(e){
       console.error(e);
-      document.getElementById('msg-form').textContent = `❌ ${e.code==='permission-denied'?'Sem permissão (veja regras Firestore)':e.message}`;
-    } finally { btn.disabled=false; }
+      document.getElementById('msg-form').textContent =
+        e.code==='permission-denied' ? '❌ Sem permissão (verifique Firestore)' : `❌ ${e.message}`;
+    } finally{ btn.disabled=false; }
+  };
+
+  // CONFIRMAR AJUSTE
+  document.getElementById('mq-confirmar').onclick = async()=>{
+    const val    = parseInt(document.getElementById('mq-val').value)||0;
+    const custo  = parseFloat(document.getElementById('mq-custo').value)||0;
+    const fornec = document.getElementById('mq-fornec').value.trim();
+
+    if(val<0||(val===0&&ajusteTipo!=='def')){ toast('Quantidade inválida.','error'); return; }
+
+    const btn = document.getElementById('mq-confirmar');
+    btn.disabled=true;
+
+    try{
+      const item = itens.find(i=>i.id===ajusteId);
+      let novaQtd;
+      if(ajusteTipo==='ent')      novaQtd = increment(val);
+      else if(ajusteTipo==='sai') novaQtd = increment(-val);
+      else                        novaQtd = val;
+
+      await updateDoc(doc(db,`estoque_${user.uid}`,ajusteId),{qtd:novaQtd});
+
+      if(ajusteTipo==='ent' && custo>0){
+        await addDoc(collection(db,`despesas_${user.uid}`),{
+          descricao:`Entrada: ${item?.nome||'?'} (${val} un)`,
+          valor:custo, categoria:'compra_estoque',
+          fornecedor:fornec, data:Timestamp.fromDate(new Date()),
+          produtoId:ajusteId
+        });
+        toast(`✅ +${val} un · despesa R$${custo.toFixed(2)} registrada`,'success');
+      } else {
+        const acao = ajusteTipo==='ent'?`+${val}`:ajusteTipo==='sai'?`-${val}`:`=${val}`;
+        toast(`✅ Estoque atualizado (${acao} un)`,'success');
+      }
+
+      document.getElementById('modal-qtd').classList.remove('open');
+    }catch(e){ toast(`Erro: ${e.message}`,'error'); }
+    finally{ btn.disabled=false; ajusteId=null; }
   };
 
   // EXCLUIR
-  window.excluirItem = async (id, nome) => {
-    if (!confirm(`Excluir "${nome}" do estoque?`)) return;
-    try {
-      await deleteDoc(doc(db, `estoque_${user.uid}`, id));
-      toast(`"${nome}" removido.`, '');
-    } catch(e) { toast('Erro ao excluir.','error'); }
+  window.excluir = async(id,nome)=>{
+    if(!confirm(`Excluir "${nome}"?`)) return;
+    try{
+      await deleteDoc(doc(db,`estoque_${user.uid}`,id));
+      toast(`"${nome}" removido.`,'');
+    }catch(e){ toast('Erro ao excluir.','error'); }
   };
 
+  // +/- rápido
+  window.ajRap = async(id,delta,qtdAt)=>{
+    if(qtdAt+delta<0){ toast('Estoque não pode ser negativo.','error'); return; }
+    try{
+      await updateDoc(doc(db,`estoque_${user.uid}`,id),{qtd:increment(delta)});
+    }catch(e){ toast('Erro.','error'); }
+  };
+
+  window.editarItem = id=>{ const it=itens.find(i=>i.id===id); if(it) preencherForm(it); };
+
   // LISTENER TEMPO REAL
-  onSnapshot(colRef, snap => {
-    todosItens = [];
-    snap.forEach(d => todosItens.push({ id:d.id, ...d.data() }));
-    todosItens.sort((a,b) => (a.nome||'').localeCompare(b.nome||''));
+  onSnapshot(colRef, snap=>{
+    itens = [];
+    snap.forEach(d=>itens.push({id:d.id,...d.data()}));
+    itens.sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));
     renderTabela();
-    atualizarResumo();
+    resumoTop();
   });
 
-  // BUSCA + FILTRO
-  ['busca','filtro-cat','filtro-status'].forEach(id =>
-    document.getElementById(id).addEventListener('input', renderTabela)
-  );
+  // FILTROS
+  ['busca','f-filtro-cat','f-filtro-st'].forEach(id=>
+    document.getElementById(id).addEventListener('input',renderTabela));
 });
 
-// ─── RENDER TABELA ──────────────────────────────────────────────
-function renderTabela() {
-  const busca  = document.getElementById('busca').value.toLowerCase();
-  const cat    = document.getElementById('filtro-cat').value;
-  const status = document.getElementById('filtro-status').value;
+// ══════════════════════════════════════════════
+// RENDER TABELA
+// ══════════════════════════════════════════════
+function renderTabela(){
+  const busca = document.getElementById('busca').value.toLowerCase();
+  const cat   = document.getElementById('f-filtro-cat').value;
+  const st    = document.getElementById('f-filtro-st').value;
 
-  let itens = todosItens.filter(i => {
-    const mB = !busca  || (i.nome||'').toLowerCase().includes(busca) || (i.codigo||'').includes(busca);
-    const mC = !cat    || i.categoria === cat;
-    const mS = !status ||
-      (status==='zerado' && (i.qtd||0)===0) ||
-      (status==='baixo'  && (i.qtd||0)>0 && (i.qtd||0)<=(i.minimo||5));
-    return mB && mC && mS;
+  const lista = itens.filter(i=>{
+    const mB = !busca || (i.nome||'').toLowerCase().includes(busca) || (i.codigo||'').includes(busca);
+    const mC = !cat  || i.categoria===cat;
+    const mS = !st   ||
+      (st==='zero'  && (i.qtd||0)===0) ||
+      (st==='baixo' && (i.qtd||0)>0 && (i.qtd||0)<=(i.minimo||5));
+    return mB&&mC&&mS;
   });
 
-  document.getElementById('count-badge').textContent = `${itens.length} itens`;
+  document.getElementById('count-badge').textContent = `${lista.length} itens`;
 
-  const tbody = document.getElementById('tabela-corpo');
-  if (itens.length===0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted);">${todosItens.length===0?'Nenhum produto cadastrado.':'Nenhum item encontrado.'}</td></tr>`;
+  const tbody = document.getElementById('tbl-body');
+  if(!lista.length){
+    tbody.innerHTML=`<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--text-muted);">${
+      itens.length?'Nenhum item encontrado.':'Nenhum produto cadastrado.'}</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = itens.map(i => {
-    const qtd = i.qtd||0;
-    const min = i.minimo||5;
-    const qC  = qtd===0?'qty-zerado':qtd<=min?'qty-baixo':'qty-ok';
+  tbody.innerHTML = lista.map(i=>{
+    const qtd = i.qtd||0, min = i.minimo||5;
+    const qC  = qtd===0?'qzero':qtd<=min?'qbaixo':'qok';
     const qI  = qtd===0?'🔴':qtd<=min?'🟡':'🟢';
-    const cat = i.categoria||'outro';
-    const icon= CAT_ICONS[cat]||'📦';
+    const ico = CAT_ICONS[i.categoria]||'📦';
+    const lucroUn = (i.preco||0)-(i.custo||0);
+    const nomeSafe = (i.nome||'').replace(/'/g,"\\'");
 
     return `<tr>
       <td>
-        <div style="font-weight:700;font-size:.85rem;color:var(--navy);">${icon} ${i.nome}</div>
-        <div style="font-size:.68rem;color:var(--text-muted);">${cat} · ${i.unidade||'un'}</div>
+        <div style="font-weight:700;font-size:.84rem;color:var(--navy);">${ico} ${i.nome}</div>
+        <div style="font-size:.67rem;color:var(--text-muted);">${i.categoria||'—'} · ${i.unidade||'un'}</div>
       </td>
-      <td><span class="cod-badge">${i.codigo||'—'}</span></td>
+      <td><span class="cod">${i.codigo||'—'}</span></td>
       <td>
-        <div style="font-size:.72rem;color:var(--text-muted);">Custo R$ ${(i.custo||0).toFixed(2)}</div>
-        <div style="font-weight:700;color:var(--navy);">Venda R$ ${(i.preco||0).toFixed(2)}</div>
-        <div style="font-size:.68rem;color:#059669;">↑ ${i.margem||0}% · +R$${((i.preco||0)-(i.custo||0)).toFixed(2)}</div>
-      </td>
-      <td>
-        <span class="qty-badge ${qC}">${qI} ${qtd} ${i.unidade||'un'}</span>
-        ${qtd<=min?`<div style="font-size:.63rem;color:var(--amber-dark);margin-top:2px;">mín: ${min}</div>`:''}
+        <div style="font-size:.7rem;color:var(--text-muted);">Custo R$${(i.custo||0).toFixed(2)}</div>
+        <div style="font-weight:700;color:var(--navy);">Venda R$${(i.preco||0).toFixed(2)}</div>
+        <div style="font-size:.67rem;color:#059669;">↑${i.margem||0}% +R$${lucroUn.toFixed(2)}</div>
       </td>
       <td>
-        <!-- Ajuste rápido inline -->
-        <div class="qty-control-inline">
-          <button class="qty-btn-sm" onclick="ajusteRapido('${i.id}',-1,${qtd})">−</button>
-          <span class="qty-num-sm">${qtd}</span>
-          <button class="qty-btn-sm" onclick="ajusteRapido('${i.id}',1,${qtd})">+</button>
+        <span class="qbadge ${qC}">${qI} ${qtd}</span>
+        ${qtd<=min?`<div style="font-size:.62rem;color:var(--amber-dark);">mín:${min}</div>`:''}
+      </td>
+      <td>
+        <div class="qctrl">
+          <button class="qbtn" onclick="ajRap('${i.id}',-1,${qtd})">−</button>
+          <span class="qnum">${qtd}</span>
+          <button class="qbtn" onclick="ajRap('${i.id}',1,${qtd})">+</button>
         </div>
-        <button class="btn btn-ghost" style="margin-top:5px;padding:4px 8px;font-size:.68rem;width:100%;"
-          onclick="abrirAjusteQtd('${i.id}','${(i.nome||'').replace(/'/g,"\\'")}',${qtd})">
-          📦 Entrada/Saída
-        </button>
+        <button class="btn btn-ghost" style="margin-top:4px;padding:3px 8px;font-size:.67rem;width:100%;"
+          onclick="abrirAjuste('${i.id}','${nomeSafe}',${qtd})">📦 Entrada/Saída</button>
       </td>
       <td>
-        <div style="display:flex;flex-direction:column;gap:4px;">
-          <button class="btn btn-ghost" style="padding:5px 8px;font-size:.7rem;" onclick="editarItem('${i.id}')">✏️ Editar</button>
-          <button class="btn btn-danger" style="padding:5px 8px;font-size:.7rem;" onclick="excluirItem('${i.id}','${(i.nome||'').replace(/'/g,"\\'")}')">🗑️</button>
+        <div style="display:flex;flex-direction:column;gap:3px;">
+          <button class="btn btn-ghost"  style="padding:4px 8px;font-size:.68rem;" onclick="editarItem('${i.id}')">✏️</button>
+          <button class="btn btn-danger" style="padding:4px 8px;font-size:.68rem;" onclick="excluir('${i.id}','${nomeSafe}')">🗑️</button>
         </div>
       </td>
     </tr>`;
   }).join('');
 }
 
-// Ajuste rápido +/- sem modal
-window.ajusteRapido = async (id, delta, qtdAtual) => {
-  if (qtdAtual + delta < 0) { toast('Estoque não pode ser negativo.','error'); return; }
-  try {
-    await (await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"))
-      .updateDoc(
-        (await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js")).doc(db, `estoque_${currentUser.uid}`, id),
-        { qtd: (await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js")).increment(delta) }
-      );
-  } catch(e) { toast('Erro.','error'); }
-};
-
-window.editarItem = id => {
-  const item = todosItens.find(i => i.id===id);
-  if (item) preencherForm(item);
-};
-
-// ─── RESUMO TOPBAR ───────────────────────────────────────────────
-function atualizarResumo() {
-  const baixo  = todosItens.filter(i => (i.qtd||0)<=(i.minimo||5) && (i.qtd||0)>0).length;
-  const zerado = todosItens.filter(i => (i.qtd||0)===0).length;
-  let txt = `${todosItens.length} produtos`;
-  if (zerado>0) txt += ` · 🔴 ${zerado} zerado${zerado>1?'s':''}`;
-  if (baixo>0)  txt += ` · 🟡 ${baixo} baixo${baixo>1?'s':''}`;
-  document.getElementById('resumo-top').textContent = txt;
+function resumoTop(){
+  const z = itens.filter(i=>(i.qtd||0)===0).length;
+  const b = itens.filter(i=>(i.qtd||0)>0&&(i.qtd||0)<=(i.minimo||5)).length;
+  let t = `${itens.length} produtos`;
+  if(z>0) t+=` · 🔴 ${z} zerado${z>1?'s':''}`;
+  if(b>0) t+=` · 🟡 ${b} baixo${b>1?'s':''}`;
+  document.getElementById('resumo-top').textContent = t;
 }
-
-const CAT_ICONS = {
-  bebida:'🥤',padaria:'🍞',salgado:'🥨',doce:'🍰',limpeza:'🧹',
-  higiene:'🧴',frios:'❄️',hortifruti:'🥦',mercearia:'🛒',outro:'📦'
-};
 </script>
 </body>
 </html>
