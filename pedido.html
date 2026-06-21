@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <style>
     /* TOTAL HERO */
     .total-hero {
@@ -207,7 +208,23 @@
       </div>
 
       <!-- CARDÁPIO -->
-      <div class="section-title">Adicionar ao pedido</div>
+      <!-- BUSCA POR CÓDIGO DE BARRAS -->
+      <div style="margin-bottom:16px;">
+        <div class="section-title" style="margin-bottom:10px;">Buscar por código ou scanner</div>
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <input type="text" id="campo-codigo" class="form-input"
+            placeholder="📷 Digite ou escaneie o código..."
+            style="flex:1; font-family:monospace;">
+          <button id="btn-scan-pedido" class="btn btn-dark" style="padding:10px 14px;white-space:nowrap;">
+            📷 Scan
+          </button>
+        </div>
+        <div id="scanner-pedido-wrap" style="display:none; border-radius:14px; overflow:hidden; margin-bottom:10px;">
+          <div id="reader-pedido"></div>
+        </div>
+      </div>
+
+      <div class="section-title">Ou escolha no cardápio</div>
       <div id="lista-cardapio" class="cardapio-grid">
         <div style="color:var(--text-muted); font-size:0.85rem; grid-column:1/-1;">Carregando cardápio...</div>
       </div>
@@ -298,6 +315,98 @@
       return;
     }
 
+    // ─── SCANNER PEDIDO ─────────────────────────────────────────
+    let scannerPedido = null;
+
+    document.getElementById('btn-scan-pedido').onclick = () => {
+      const wrap = document.getElementById('scanner-pedido-wrap');
+      if (scannerPedido) {
+        scannerPedido.stop().catch(()=>{});
+        scannerPedido = null;
+        wrap.style.display = 'none';
+        return;
+      }
+      wrap.style.display = 'block';
+      scannerPedido = new Html5Qrcode('reader-pedido');
+      scannerPedido.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 260, height: 100 } },
+        async codigo => {
+          document.getElementById('campo-codigo').value = codigo;
+          scannerPedido.stop().catch(()=>{});
+          scannerPedido = null;
+          wrap.style.display = 'none';
+          await adicionarPorCodigo(codigo);
+        },
+        () => {}
+      ).catch(() => {
+        showToast('Câmera não disponível.', 'error');
+        wrap.style.display = 'none';
+      });
+    };
+
+    // Busca por Enter no campo código
+    document.getElementById('campo-codigo').addEventListener('keydown', async e => {
+      if (e.key === 'Enter') {
+        await adicionarPorCodigo(e.target.value.trim());
+        e.target.value = '';
+      }
+    });
+
+    // ─── ADICIONAR POR CÓDIGO (estoque) ────────────────────────
+    async function adicionarPorCodigo(codigo) {
+      if (!codigo) return;
+      try {
+        const { collection: col2, getDocs, query: q2, where }
+          = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+
+        const estoqueSnap = await getDocs(
+          q2(col2(db, `estoque_${user.uid}`), where('codigo', '==', codigo))
+        );
+
+        if (estoqueSnap.empty) {
+          showToast(`❌ Código ${codigo} não encontrado no estoque.`, 'error');
+          return;
+        }
+
+        const eDoc  = estoqueSnap.docs[0];
+        const prod  = eDoc.data();
+        const qtdAt = prod.qtd || 0;
+
+        if (qtdAt <= 0) {
+          showToast(`⚠️ ${prod.nome}: sem estoque!`, 'error');
+          return;
+        }
+
+        // Desconta 1 do estoque
+        const { updateDoc: upd2, doc: doc2, increment: inc }
+          = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+        await upd2(doc2(db, `estoque_${user.uid}`, eDoc.id), { qtd: inc(-1) });
+
+        // Adiciona à mesa usando o preço de venda do estoque
+        const preco   = prod.preco || 0;
+        const novoItem = { nome: prod.nome, preco, hora: Date.now(), codigo };
+
+        const mesaSnap = await getDoc(mesaRef);
+        if (mesaSnap.exists()) {
+          await updateDoc(mesaRef, {
+            ocupada: true,
+            total: somarPreco(mesaSnap.data().total || 0, preco),
+            itens: arrayUnion(novoItem)
+          });
+        } else {
+          await setDoc(mesaRef, { ocupada: true, total: preco, itens: [novoItem], abertoEm: Date.now() });
+        }
+
+        showToast(`✅ ${prod.nome} — R$ ${preco.toFixed(2)} (estoque: ${qtdAt-1})`, 'success');
+        document.getElementById('campo-codigo').value = '';
+      } catch(e) {
+        console.error(e);
+        showToast('Erro ao buscar no estoque.', 'error');
+      }
+    }
+
+    // ─── CARDÁPIO (produtos sem código de barras) ───────────────
     pSnap.forEach(pDoc => {
       const p = pDoc.data();
       if (isNaN(p.preco)) return;
