@@ -3,374 +3,872 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Salão — Sistema Cris</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <title>Pessoas — Sistema Cris</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="style.css">
   <style>
-    /* GRID DE MESAS */
-    .mesas-grid {
+    /* TIPO TOGGLE */
+    .tipo-toggle {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 14px;
-    }
-
-    .mesa-card {
-      aspect-ratio: 1 / 1;
-      border-radius: var(--radius-lg);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      border: 2.5px solid transparent;
-      transition: transform 0.15s, box-shadow 0.15s;
-      position: relative;
-      gap: 6px;
-      user-select: none;
-    }
-
-    .mesa-card:hover  { transform: translateY(-3px); box-shadow: var(--shadow-md); }
-    .mesa-card:active { transform: scale(0.96); }
-
-    .mesa-card.livre {
-      background: var(--livre-bg);
-      border-color: #6EE7B7;
-    }
-
-    .mesa-card.ocupada {
-      background: var(--ocupada-bg);
-      border-color: #FCA5A5;
-      animation: pulse-ring 2.5s infinite;
-    }
-
-    .mesa-num {
-      font-size: 0.62rem;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-    }
-    .mesa-card.livre   .mesa-num { color: #065F46; }
-    .mesa-card.ocupada .mesa-num { color: #991B1B; }
-
-    .mesa-icon { font-size: 1.9rem; line-height: 1; }
-
-    .mesa-valor {
-      font-size: 0.95rem;
-      font-weight: 800;
-      line-height: 1;
-    }
-    .mesa-card.livre   .mesa-valor { font-size: 0.72rem; font-weight: 500; color: #065F46; }
-    .mesa-card.ocupada .mesa-valor { color: #991B1B; }
-
-    /* STATUS PILLS */
-    .status-bar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
-    .status-pill {
-      display: flex; align-items: center; gap: 8px;
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: 999px; padding: 6px 14px;
-      font-size: 0.8rem; font-weight: 600;
-      box-shadow: var(--shadow-sm);
-    }
-    .status-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-    .dot-livre   { background: var(--livre); }
-    .dot-ocupada { background: var(--ocupada); }
-
-    /* MODAL CONFIG MESAS */
-    .modal-overlay {
-      display: none;
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0.5);
-      z-index: 200;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-    .modal-overlay.open { display: flex; }
-
-    .modal-box {
-      background: var(--card);
-      border-radius: var(--radius-lg);
-      padding: 28px 24px;
-      width: 100%;
-      max-width: 380px;
-      box-shadow: var(--shadow-lg);
-    }
-
-    .modal-title {
-      font-size: 1.1rem;
-      font-weight: 800;
-      color: var(--navy);
-      margin-bottom: 6px;
-    }
-
-    .modal-sub {
-      font-size: 0.82rem;
-      color: var(--text-muted);
-      margin-bottom: 20px;
-    }
-
-    .qty-control {
-      display: flex;
-      align-items: center;
+      grid-template-columns: 1fr 1fr;
       gap: 0;
       background: var(--bg);
-      border: 1.5px solid var(--border);
+      border: 2px solid var(--border);
       border-radius: var(--radius-md);
       overflow: hidden;
       margin-bottom: 20px;
     }
-
-    .qty-btn {
-      width: 52px; height: 52px;
-      font-size: 1.4rem;
+    .tipo-btn {
+      padding: 14px;
+      text-align: center;
+      cursor: pointer;
       font-weight: 700;
+      font-size: .9rem;
+      transition: all .2s;
       border: none;
       background: none;
-      cursor: pointer;
-      color: var(--navy);
-      transition: background 0.15s;
-      flex-shrink: 0;
+      color: var(--text-muted);
     }
-    .qty-btn:hover { background: var(--border); }
+    .tipo-btn.ativo-cli { background: #0EA5E9; color: #fff; }
+    .tipo-btn.ativo-fun { background: var(--navy); color: #fff; }
 
-    .qty-val {
-      flex: 1;
-      text-align: center;
-      font-size: 1.6rem;
+    /* FORM */
+    .form-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius-md); padding:18px 16px; margin-bottom:18px; box-shadow:var(--shadow-sm); }
+    .form-card-title { font-size:.7rem; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--text-muted); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+    .f2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .f2 .full { grid-column:1/-1; }
+
+    /* CÓDIGO GERADO */
+    .cod-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+    }
+    .cod-prefix {
+      font-size: 1.1rem;
       font-weight: 800;
+      font-family: monospace;
+      width: 40px;
+    }
+    .cod-prefix.cli { color: #0EA5E9; }
+    .cod-prefix.fun { color: var(--navy); }
+    .cod-num {
+      font-size: 1.4rem;
+      font-weight: 800;
+      font-family: monospace;
       color: var(--navy);
+      letter-spacing: .1em;
+      flex: 1;
     }
-
-    .modal-actions { display: flex; gap: 10px; }
-    .modal-actions button { flex: 1; }
-
-    @media (max-width: 768px) {
-      .mesas-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
-      .mesa-icon { font-size: 1.5rem; }
+    .cod-badge-full {
+      font-family: monospace;
+      font-size: .8rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
     }
-    @media (max-width: 360px) {
-      .mesas-grid { grid-template-columns: repeat(2, 1fr); }
+    .cod-badge-full.cli { background: #E0F2FE; color: #0369A1; }
+    .cod-badge-full.fun { background: var(--bg); border: 1px solid var(--border); color: var(--navy); }
+
+    /* SEÇÃO DESABILITADA */
+    .secao-disabled { opacity: .35; pointer-events: none; }
+
+    /* EXPERIÊNCIA BANNER */
+    .exp-banner {
+      background: linear-gradient(135deg, #0F3460, var(--navy));
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      color: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 4px;
+    }
+    .exp-banner .eb-label { font-size: .65rem; opacity: .55; margin-bottom: 2px; }
+    .exp-banner .eb-val   { font-size: 1rem; font-weight: 800; }
+    .exp-banner .eb-val.verde { color: #34D399; }
+    .exp-banner .eb-val.amber { color: var(--amber); }
+
+    /* CARDS LISTA */
+    .pessoas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+
+    .pessoa-card {
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      transition: transform .15s, box-shadow .15s;
+    }
+    .pessoa-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+    .pessoa-card-header {
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .pessoa-card-header.cli { background: linear-gradient(135deg, #0EA5E9, #0284C7); }
+    .pessoa-card-header.fun { background: linear-gradient(135deg, var(--navy), #0F3460); }
+
+    .avatar {
+      width: 46px; height: 46px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; flex-shrink: 0;
+    }
+    .pc-nome { font-size: .95rem; font-weight: 800; color: #fff; }
+    .pc-cod  { font-size: .7rem; font-family: monospace; color: rgba(255,255,255,.7); margin-top: 2px; }
+    .pc-func { font-size: .7rem; color: rgba(255,255,255,.6); margin-top: 1px; }
+
+    .pessoa-card-body { padding: 12px 16px; display: flex; flex-direction: column; gap: 6px; }
+
+    .pc-row { display: flex; justify-content: space-between; align-items: center; }
+    .pc-key { font-size: .68rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; }
+    .pc-val { font-size: .82rem; font-weight: 700; color: var(--navy); }
+
+    .pc-actions { display: flex; gap: 6px; padding: 0 16px 14px; }
+
+    /* TABS LISTA */
+    .lista-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+    .lista-tab { padding: 7px 16px; border-radius: 999px; border: 1.5px solid var(--border); font-size: .78rem; font-weight: 700; cursor: pointer; background: var(--card); color: var(--text-muted); transition: all .15s; }
+    .lista-tab.ativo { background: var(--navy); color: #fff; border-color: var(--navy); }
+    .lista-tab.cli-tab.ativo { background: #0EA5E9; border-color: #0EA5E9; }
+
+    /* BUSCA */
+    .busca-row { display: flex; gap: 8px; margin-bottom: 16px; }
+
+    @media(max-width:600px) {
+      .f2 { grid-template-columns: 1fr; }
+      .f2 .full { grid-column: 1; }
+      .pessoas-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
-
 <div class="app-shell">
-
-  <!-- SIDEBAR -->
   <aside class="sidebar">
     <div class="sidebar-logo">
       <span class="logo-icon">🍞</span>
-      <div>
-        <div class="logo-text">Sistema Cris</div>
-        <span class="logo-sub">Padaria</span>
-      </div>
+      <div><div class="logo-text">Sistema Cris</div><span class="logo-sub">Padaria</span></div>
     </div>
     <nav class="sidebar-nav">
-      <a href="salao.html"      class="nav-item active"><span class="nav-icon">🪑</span> Salão</a>
+      <a href="salao.html"      class="nav-item"><span class="nav-icon">🪑</span> Salão</a>
       <a href="caixa.html"      class="nav-item"><span class="nav-icon">💰</span> Caixa</a>
       <a href="estoque.html"    class="nav-item"><span class="nav-icon">📦</span> Estoque</a>
       <a href="financeiro.html" class="nav-item"><span class="nav-icon">💳</span> Financeiro</a>
-      <a href="pessoas.html"    class="nav-item"><span class="nav-icon">👥</span> Pessoas</a>
+      <a href="pessoas.html"    class="nav-item active"><span class="nav-icon">👥</span> Pessoas</a>
       <a href="dashboard.html"  class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
       <a href="produtos.html"   class="nav-item"><span class="nav-icon">🛍️</span> Cardápio</a>
     </nav>
-    <div class="sidebar-bottom">
-      <button id="btn-sair" class="nav-item" style="color:rgba(255,255,255,0.5);">
-        <span class="nav-icon">🚪</span> Sair
-      </button>
-    </div>
   </aside>
 
-  <!-- CONTEÚDO -->
   <div class="main-content">
     <div class="topbar">
-      <span class="topbar-title">🪑 Salão</span>
-      <div class="topbar-right" style="gap:8px; display:flex; align-items:center;">
-        <button id="btn-config-mesas" class="btn btn-ghost" style="font-size:0.8rem; padding:7px 12px;">
-          ⚙️ Mesas
-        </button>
-        <button id="btn-sair-mobile" class="btn btn-ghost" style="font-size:0.8rem; padding:7px 12px; color:#EF4444; border-color:#EF4444;">
-          🚪 Sair
-        </button>
-      </div>
+      <span class="topbar-title">👥 Pessoas</span>
+      <span id="resumo-top" style="font-size:.75rem;color:var(--text-muted);font-weight:500;"></span>
     </div>
 
     <div class="page-body">
-      <div class="status-bar">
-        <div class="status-pill">
-          <div class="status-dot dot-ocupada"></div>
-          <span id="cnt-ocupadas">0 ocupadas</span>
+
+      <!-- TIPO TOGGLE -->
+      <div class="tipo-toggle">
+        <button class="tipo-btn ativo-cli" id="btn-tipo-cli" onclick="setTipo('cliente')">
+          👤 Cliente
+        </button>
+        <button class="tipo-btn" id="btn-tipo-fun" onclick="setTipo('funcionario')">
+          👔 Funcionário
+        </button>
+      </div>
+
+      <!-- FORM -->
+      <div class="form-card">
+        <div class="form-card-title" id="form-titulo">
+          <span id="form-icon">👤</span> Cadastrar Cliente
         </div>
-        <div class="status-pill">
-          <div class="status-dot dot-livre"></div>
-          <span id="cnt-livres">— livres</span>
+
+        <!-- CÓDIGO GERADO -->
+        <div class="form-group">
+          <label class="form-label">Código de Identificação</label>
+          <div class="cod-box">
+            <span class="cod-prefix cli" id="cod-prefix">C</span>
+            <span class="cod-num" id="cod-numero">0001</span>
+            <span class="cod-badge-full cli" id="cod-completo">C0001</span>
+          </div>
+          <div style="font-size:.68rem;color:var(--text-muted);margin-top:4px;">
+            Gerado automaticamente · C = cliente · F = funcionário
+          </div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--border);margin:14px 0;">
+
+        <!-- DADOS COMUNS -->
+        <div class="f2">
+          <div class="form-group full">
+            <label class="form-label">Nome Completo *</label>
+            <input type="text" id="f-nome" class="form-input" placeholder="Ex: Maria da Silva">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Data de Nascimento</label>
+            <input type="date" id="f-nascimento" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Idade</label>
+            <input type="number" id="f-idade" class="form-input" placeholder="Ex: 32" min="1" max="120" readonly
+              style="background:var(--bg);cursor:default;" title="Calculada pelo nascimento">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Sexo</label>
+            <select id="f-sexo" class="form-input">
+              <option value="">Não informado</option>
+              <option value="M">Masculino</option>
+              <option value="F">Feminino</option>
+              <option value="O">Outro</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Telefone / WhatsApp</label>
+            <input type="tel" id="f-tel" class="form-input" placeholder="(99) 99999-9999">
+          </div>
+
+          <div class="form-group full">
+            <label class="form-label">E-mail</label>
+            <input type="email" id="f-email" class="form-input" placeholder="exemplo@email.com">
+          </div>
+
+          <div class="form-group full">
+            <label class="form-label">Endereço</label>
+            <input type="text" id="f-endereco" class="form-input" placeholder="Rua, número, bairro">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">CPF</label>
+            <input type="text" id="f-cpf" class="form-input" placeholder="000.000.000-00" maxlength="14">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Observações</label>
+            <input type="text" id="f-obs" class="form-input" placeholder="Ex: Alergia a glúten">
+          </div>
+        </div>
+
+        <!-- SEÇÃO CLIENTE -->
+        <div id="secao-cliente">
+          <hr style="border:none;border-top:1px solid var(--border);margin:14px 0;">
+          <div class="form-card-title">👤 Dados do Cliente</div>
+          <div class="f2">
+            <div class="form-group">
+              <label class="form-label">Como conheceu</label>
+              <select id="f-origem" class="form-input">
+                <option value="">Não informado</option>
+                <option value="indicacao">Indicação</option>
+                <option value="instagram">Instagram</option>
+                <option value="google">Google</option>
+                <option value="passou">Passou na frente</option>
+                <option value="outro">Outro</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Preferência</label>
+              <input type="text" id="f-pref" class="form-input" placeholder="Ex: Café com leite, pão de queijo">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Restrição alimentar</label>
+              <input type="text" id="f-restricao" class="form-input" placeholder="Ex: Lactose, glúten">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Data de aniversário</label>
+              <input type="date" id="f-aniversario" class="form-input">
+            </div>
+          </div>
+        </div>
+
+        <!-- SEÇÃO FUNCIONÁRIO -->
+        <div id="secao-funcionario" class="secao-disabled">
+          <hr style="border:none;border-top:1px solid var(--border);margin:14px 0;">
+          <div class="form-card-title">👔 Dados do Funcionário</div>
+          <div class="f2">
+
+            <div class="form-group full">
+              <label class="form-label">Função / Cargo *</label>
+              <select id="f-funcao" class="form-input">
+                <option value="">Selecione...</option>
+                <option value="atendente">Atendente</option>
+                <option value="padeiro">Padeiro / Confeiteiro</option>
+                <option value="caixa">Caixa</option>
+                <option value="gerente">Gerente</option>
+                <option value="auxiliar">Auxiliar de Produção</option>
+                <option value="entregador">Entregador</option>
+                <option value="limpeza">Limpeza</option>
+                <option value="outro">Outro</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Data de Contratação *</label>
+              <input type="date" id="f-contratacao" class="form-input">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Fim do Período de Experiência</label>
+              <input type="text" id="f-experiencia" class="form-input" readonly
+                style="background:var(--bg);cursor:default;" placeholder="Calculado automaticamente">
+            </div>
+
+            <!-- Banner experiência -->
+            <div class="full" id="exp-banner-wrap" style="display:none;">
+              <div class="exp-banner">
+                <div>
+                  <div class="eb-label">Período de experiência (90 dias)</div>
+                  <div class="eb-val" id="exp-status">—</div>
+                </div>
+                <div style="text-align:right;">
+                  <div class="eb-label">Dias restantes</div>
+                  <div class="eb-val amber" id="exp-dias">—</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Salário Base (R$) *</label>
+              <input type="number" id="f-salario" class="form-input" placeholder="1500.00" step="0.01" min="0">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Valor Hora Extra (R$)</label>
+              <input type="number" id="f-hora-extra" class="form-input" placeholder="Ex: 12.50" step="0.01" min="0">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Horário de Trabalho</label>
+              <select id="f-horario" class="form-input">
+                <option value="">Selecione...</option>
+                <option value="06-14">06h às 14h</option>
+                <option value="07-15">07h às 15h</option>
+                <option value="08-17">08h às 17h</option>
+                <option value="14-22">14h às 22h</option>
+                <option value="22-06">22h às 06h</option>
+                <option value="part-manha">Part-time manhã</option>
+                <option value="part-tarde">Part-time tarde</option>
+                <option value="flex">Flexível</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Dias de Trabalho</label>
+              <select id="f-dias" class="form-input">
+                <option value="seg-sex">Seg a Sex</option>
+                <option value="seg-sab">Seg a Sáb</option>
+                <option value="ter-dom">Ter a Dom</option>
+                <option value="seg-dom">Seg a Dom (escala)</option>
+                <option value="5x2">5×2 (escala)</option>
+                <option value="6x1">6×1</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">PIS / NIT</label>
+              <input type="text" id="f-pis" class="form-input" placeholder="000.00000.00-0">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">CTPS (Carteira de Trabalho)</label>
+              <input type="text" id="f-ctps" class="form-input" placeholder="Nº da carteira">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Banco / Conta para pagamento</label>
+              <input type="text" id="f-banco" class="form-input" placeholder="Ex: Nubank / Pix CPF">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Chave Pix</label>
+              <input type="text" id="f-pix" class="form-input" placeholder="CPF, e-mail ou telefone">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Status</label>
+              <select id="f-status" class="form-input">
+                <option value="ativo">Ativo</option>
+                <option value="ferias">Em férias</option>
+                <option value="afastado">Afastado</option>
+                <option value="experiencia">Em experiência</option>
+                <option value="desligado">Desligado</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Benefícios</label>
+              <input type="text" id="f-beneficios" class="form-input" placeholder="Ex: VT, VR, Plano saúde">
+            </div>
+
+          </div>
+        </div>
+
+        <!-- BOTÕES -->
+        <div style="display:flex;gap:8px;margin-top:14px;">
+          <button id="btn-salvar" class="btn btn-primary btn-lg" style="flex:1;">+ Cadastrar</button>
+          <button id="btn-limpar" class="btn btn-ghost" style="padding:14px;">✕</button>
+        </div>
+        <p id="msg-form" style="color:var(--ocupada);font-size:.8rem;margin-top:8px;min-height:18px;"></p>
+      </div>
+
+      <!-- LISTA -->
+      <div class="lista-tabs">
+        <div class="lista-tab cli-tab ativo" id="tab-cli" onclick="setListaTab('cliente')">
+          👤 Clientes <span id="cnt-cli" style="margin-left:4px;"></span>
+        </div>
+        <div class="lista-tab" id="tab-fun" onclick="setListaTab('funcionario')">
+          👔 Funcionários <span id="cnt-fun" style="margin-left:4px;"></span>
         </div>
       </div>
 
-      <div id="container-mesas" class="mesas-grid"></div>
+      <div class="busca-row">
+        <input type="text" id="busca" class="form-input" placeholder="🔍 Buscar por nome ou código..." style="flex:1;">
+      </div>
+
+      <div id="pessoas-grid" class="pessoas-grid">
+        <div style="color:var(--text-muted);font-size:.85rem;grid-column:1/-1;text-align:center;padding:32px;">
+          Carregando...
+        </div>
+      </div>
+
     </div>
   </div>
 
-  <!-- BOTTOM NAV MOBILE -->
   <nav class="bottom-nav">
     <div class="bottom-nav-inner">
-      <a href="salao.html"      class="bnav-item active"><span class="bnav-icon">🪑</span>Salão</a>
+      <a href="salao.html"      class="bnav-item"><span class="bnav-icon">🪑</span>Salão</a>
       <a href="caixa.html"      class="bnav-item"><span class="bnav-icon">💰</span>Caixa</a>
       <a href="estoque.html"    class="bnav-item"><span class="bnav-icon">📦</span>Estoque</a>
+      <a href="pessoas.html"    class="bnav-item active"><span class="bnav-icon">👥</span>Pessoas</a>
       <a href="financeiro.html" class="bnav-item"><span class="bnav-icon">💳</span>Financeiro</a>
-      <a href="dashboard.html"  class="bnav-item"><span class="bnav-icon">📊</span>Dados</a>
     </div>
   </nav>
-</div>
-
-<!-- MODAL CONFIG MESAS -->
-<div class="modal-overlay" id="modal-mesas">
-  <div class="modal-box">
-    <div class="modal-title">⚙️ Configurar Mesas</div>
-    <div class="modal-sub">Quantas mesas tem o seu salão?</div>
-
-    <div class="qty-control">
-      <button class="qty-btn" id="qty-menos">−</button>
-      <div class="qty-val" id="qty-num">11</div>
-      <button class="qty-btn" id="qty-mais">+</button>
-    </div>
-
-    <div class="modal-actions">
-      <button class="btn btn-ghost" id="modal-cancelar">Cancelar</button>
-      <button class="btn btn-primary" id="modal-salvar">Salvar</button>
-    </div>
-  </div>
 </div>
 
 <div class="toast-container" id="toast-container"></div>
 
 <script type="module">
-  import { db, auth } from './firebase.js';
-  import { collection, onSnapshot, doc, getDoc, setDoc } from
-    "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-  import { signOut } from
-    "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { db, auth } from './firebase.js';
+import {
+  collection, doc, addDoc, updateDoc, deleteDoc,
+  onSnapshot, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  // ─── ESTADO GLOBAL ──────────────────────────────────────────────
-  let qtdMesas   = 11;       // número de mesas configurado
-  let dadosMesas = {};       // último snapshot das mesas do Firestore
+// ══════════════════════════════════════════════
+// ESTADO
+// ══════════════════════════════════════════════
+let tipoAtivo   = 'cliente';   // 'cliente' | 'funcionario'
+let listaTab    = 'cliente';
+let todas       = [];          // todos os registros
+let editId      = null;
+let currentUser = null;
 
-  // ─── TOAST ──────────────────────────────────────────────────────
-  function showToast(msg, type = '') {
-    const el = document.createElement('div');
-    el.className = `toast ${type}`;
-    el.textContent = msg;
-    document.getElementById('toast-container').appendChild(el);
-    setTimeout(() => el.remove(), 3000);
-  }
+// ══════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════
+function toast(msg, type=''){
+  const el = document.createElement('div');
+  el.className=`toast ${type}`; el.textContent=msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(()=>el.remove(),3200);
+}
 
-  // ─── RENDER — chamado sempre que mesas ou config mudam ──────────
-  function renderMesas() {
-    const container = document.getElementById('container-mesas');
-    container.innerHTML = '';
-    let ocupadas = 0;
+// ══════════════════════════════════════════════
+// TIPO TOGGLE (Cliente / Funcionário)
+// ══════════════════════════════════════════════
+window.setTipo = tipo => {
+  tipoAtivo = tipo;
+  const eCli = tipo==='cliente';
 
-    for (let i = 1; i <= qtdMesas; i++) {
-      const mesa  = dadosMesas[`mesa_${i}`] || { ocupada: false, total: 0 };
-      const total = mesa.total || 0;
+  document.getElementById('btn-tipo-cli').className = `tipo-btn${eCli?' ativo-cli':''}`;
+  document.getElementById('btn-tipo-fun').className = `tipo-btn${!eCli?' ativo-fun':''}`;
+  document.getElementById('form-titulo').innerHTML =
+    `<span id="form-icon">${eCli?'👤':'👔'}</span> ${eCli?'Cadastrar Cliente':'Cadastrar Funcionário'}`;
 
-      if (mesa.ocupada) ocupadas++;
+  // Seções
+  document.getElementById('secao-cliente').className      = eCli?'':'secao-disabled';
+  document.getElementById('secao-funcionario').className  = !eCli?'':'secao-disabled';
 
-      const card = document.createElement('div');
-      card.className = `mesa-card ${mesa.ocupada ? 'ocupada' : 'livre'}`;
-      card.innerHTML = `
-        <div class="mesa-num">Mesa ${i}</div>
-        <div class="mesa-icon">${mesa.ocupada ? '🔴' : '🟢'}</div>
-        <div class="mesa-valor">
-          ${mesa.ocupada ? 'R$ ' + total.toFixed(2) : 'Livre'}
-        </div>
-      `;
-      card.onclick = () => { window.location.href = `pedido.html?mesa=${i}`; };
-      container.appendChild(card);
-    }
+  // Código
+  document.getElementById('cod-prefix').textContent = eCli?'C':'F';
+  document.getElementById('cod-prefix').className   = `cod-prefix ${eCli?'cli':'fun'}`;
+  document.getElementById('cod-badge-full').className = `cod-badge-full ${eCli?'cli':'fun'}`;
 
-    const livres = qtdMesas - ocupadas;
-    document.getElementById('cnt-ocupadas').textContent =
-      `${ocupadas} ocupada${ocupadas !== 1 ? 's' : ''}`;
-    document.getElementById('cnt-livres').textContent =
-      `${livres} livre${livres !== 1 ? 's' : ''}`;
-  }
+  gerarCodigo();
+};
 
-  // ─── MODAL ──────────────────────────────────────────────────────
-  document.getElementById('btn-config-mesas').onclick = () => {
-    document.getElementById('qty-num').textContent = qtdMesas;
-    document.getElementById('modal-mesas').classList.add('open');
-  };
-  document.getElementById('modal-cancelar').onclick = () =>
-    document.getElementById('modal-mesas').classList.remove('open');
-  document.getElementById('qty-menos').onclick = () => {
-    const v = parseInt(document.getElementById('qty-num').textContent);
-    if (v > 1) document.getElementById('qty-num').textContent = v - 1;
-  };
-  document.getElementById('qty-mais').onclick = () => {
-    const v = parseInt(document.getElementById('qty-num').textContent);
-    if (v < 50) document.getElementById('qty-num').textContent = v + 1;
-  };
-
-  // ─── FIREBASE ───────────────────────────────────────────────────
-  auth.onAuthStateChanged(async user => {
-    if (!user) { location.href = 'index.html'; return; }
-
-    // Botão Sair (sidebar desktop + topbar mobile)
-    const fnSair = async () => {
-      if (confirm('Deseja sair do sistema?')) {
-        await signOut(auth);
-        location.href = 'index.html';
-      }
-    };
-    document.getElementById('btn-sair').onclick        = fnSair;
-    document.getElementById('btn-sair-mobile').onclick = fnSair;
-
-    const configRef = doc(db, `config_${user.uid}`, 'salao');
-    const mesasRef  = collection(db, `mesas_${user.uid}`);
-
-    // 1. Carrega config salva (aguarda antes de qualquer render)
-    try {
-      const snap = await getDoc(configRef);
-      qtdMesas = snap.exists() ? (snap.data().totalMesas || 11) : 11;
-      if (!snap.exists()) await setDoc(configRef, { totalMesas: 11 });
-    } catch(e) {
-      qtdMesas = 11;
-    }
-
-    // 2. Primeira renderização imediata (sem esperar Firestore de mesas)
-    renderMesas();
-
-    // 3. Listener de mesas — atualiza dadosMesas e re-renderiza
-    onSnapshot(mesasRef, snap => {
-      dadosMesas = {};
-      snap.forEach(d => { dadosMesas[d.id] = d.data(); });
-      renderMesas();
-    });
-
-    // 4. Botão Salvar do modal — grava no Firestore e re-renderiza na hora
-    document.getElementById('modal-salvar').onclick = async () => {
-      const novoTotal = parseInt(document.getElementById('qty-num').textContent);
-      const btn = document.getElementById('modal-salvar');
-      btn.disabled = true;
-      btn.textContent = 'Salvando...';
-
-      try {
-        await setDoc(configRef, { totalMesas: novoTotal });
-        qtdMesas = novoTotal;              // atualiza estado local
-        renderMesas();                     // re-renderiza IMEDIATAMENTE
-        document.getElementById('modal-mesas').classList.remove('open');
-        showToast(`✅ ${novoTotal} mesas configuradas!`, 'success');
-      } catch(e) {
-        showToast('Erro ao salvar. Tente novamente.', 'error');
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Salvar';
-      }
-    };
+// ══════════════════════════════════════════════
+// GERAR CÓDIGO AUTOMÁTICO
+// ══════════════════════════════════════════════
+function gerarCodigo(){
+  const prefixo = tipoAtivo==='cliente' ? 'C' : 'F';
+  const existentes = todas.filter(p=>p.tipo===tipoAtivo);
+  // Pega o maior número já usado
+  let maxNum = 0;
+  existentes.forEach(p=>{
+    const n = parseInt((p.codigo||'0').replace(/[CF]/i,''));
+    if(n>maxNum) maxNum=n;
   });
+  const num = String(maxNum+1).padStart(4,'0');
+  document.getElementById('cod-numero').textContent  = num;
+  document.getElementById('cod-completo').textContent = `${prefixo}${num}`;
+  return `${prefixo}${num}`;
+}
+
+// ══════════════════════════════════════════════
+// NASCIMENTO → IDADE
+// ══════════════════════════════════════════════
+document.getElementById('f-nascimento').addEventListener('change', e=>{
+  const d = new Date(e.target.value);
+  if(isNaN(d)) return;
+  const hoje = new Date();
+  let idade = hoje.getFullYear()-d.getFullYear();
+  const m = hoje.getMonth()-d.getMonth();
+  if(m<0||(m===0&&hoje.getDate()<d.getDate())) idade--;
+  document.getElementById('f-idade').value = idade>=0?idade:'';
+});
+
+// ══════════════════════════════════════════════
+// CONTRATAÇÃO → FIM EXPERIÊNCIA (90 dias)
+// ══════════════════════════════════════════════
+document.getElementById('f-contratacao').addEventListener('change', e=>{
+  const d = new Date(e.target.value);
+  if(isNaN(d)) return;
+
+  const exp = new Date(d); exp.setDate(exp.getDate()+90);
+  const fmt = dt => dt.toLocaleDateString('pt-BR');
+  document.getElementById('f-experiencia').value = fmt(exp);
+
+  // Banner
+  const hoje  = new Date();
+  const dias  = Math.ceil((exp-hoje)/(1000*60*60*24));
+  const wrap  = document.getElementById('exp-banner-wrap');
+  wrap.style.display = '';
+
+  if(dias>0){
+    document.getElementById('exp-status').textContent = `Em experiência — termina em ${fmt(exp)}`;
+    document.getElementById('exp-status').className   = 'eb-val amber';
+    document.getElementById('exp-dias').textContent   = `${dias} dias`;
+  } else {
+    document.getElementById('exp-status').textContent = 'Período encerrado ✓';
+    document.getElementById('exp-status').className   = 'eb-val verde';
+    document.getElementById('exp-dias').textContent   = '0';
+  }
+});
+
+// ══════════════════════════════════════════════
+// LISTA TAB
+// ══════════════════════════════════════════════
+window.setListaTab = tab=>{
+  listaTab = tab;
+  document.getElementById('tab-cli').className = `lista-tab cli-tab${tab==='cliente'?' ativo':''}`;
+  document.getElementById('tab-fun').className = `lista-tab${tab==='funcionario'?' ativo':''}`;
+  renderLista();
+};
+
+// ══════════════════════════════════════════════
+// FIREBASE
+// ══════════════════════════════════════════════
+auth.onAuthStateChanged(async user=>{
+  if(!user){ location.href='index.html'; return; }
+  currentUser = user;
+  console.log('✅ Usuário logado:', user.uid);
+
+  const colRef = collection(db, `pessoas_${user.uid}`);
+  console.log('📦 Coleção:', `pessoas_${user.uid}`);
+
+  // SALVAR
+  document.getElementById('btn-salvar').onclick = async()=>{
+    const nome = document.getElementById('f-nome').value.trim();
+    if(!nome){ document.getElementById('msg-form').textContent='⚠️ Nome obrigatório.'; return; }
+
+    const codigo = editId
+      ? todas.find(p=>p.id===editId)?.codigo
+      : gerarCodigo();
+
+    // Valida funcionário
+    if(tipoAtivo==='funcionario'){
+      const func = document.getElementById('f-funcao').value;
+      const sal  = parseFloat(document.getElementById('f-salario').value);
+      const cont = document.getElementById('f-contratacao').value;
+      if(!func){ document.getElementById('msg-form').textContent='⚠️ Função obrigatória.'; return; }
+      if(isNaN(sal)||sal<=0){ document.getElementById('msg-form').textContent='⚠️ Salário obrigatório.'; return; }
+      if(!cont){ document.getElementById('msg-form').textContent='⚠️ Data de contratação obrigatória.'; return; }
+    }
+
+    document.getElementById('msg-form').textContent='';
+    const btn = document.getElementById('btn-salvar');
+    btn.disabled=true;
+
+    const dados = {
+      tipo:      tipoAtivo,
+      codigo,
+      nome,
+      nascimento: document.getElementById('f-nascimento').value||null,
+      idade:      parseInt(document.getElementById('f-idade').value)||null,
+      sexo:       document.getElementById('f-sexo').value||null,
+      telefone:   document.getElementById('f-tel').value.trim()||null,
+      email:      document.getElementById('f-email').value.trim()||null,
+      endereco:   document.getElementById('f-endereco').value.trim()||null,
+      cpf:        document.getElementById('f-cpf').value.trim()||null,
+      obs:        document.getElementById('f-obs').value.trim()||null,
+      updatedAt:  serverTimestamp(),
+    };
+
+    if(tipoAtivo==='cliente'){
+      Object.assign(dados,{
+        origem:     document.getElementById('f-origem').value||null,
+        preferencia:document.getElementById('f-pref').value.trim()||null,
+        restricao:  document.getElementById('f-restricao').value.trim()||null,
+        aniversario:document.getElementById('f-aniversario').value||null,
+      });
+    } else {
+      Object.assign(dados,{
+        funcao:      document.getElementById('f-funcao').value,
+        contratacao: document.getElementById('f-contratacao').value,
+        fimExp:      document.getElementById('f-experiencia').value||null,
+        salario:     parseFloat(document.getElementById('f-salario').value)||0,
+        horaExtra:   parseFloat(document.getElementById('f-hora-extra').value)||0,
+        horario:     document.getElementById('f-horario').value||null,
+        dias:        document.getElementById('f-dias').value||null,
+        pis:         document.getElementById('f-pis').value.trim()||null,
+        ctps:        document.getElementById('f-ctps').value.trim()||null,
+        banco:       document.getElementById('f-banco').value.trim()||null,
+        pix:         document.getElementById('f-pix').value.trim()||null,
+        statusEmp:   document.getElementById('f-status').value,
+        beneficios:  document.getElementById('f-beneficios').value.trim()||null,
+      });
+    }
+
+    try{
+      if(editId){
+        await updateDoc(doc(db,`pessoas_${user.uid}`,editId), dados);
+        toast(`✅ "${nome}" atualizado!`,'success');
+      } else {
+        await addDoc(colRef,{...dados, createdAt:serverTimestamp()});
+        toast(`✅ "${nome}" cadastrado! Código: ${codigo}`,'success');
+      }
+      limparForm();
+    }catch(e){
+      console.error(e);
+      document.getElementById('msg-form').textContent =
+        e.code==='permission-denied'?'❌ Sem permissão (Firestore)':`❌ ${e.message}`;
+    } finally{ btn.disabled=false; }
+  };
+
+  document.getElementById('btn-limpar').onclick = limparForm;
+
+  // LISTENER
+  // SEM orderBy — evita necessidade de índice composto no Firestore
+  onSnapshot(colRef, snap=>{
+    console.log('📥 Snapshot recebido — docs:', snap.size);
+    todas=[];
+    snap.forEach(d=>todas.push({id:d.id,...d.data()}));
+    // Ordena por nome no cliente (sem índice Firestore)
+    todas.sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));
+    renderLista();
+    atualizarResumo();
+    gerarCodigo(); // recalcula próximo código
+  }, err=>{
+    console.error('❌ Erro no onSnapshot:', err.code, err.message);
+    document.getElementById('pessoas-grid').innerHTML =
+      `<div style="color:var(--ocupada);text-align:center;padding:32px;grid-column:1/-1;">
+        ❌ Erro ao carregar: ${err.code==='permission-denied'
+          ? 'Sem permissão — verifique as regras do Firestore'
+          : err.message}
+      </div>`;
+  });
+
+  document.getElementById('busca').addEventListener('input', renderLista);
+});
+
+// ══════════════════════════════════════════════
+// RENDER LISTA
+// ══════════════════════════════════════════════
+const FUNCAO_ICON = {
+  atendente:'🧑‍💼',padeiro:'👨‍🍳',caixa:'💰',gerente:'🎯',
+  auxiliar:'🔧',entregador:'🚴',limpeza:'🧹',outro:'👤'
+};
+
+const SEXO_ICON = { M:'👨', F:'👩', O:'🧑', '':'🧑' };
+
+function renderLista(){
+  const busca = document.getElementById('busca').value.toLowerCase();
+  const lista = todas.filter(p=>{
+    const mT = p.tipo===listaTab;
+    const mB = !busca || (p.nome||'').toLowerCase().includes(busca) || (p.codigo||'').toLowerCase().includes(busca);
+    return mT&&mB;
+  });
+
+  // Contadores
+  const nCli = todas.filter(p=>p.tipo==='cliente').length;
+  const nFun = todas.filter(p=>p.tipo==='funcionario').length;
+  document.getElementById('cnt-cli').textContent = nCli>0?`(${nCli})`:'';
+  document.getElementById('cnt-fun').textContent = nFun>0?`(${nFun})`:'';
+
+  const grid = document.getElementById('pessoas-grid');
+
+  if(!lista.length){
+    grid.innerHTML=`<div style="color:var(--text-muted);font-size:.85rem;grid-column:1/-1;text-align:center;padding:40px;">
+      ${todas.filter(p=>p.tipo===listaTab).length===0
+        ? `Nenhum ${listaTab} cadastrado ainda.`
+        : 'Nenhum resultado encontrado.'}
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = lista.map(p=>{
+    const eCli = p.tipo==='cliente';
+    const ico  = eCli ? (SEXO_ICON[p.sexo||'']||'🧑') : (FUNCAO_ICON[p.funcao]||'👔');
+
+    // Info principal
+    let info1 = '', info2 = '', info3 = '', info4 = '';
+
+    if(eCli){
+      info1 = p.telefone ? `📱 ${p.telefone}` : '';
+      info2 = p.preferencia ? `☕ ${p.preferencia}` : '';
+      info3 = p.nascimento ? `🎂 ${new Date(p.nascimento).toLocaleDateString('pt-BR')}` : '';
+      info4 = p.restricao ? `⚠️ ${p.restricao}` : '';
+    } else {
+      info1 = p.salario ? `💰 R$ ${p.salario.toFixed(2)}` : '';
+      info2 = p.horario ? `🕐 ${p.horario}` : '';
+      info3 = p.contratacao ? `📅 Desde ${new Date(p.contratacao+'T12:00:00').toLocaleDateString('pt-BR')}` : '';
+
+      // Alerta de experiência
+      if(p.fimExp){
+        const hoje = new Date();
+        const fimParts = p.fimExp.split('/');
+        const fim = fimParts.length===3
+          ? new Date(`${fimParts[2]}-${fimParts[1]}-${fimParts[0]}T12:00:00`)
+          : null;
+        if(fim && fim>hoje){
+          const dias = Math.ceil((fim-hoje)/(1000*60*60*24));
+          info4 = `⏳ Exp. termina em ${dias} dias`;
+        }
+      }
+    }
+
+    const statusColor = {ativo:'#059669',ferias:'#0EA5E9',afastado:'#F59E0B',experiencia:'#8B5CF6',desligado:'#EF4444'};
+    const statusLabel = {ativo:'Ativo',ferias:'Férias',afastado:'Afastado',experiencia:'Em experiência',desligado:'Desligado'};
+
+    return `<div class="pessoa-card">
+      <div class="pessoa-card-header ${eCli?'cli':'fun'}">
+        <div class="avatar">${ico}</div>
+        <div style="flex:1;min-width:0;">
+          <div class="pc-nome">${p.nome}</div>
+          <div class="pc-cod">${p.codigo||'—'}</div>
+          ${!eCli&&p.funcao ? `<div class="pc-func">${p.funcao.charAt(0).toUpperCase()+p.funcao.slice(1)}</div>` : ''}
+          ${!eCli&&p.statusEmp ? `<div style="font-size:.65rem;margin-top:2px;color:rgba(255,255,255,.8);">
+            <span style="background:${statusColor[p.statusEmp]||'#6B7280'};padding:2px 7px;border-radius:999px;font-weight:700;">
+              ${statusLabel[p.statusEmp]||p.statusEmp}
+            </span></div>` : ''}
+        </div>
+      </div>
+      <div class="pessoa-card-body">
+        ${info1?`<div class="pc-row"><span class="pc-val">${info1}</span></div>`:''}
+        ${info2?`<div class="pc-row"><span class="pc-val">${info2}</span></div>`:''}
+        ${info3?`<div class="pc-row"><span class="pc-val" style="font-size:.75rem;">${info3}</span></div>`:''}
+        ${info4?`<div class="pc-row"><span class="pc-val" style="font-size:.75rem;color:var(--amber-dark);">${info4}</span></div>`:''}
+        ${p.obs?`<div style="font-size:.72rem;color:var(--text-muted);font-style:italic;">${p.obs}</div>`:''}
+      </div>
+      <div class="pc-actions">
+        <button class="btn btn-ghost" style="flex:1;font-size:.75rem;padding:7px;" onclick="editarPessoa('${p.id}')">✏️ Editar</button>
+        <button class="btn btn-danger" style="padding:7px 10px;font-size:.75rem;" onclick="excluirPessoa('${p.id}','${(p.nome||'').replace(/'/g,"\\'")}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+// EDITAR / EXCLUIR
+// ══════════════════════════════════════════════
+window.editarPessoa = id=>{
+  const p = todas.find(x=>x.id===id);
+  if(!p) return;
+  editId = id;
+  setTipo(p.tipo);
+
+  ['nome','nascimento','sexo','email','endereco','cpf','obs'].forEach(k=>{
+    const el = document.getElementById(`f-${k}`);
+    if(el) el.value = p[k]||'';
+  });
+  document.getElementById('f-tel').value   = p.telefone||'';
+  document.getElementById('f-idade').value = p.idade||'';
+
+  if(p.tipo==='cliente'){
+    document.getElementById('f-origem').value      = p.origem||'';
+    document.getElementById('f-pref').value        = p.preferencia||'';
+    document.getElementById('f-restricao').value   = p.restricao||'';
+    document.getElementById('f-aniversario').value = p.aniversario||'';
+  } else {
+    document.getElementById('f-funcao').value      = p.funcao||'';
+    document.getElementById('f-contratacao').value = p.contratacao||'';
+    document.getElementById('f-experiencia').value = p.fimExp||'';
+    document.getElementById('f-salario').value     = p.salario||'';
+    document.getElementById('f-hora-extra').value  = p.horaExtra||'';
+    document.getElementById('f-horario').value     = p.horario||'';
+    document.getElementById('f-dias').value        = p.dias||'';
+    document.getElementById('f-pis').value         = p.pis||'';
+    document.getElementById('f-ctps').value        = p.ctps||'';
+    document.getElementById('f-banco').value       = p.banco||'';
+    document.getElementById('f-pix').value         = p.pix||'';
+    document.getElementById('f-status').value      = p.statusEmp||'ativo';
+    document.getElementById('f-beneficios').value  = p.beneficios||'';
+    if(p.contratacao) document.getElementById('f-contratacao').dispatchEvent(new Event('change'));
+  }
+
+  document.getElementById('btn-salvar').textContent = '💾 Salvar Alterações';
+  window.scrollTo({top:0,behavior:'smooth'});
+};
+
+window.excluirPessoa = async(id,nome)=>{
+  if(!confirm(`Excluir "${nome}"? Esta ação é permanente.`)) return;
+  try{
+    await deleteDoc(doc(db,`pessoas_${currentUser.uid}`,id));
+    toast(`"${nome}" removido.`,'');
+  }catch(e){ toast('Erro ao excluir.','error'); }
+};
+
+// ══════════════════════════════════════════════
+// LIMPAR FORM
+// ══════════════════════════════════════════════
+function limparForm(){
+  editId=null;
+  document.getElementById('btn-salvar').textContent='+ Cadastrar';
+  document.getElementById('msg-form').textContent='';
+  const ids = ['f-nome','f-nascimento','f-sexo','f-tel','f-email','f-endereco','f-cpf','f-obs',
+    'f-origem','f-pref','f-restricao','f-aniversario',
+    'f-funcao','f-contratacao','f-experiencia','f-salario','f-hora-extra',
+    'f-horario','f-dias','f-pis','f-ctps','f-banco','f-pix','f-beneficios'];
+  ids.forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('f-idade').value='';
+  document.getElementById('f-status').value='ativo';
+  document.getElementById('exp-banner-wrap').style.display='none';
+  gerarCodigo();
+}
+
+// ══════════════════════════════════════════════
+// RESUMO
+// ══════════════════════════════════════════════
+function atualizarResumo(){
+  const nC = todas.filter(p=>p.tipo==='cliente').length;
+  const nF = todas.filter(p=>p.tipo==='funcionario').length;
+  document.getElementById('resumo-top').textContent = `${nC} clientes · ${nF} funcionários`;
+}
 </script>
 </body>
 </html>
