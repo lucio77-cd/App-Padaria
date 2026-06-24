@@ -441,14 +441,14 @@
 
       <div id="pessoas-grid" class="pessoas-grid">
         <div style="color:var(--text-muted);font-size:.85rem;grid-column:1/-1;text-align:center;padding:32px;">
-          Carregando...
+          ⏳ Conectando...
         </div>
       </div>
 
     </div>
   </div>
 
-  <nav class="bottom-nav">
+    <nav class="bottom-nav">
     <div class="bottom-nav-inner">
       <a href="salao.html"      class="bnav-item"><span class="bnav-icon">🪑</span>Salão</a>
       <a href="caixa.html"      class="bnav-item"><span class="bnav-icon">💰</span>Caixa</a>
@@ -675,21 +675,18 @@ auth.onAuthStateChanged(async user=>{
   // LISTENER
   // SEM orderBy — evita necessidade de índice composto no Firestore
   onSnapshot(colRef, snap=>{
-    console.log('📥 Snapshot recebido — docs:', snap.size);
     todas=[];
     snap.forEach(d=>todas.push({id:d.id,...d.data()}));
-    // Ordena por nome no cliente (sem índice Firestore)
     todas.sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));
     renderLista();
     atualizarResumo();
-    gerarCodigo(); // recalcula próximo código
+    gerarCodigo();
   }, err=>{
-    console.error('❌ Erro no onSnapshot:', err.code, err.message);
     document.getElementById('pessoas-grid').innerHTML =
-      `<div style="color:var(--ocupada);text-align:center;padding:32px;grid-column:1/-1;">
-        ❌ Erro ao carregar: ${err.code==='permission-denied'
-          ? 'Sem permissão — verifique as regras do Firestore'
-          : err.message}
+      `<div style="color:#DC2626;text-align:center;padding:32px;grid-column:1/-1;font-size:.85rem;">
+        ❌ ${err.code==='permission-denied'
+          ? 'Sem permissão — vá ao Firebase Console → Firestore → Regras e publique: allow read, write: if request.auth != null;'
+          : 'Erro: ' + err.message}
       </div>`;
   });
 
@@ -723,10 +720,12 @@ function renderLista(){
   const grid = document.getElementById('pessoas-grid');
 
   if(!lista.length){
+    const tipo = listaTab==='cliente' ? 'cliente' : 'funcionário';
+    const semNenhum = todas.filter(p=>p.tipo===listaTab).length===0;
     grid.innerHTML=`<div style="color:var(--text-muted);font-size:.85rem;grid-column:1/-1;text-align:center;padding:40px;">
-      ${todas.filter(p=>p.tipo===listaTab).length===0
-        ? `Nenhum ${listaTab} cadastrado ainda.`
-        : 'Nenhum resultado encontrado.'}
+      ${semNenhum
+        ? `Nenhum ${tipo} cadastrado ainda.<br><small style="color:var(--amber-dark);">Use o formulário acima para adicionar.</small>`
+        : 'Nenhum resultado para esta busca.'}
     </div>`;
     return;
   }
