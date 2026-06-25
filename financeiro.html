@@ -29,14 +29,44 @@
     .saldo-item .val.vermelho { color:#F87171; }
     .saldo-item .val.amarelo  { color:var(--amber); }
 
+    /* PENDENTES (lançamentos futuros / a pagar) */
+    .pendentes-card {
+      background:#FFFBEB; border:1px solid #FCD34D;
+      border-radius:var(--radius-md); padding:14px 16px;
+      margin-bottom:20px; display:none;
+    }
+    .pendentes-card.show { display:block; }
+    .pendentes-title { font-size:.72rem; font-weight:700; letter-spacing:.05em;
+      text-transform:uppercase; color:#92400E; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+    .pendentes-list { display:flex; flex-direction:column; gap:6px; }
+    .pendente-item { display:flex; justify-content:space-between; align-items:center;
+      font-size:.82rem; color:#78350F; background:white; border-radius:8px; padding:8px 10px; }
+    .pendente-item .pdesc { font-weight:600; }
+    .pendente-item .pdata { font-size:.68rem; opacity:.7; margin-left:6px; }
+
     /* FORM DESPESA */
     .form-card { background:var(--card); border:1px solid var(--border);
       border-radius:var(--radius-md); padding:18px 20px;
       margin-bottom:20px; box-shadow:var(--shadow-sm); }
     .form-card-title { font-size:.72rem; font-weight:700; letter-spacing:.07em;
-      text-transform:uppercase; color:var(--text-muted); margin-bottom:14px; }
+      text-transform:uppercase; color:var(--text-muted); margin-bottom:14px;
+      display:flex; align-items:center; justify-content:space-between; }
     .form-grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
     .form-grid2 .full { grid-column:1/-1; }
+
+    .status-toggle { display:flex; gap:8px; }
+    .status-btn {
+      flex:1; padding:9px; border-radius:8px; border:1px solid var(--border);
+      background:var(--card); font-size:.8rem; font-weight:600; cursor:pointer;
+      color:var(--text-muted); transition:all .15s;
+    }
+    .status-btn.active[data-s="pago"] { background:#059669; color:white; border-color:#059669; }
+    .status-btn.active[data-s="pendente"] { background:var(--amber); color:white; border-color:var(--amber); }
+
+    .btn-cancelar-edicao {
+      font-size:.68rem; font-weight:700; color:var(--text-muted);
+      background:none; border:none; cursor:pointer; text-decoration:underline;
+    }
 
     /* LISTA LANÇAMENTOS */
     .lancamentos { display:flex; flex-direction:column; gap:8px; margin-top:16px; }
@@ -47,6 +77,7 @@
       display:flex; align-items:center; gap:12px;
       box-shadow:var(--shadow-sm);
     }
+    .lanc-item.futuro { border-style:dashed; opacity:.85; }
     .lanc-icon { font-size:1.3rem; flex-shrink:0; }
     .lanc-info { flex:1; }
     .lanc-desc { font-size:.88rem; font-weight:600; color:var(--navy); }
@@ -60,6 +91,15 @@
       border-radius:999px; background:var(--bg);
       border:1px solid var(--border); color:var(--text-muted);
     }
+    .status-pill {
+      font-size:.6rem; font-weight:700; padding:2px 7px;
+      border-radius:999px; margin-left:4px;
+    }
+    .status-pill.pago { background:#D1FAE5; color:#065F46; }
+    .status-pill.pendente { background:#FEF3C7; color:#92400E; }
+
+    .lanc-actions { display:flex; flex-direction:column; align-items:flex-end; gap:4px; }
+    .lanc-btns { display:flex; gap:4px; }
 
     .chart-card { background:var(--card); border:1px solid var(--border);
       border-radius:var(--radius-md); padding:18px;
@@ -109,6 +149,7 @@
         <div class="chip active" data-d="0">Hoje</div>
         <div class="chip" data-d="6">7 dias</div>
         <div class="chip" data-d="29">30 dias</div>
+        <div class="chip" data-d="futuro">📅 A vencer</div>
       </div>
 
       <!-- SALDO HERO -->
@@ -135,6 +176,12 @@
         </div>
       </div>
 
+      <!-- ALERTA DE PENDENTES A VENCER -->
+      <div class="pendentes-card" id="pendentes-card">
+        <div class="pendentes-title">⏰ Contas a vencer (próximos 30 dias)</div>
+        <div class="pendentes-list" id="pendentes-list"></div>
+      </div>
+
       <!-- GRÁFICO RECEITA vs DESPESA -->
       <div class="chart-card">
         <div class="chart-title">📊 Receita × Despesa por dia</div>
@@ -143,7 +190,10 @@
 
       <!-- FORM NOVA DESPESA -->
       <div class="form-card">
-        <div class="form-card-title">+ Lançar Despesa / Conta</div>
+        <div class="form-card-title">
+          <span id="form-titulo">+ Lançar Despesa / Conta</span>
+          <button class="btn-cancelar-edicao" id="btn-cancelar-edicao" style="display:none;">cancelar edição</button>
+        </div>
         <div class="form-grid2">
           <div class="form-group full">
             <label class="form-label">Descrição</label>
@@ -167,6 +217,13 @@
           <div class="form-group">
             <label class="form-label">Data</label>
             <input type="date" id="d-data" class="form-input">
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Status</label>
+            <div class="status-toggle">
+              <button type="button" class="status-btn active" data-s="pago">✅ Pago</button>
+              <button type="button" class="status-btn" data-s="pendente">⏳ A pagar</button>
+            </div>
           </div>
           <div class="form-group full">
             <label class="form-label">Observação (opcional)</label>
@@ -215,7 +272,7 @@
 <script type="module">
 import { db, auth } from './firebase.js';
 import {
-  collection, addDoc, deleteDoc, doc,
+  collection, addDoc, updateDoc, deleteDoc, doc,
   query, where, onSnapshot, orderBy, Timestamp, serverTimestamp,
   getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -223,6 +280,8 @@ import {
 let chartFluxo = null;
 let currentUser = null;
 let periodoInicio, periodoFim;
+let modoFuturo = false;     // true quando chip "A vencer" está ativo
+let editandoId = null;      // id do lançamento em edição (null = criando novo)
 
 function toast(msg, type='') {
   const el = document.createElement('div');
@@ -235,8 +294,27 @@ function toast(msg, type='') {
 const hoje = new Date().toISOString().split('T')[0];
 document.getElementById('d-data').value = hoje;
 
+// ─── TOGGLE STATUS (pago / pendente) ───────────────────────────
+let statusAtual = 'pago';
+document.querySelectorAll('.status-btn').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.status-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    statusAtual = btn.dataset.s;
+  };
+});
+
 // ─── PERÍODO ────────────────────────────────────────────────────
 function setDatas(dias) {
+  if (dias === 'futuro') {
+    modoFuturo = true;
+    const ini = new Date(); ini.setDate(ini.getDate() + 1);
+    const fim = new Date(); fim.setDate(fim.getDate() + 30);
+    periodoInicio = new Date(ini.toISOString().split('T')[0] + 'T00:00:00');
+    periodoFim    = new Date(fim.toISOString().split('T')[0] + 'T23:59:59');
+    return;
+  }
+  modoFuturo = false;
   const fim = new Date();
   const ini = new Date(); ini.setDate(fim.getDate() - dias);
   periodoInicio = new Date(ini.toISOString().split('T')[0] + 'T00:00:00');
@@ -247,7 +325,8 @@ document.querySelectorAll('.chip').forEach(chip => {
   chip.onclick = () => {
     document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
     chip.classList.add('active');
-    setDatas(parseInt(chip.dataset.d));
+    const d = chip.dataset.d;
+    setDatas(d === 'futuro' ? 'futuro' : parseInt(d));
     if (currentUser) carregarDados();
   };
 });
@@ -257,7 +336,7 @@ auth.onAuthStateChanged(user => {
   if (!user) { location.href = 'index.html'; return; }
   currentUser = user;
 
-  // Lançar despesa
+  // Lançar / Atualizar despesa
   document.getElementById('btn-lancar').onclick = async () => {
     const desc  = document.getElementById('d-desc').value.trim();
     const valor = parseFloat(document.getElementById('d-valor').value);
@@ -273,39 +352,77 @@ auth.onAuthStateChanged(user => {
     btn.disabled = true;
 
     try {
-      await addDoc(collection(db, `despesas_${user.uid}`), {
+      const payload = {
         descricao:  desc,
         valor:      valor,
         categoria:  cat,
         obs:        obs,
-        data:       Timestamp.fromDate(new Date(data + 'T12:00:00')),
-        createdAt:  serverTimestamp()
-      });
+        status:     statusAtual,
+        data:       Timestamp.fromDate(new Date(data + 'T12:00:00'))
+      };
+
+      if (editandoId) {
+        await updateDoc(doc(db, `despesas_${user.uid}`, editandoId), payload);
+        toast('✅ Despesa atualizada!', 'success');
+        cancelarEdicao();
+      } else {
+        await addDoc(collection(db, `despesas_${user.uid}`), {
+          ...payload,
+          createdAt: serverTimestamp()
+        });
+        toast('✅ Despesa lançada!', 'success');
+      }
+
       document.getElementById('d-desc').value  = '';
       document.getElementById('d-valor').value = '';
       document.getElementById('d-obs').value   = '';
+      document.getElementById('d-data').value  = hoje;
       document.getElementById('msg-desp').textContent = '';
-      toast('✅ Despesa lançada!', 'success');
+      resetStatusToggle();
+
+      // Recarrega para refletir o novo lançamento na lista/gráfico/totais
+      carregarDados();
     } catch(e) {
       document.getElementById('msg-desp').textContent = `❌ ${e.code||e.message}`;
     } finally { btn.disabled = false; }
   };
 
+  document.getElementById('btn-cancelar-edicao').onclick = cancelarEdicao;
+
   setDatas(0);
   carregarDados();
 });
 
+function resetStatusToggle() {
+  statusAtual = 'pago';
+  document.querySelectorAll('.status-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.status-btn[data-s="pago"]').classList.add('active');
+}
+
+function cancelarEdicao() {
+  editandoId = null;
+  document.getElementById('form-titulo').textContent = '+ Lançar Despesa / Conta';
+  document.getElementById('btn-lancar').textContent = '🧾 Lançar Despesa';
+  document.getElementById('btn-cancelar-edicao').style.display = 'none';
+  document.getElementById('d-desc').value  = '';
+  document.getElementById('d-valor').value = '';
+  document.getElementById('d-obs').value   = '';
+  document.getElementById('d-data').value  = hoje;
+  document.getElementById('d-categoria').value = 'fixo';
+  resetStatusToggle();
+}
+
 // ─── CARREGAR DADOS ─────────────────────────────────────────────
+let unsubVendas = null, unsubDesp = null;
+
 function carregarDados() {
   if (!currentUser || !periodoInicio || !periodoFim) return;
 
+  if (unsubVendas) unsubVendas();
+  if (unsubDesp) unsubDesp();
+
   const tsIni = Timestamp.fromDate(periodoInicio);
   const tsFim = Timestamp.fromDate(periodoFim);
-
-  const qVendas = query(
-    collection(db, `vendas_${currentUser.uid}`),
-    where('data', '>=', tsIni), where('data', '<=', tsFim), orderBy('data','asc')
-  );
 
   const qDesp = query(
     collection(db, `despesas_${currentUser.uid}`),
@@ -314,30 +431,79 @@ function carregarDados() {
 
   let vendas = [], despesas = [], folhaMensal = 0;
 
-  // Busca funcionários ativos e calcula folha proporcional ao período
-  getDocs(collection(db, `pessoas_${currentUser.uid}`)).then(snap => {
-    folhaMensal = 0;
-    snap.forEach(d => {
-      const p = d.data();
-      if (p.tipo === 'funcionario' && p.statusEmp !== 'desligado' && p.salario > 0) {
-        // Proporcional: dias do período / 30
-        const diasPeriodo = Math.round((periodoFim - periodoInicio) / (1000*60*60*24)) + 1;
-        folhaMensal += (p.salario / 30) * diasPeriodo;
-      }
+  // Vendas não existem no modo "futuro" (vendas futuras não fazem sentido)
+  if (!modoFuturo) {
+    const qVendas = query(
+      collection(db, `vendas_${currentUser.uid}`),
+      where('data', '>=', tsIni), where('data', '<=', tsFim), orderBy('data','asc')
+    );
+    unsubVendas = onSnapshot(qVendas, snap => {
+      vendas = [];
+      snap.forEach(d => vendas.push({ id:d.id, tipo:'entrada', ...d.data() }));
+      renderFinanceiro(vendas, despesas, folhaMensal);
     });
-    renderFinanceiro(vendas, despesas, folhaMensal);
-  }).catch(() => { /* sem funcionários ainda */ });
+  } else {
+    unsubVendas = null;
+  }
 
-  onSnapshot(qVendas, snap => {
-    vendas = [];
-    snap.forEach(d => vendas.push({ id:d.id, tipo:'entrada', ...d.data() }));
-    renderFinanceiro(vendas, despesas, folhaMensal);
-  });
+  // Busca funcionários ativos e calcula folha proporcional ao período (apenas fora do modo futuro)
+  if (!modoFuturo) {
+    getDocs(collection(db, `pessoas_${currentUser.uid}`)).then(snap => {
+      folhaMensal = 0;
+      snap.forEach(d => {
+        const p = d.data();
+        if (p.tipo === 'funcionario' && p.statusEmp !== 'desligado' && p.salario > 0) {
+          const diasPeriodo = Math.round((periodoFim - periodoInicio) / (1000*60*60*24)) + 1;
+          folhaMensal += (p.salario / 30) * diasPeriodo;
+        }
+      });
+      renderFinanceiro(vendas, despesas, folhaMensal);
+    }).catch(() => { /* sem funcionários ainda */ });
+  }
 
-  onSnapshot(qDesp, snap => {
+  unsubDesp = onSnapshot(qDesp, snap => {
     despesas = [];
     snap.forEach(d => despesas.push({ id:d.id, tipo:'saida', ...d.data() }));
     renderFinanceiro(vendas, despesas, folhaMensal);
+  });
+
+  carregarPendentes();
+}
+
+// ─── ALERTA DE PENDENTES (independente do filtro de período) ──
+function carregarPendentes() {
+  if (!currentUser) return;
+  const agora = new Date();
+  const limite = new Date(); limite.setDate(limite.getDate() + 30);
+
+  const qPend = query(
+    collection(db, `despesas_${currentUser.uid}`),
+    where('data', '>=', Timestamp.fromDate(agora)),
+    where('data', '<=', Timestamp.fromDate(limite)),
+    orderBy('data','asc')
+  );
+
+  onSnapshot(qPend, snap => {
+    const itens = [];
+    snap.forEach(d => {
+      const x = d.data();
+      if (x.status !== 'pago') itens.push({ id:d.id, ...x });
+    });
+
+    const card = document.getElementById('pendentes-card');
+    const list = document.getElementById('pendentes-list');
+
+    if (itens.length === 0) { card.classList.remove('show'); return; }
+
+    card.classList.add('show');
+    list.innerHTML = itens.map(i => {
+      const dt = i.data?.toDate?.();
+      const dtStr = dt ? dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) : '—';
+      return `<div class="pendente-item">
+        <span class="pdesc">${i.descricao} <span class="pdata">${dtStr}</span></span>
+        <span>R$ ${(i.valor||0).toFixed(2)}</span>
+      </div>`;
+    }).join('');
   });
 }
 
@@ -354,18 +520,15 @@ const CAT_LABELS = {
 
 function renderFinanceiro(vendas, despesas, folhaMensal=0) {
   // ── CUSTO DE PRODUTOS VENDIDOS (CMV) ──────────────────────────
-  // Cada venda tem itens com preco (venda) e custo (do estoque)
-  // Calculamos o CMV somando o custo de cada item vendido
   let cmvTotal = 0;
   let lucroVenda = 0;
   vendas.forEach(v => {
     (v.itens || []).forEach(item => {
-      const custo = item.custo || 0;     // custo unitário salvo na venda
-      const preco = item.preco || 0;     // preço de venda
+      const custo = item.custo || 0;
+      const preco = item.preco || 0;
       cmvTotal  += custo;
       lucroVenda += (preco - custo);
     });
-    // Se não tem custo nos itens, usa margem estimada de 40%
     if ((v.itens||[]).every(i => !i.custo)) {
       cmvTotal  += (v.valor||0) * 0.4;
       lucroVenda += (v.valor||0) * 0.6;
@@ -393,7 +556,6 @@ function renderFinanceiro(vendas, despesas, folhaMensal=0) {
     const key = dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
     if (!dias[key]) dias[key] = { receita:0, custo:0, despesa:0 };
     dias[key].receita += v.valor||0;
-    // Custo proporcional desta venda
     let custoDia = 0;
     (v.itens||[]).forEach(i => { custoDia += i.custo||0; });
     if ((v.itens||[]).every(i=>!i.custo)) custoDia = (v.valor||0)*0.4;
@@ -445,24 +607,24 @@ function renderFinanceiro(vendas, despesas, folhaMensal=0) {
   ].sort((a,b) => {
     const da = a.data?.toDate?.() || 0;
     const db_ = b.data?.toDate?.() || 0;
-    return db_ - da; // mais recente primeiro
+    return modoFuturo ? (da - db_) : (db_ - da); // futuro: mais próximo primeiro / senão: recente primeiro
   });
 
   const lista = document.getElementById('lista-lanc');
 
-  if (todos.length === 0) {
-    lista.innerHTML = '<div class="empty-lanc">Nenhum lançamento no período.</div>';
-    return;
-  }
-
-  // Adiciona linha da folha salarial se > 0
-  if (folhaMensal > 0) {
+  // Adiciona linha da folha salarial se > 0 (apenas fora do modo futuro)
+  if (folhaMensal > 0 && !modoFuturo) {
     todos.unshift({
       tipo:'saida', categoria:'salario',
       descricao:`Folha salarial (proporcional ao período)`,
-      valor: folhaMensal,
+      valor: folhaMensal, status:'pago',
       data: null, _folha: true
     });
+  }
+
+  if (todos.length === 0) {
+    lista.innerHTML = `<div class="empty-lanc">${modoFuturo ? 'Nenhuma conta a vencer nos próximos 30 dias.' : 'Nenhum lançamento no período.'}</div>`;
+    return;
   }
 
   lista.innerHTML = todos.map(l => {
@@ -473,28 +635,57 @@ function renderFinanceiro(vendas, despesas, folhaMensal=0) {
       ? (l.itens?.length ? `Mesa ${l.mesa||'—'} · ${l.itens.length} itens` : `Mesa ${l.mesa||'—'}`)
       : (CAT_LABELS[l.categoria]||'Outro');
     const desc   = l.tipo==='entrada' ? `Venda Mesa ${l.mesa||'—'}` : l.descricao;
+    const isFuturoItem = dt && dt > new Date();
+    const statusPill = l.tipo==='saida' && !l._folha
+      ? `<span class="status-pill ${l.status==='pendente'?'pendente':'pago'}">${l.status==='pendente'?'⏳ A pagar':'✅ Pago'}</span>`
+      : '';
 
-    return `<div class="lanc-item">
+    return `<div class="lanc-item ${isFuturoItem ? 'futuro' : ''}">
       <div class="lanc-icon">${icon}</div>
       <div class="lanc-info">
         <div class="lanc-desc">${desc}</div>
         <div class="lanc-meta">
           ${dtStr}
           <span class="cat-pill" style="margin-left:4px;">${catLbl}</span>
+          ${statusPill}
         </div>
       </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+      <div class="lanc-actions">
         ${l.tipo==='entrada' ? `
           <div class="lanc-val entrada">+ R$ ${(l.valor||0).toFixed(2)}</div>
           ${(()=>{ let c=0; (l.itens||[]).forEach(i=>c+=i.custo||0); if(c>0) return `<div style="font-size:.65rem;color:#F59E0B;font-weight:600;">CMV: R$ ${c.toFixed(2)} · Lucro: R$ ${((l.valor||0)-c).toFixed(2)}</div>`; return ''; })()}
         ` : `
           <div class="lanc-val saida">− R$ ${(l.valor||0).toFixed(2)}</div>
-          ${!l._folha ? `<button onclick="excluirDesp('${l.id}')" class="btn btn-ghost" style="padding:3px 8px;font-size:.65rem;">🗑️</button>` : ''}
+          ${!l._folha ? `
+            <div class="lanc-btns">
+              <button onclick='editarDesp(${JSON.stringify({id:l.id, descricao:l.descricao, valor:l.valor, categoria:l.categoria, obs:l.obs||'', status:l.status||'pago', data: dt ? dt.toISOString().split('T')[0] : ''})})' class="btn btn-ghost" style="padding:3px 8px;font-size:.65rem;">✏️</button>
+              <button onclick="excluirDesp('${l.id}')" class="btn btn-ghost" style="padding:3px 8px;font-size:.65rem;">🗑️</button>
+            </div>
+          ` : ''}
         `}
       </div>
     </div>`;
   }).join('');
 }
+
+window.editarDesp = (item) => {
+  editandoId = item.id;
+  document.getElementById('d-desc').value      = item.descricao;
+  document.getElementById('d-valor').value     = item.valor;
+  document.getElementById('d-categoria').value = item.categoria;
+  document.getElementById('d-data').value      = item.data;
+  document.getElementById('d-obs').value       = item.obs;
+
+  statusAtual = item.status || 'pago';
+  document.querySelectorAll('.status-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.status-btn[data-s="${statusAtual}"]`).classList.add('active');
+
+  document.getElementById('form-titulo').textContent = '✏️ Editando lançamento';
+  document.getElementById('btn-lancar').textContent = '💾 Salvar alterações';
+  document.getElementById('btn-cancelar-edicao').style.display = 'inline';
+
+  document.querySelector('.form-card').scrollIntoView({ behavior:'smooth', block:'start' });
+};
 
 window.excluirDesp = async id => {
   if (!confirm('Excluir este lançamento?')) return;
