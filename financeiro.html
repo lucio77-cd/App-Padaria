@@ -21,7 +21,7 @@
       background:linear-gradient(135deg,var(--navy) 0%,#0F3460 100%);
       border-radius:var(--radius-lg); padding:24px;
       margin-bottom:20px; color:white;
-      display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;
+      display:grid; grid-template-columns:1fr 1fr; gap:16px;
     }
     .saldo-item .label { font-size:.65rem; opacity:.55; letter-spacing:.08em; text-transform:uppercase; }
     .saldo-item .val   { font-size:1.4rem; font-weight:800; margin-top:4px; }
@@ -71,8 +71,7 @@
     .empty-lanc { text-align:center; padding:32px; color:var(--text-muted); font-size:.85rem; }
 
     @media(max-width:768px){
-      .saldo-hero { grid-template-columns:1fr 1fr; }
-      .saldo-hero .saldo-item:last-child { grid-column:1/-1; }
+      /* saldo hero já é 2 col */
       .form-grid2 { grid-template-columns:1fr; }
       .form-grid2 .full { grid-column:1; }
     }
@@ -119,11 +118,19 @@
           <div class="val verde" id="sh-receita">R$ 0,00</div>
         </div>
         <div class="saldo-item">
+          <div class="label">Custo dos Produtos</div>
+          <div class="val vermelho" id="sh-custo-prod">R$ 0,00</div>
+        </div>
+        <div class="saldo-item">
           <div class="label">Despesas</div>
           <div class="val vermelho" id="sh-despesas">R$ 0,00</div>
         </div>
         <div class="saldo-item">
-          <div class="label">Lucro Líquido</div>
+          <div class="label">Folha Salarial</div>
+          <div class="val vermelho" id="sh-folha">R$ 0,00</div>
+        </div>
+        <div class="saldo-item" style="grid-column:1/-1;">
+          <div class="label">Lucro Líquido Real</div>
           <div class="val amarelo" id="sh-lucro">R$ 0,00</div>
         </div>
       </div>
@@ -209,7 +216,8 @@
 import { db, auth } from './firebase.js';
 import {
   collection, addDoc, deleteDoc, doc,
-  query, where, onSnapshot, orderBy, Timestamp, serverTimestamp
+  query, where, onSnapshot, orderBy, Timestamp, serverTimestamp,
+  getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 let chartFluxo = null;
@@ -294,30 +302,42 @@ function carregarDados() {
   const tsIni = Timestamp.fromDate(periodoInicio);
   const tsFim = Timestamp.fromDate(periodoFim);
 
-  // Vendas do período
   const qVendas = query(
     collection(db, `vendas_${currentUser.uid}`),
     where('data', '>=', tsIni), where('data', '<=', tsFim), orderBy('data','asc')
   );
 
-  // Despesas do período
   const qDesp = query(
     collection(db, `despesas_${currentUser.uid}`),
     where('data', '>=', tsIni), where('data', '<=', tsFim), orderBy('data','asc')
   );
 
-  let vendas = [], despesas = [];
+  let vendas = [], despesas = [], folhaMensal = 0;
+
+  // Busca funcionários ativos e calcula folha proporcional ao período
+  getDocs(collection(db, `pessoas_${currentUser.uid}`)).then(snap => {
+    folhaMensal = 0;
+    snap.forEach(d => {
+      const p = d.data();
+      if (p.tipo === 'funcionario' && p.statusEmp !== 'desligado' && p.salario > 0) {
+        // Proporcional: dias do período / 30
+        const diasPeriodo = Math.round((periodoFim - periodoInicio) / (1000*60*60*24)) + 1;
+        folhaMensal += (p.salario / 30) * diasPeriodo;
+      }
+    });
+    renderFinanceiro(vendas, despesas, folhaMensal);
+  }).catch(() => { /* sem funcionários ainda */ });
 
   onSnapshot(qVendas, snap => {
     vendas = [];
     snap.forEach(d => vendas.push({ id:d.id, tipo:'entrada', ...d.data() }));
-    renderFinanceiro(vendas, despesas);
+    renderFinanceiro(vendas, despesas, folhaMensal);
   });
 
   onSnapshot(qDesp, snap => {
     despesas = [];
     snap.forEach(d => despesas.push({ id:d.id, tipo:'saida', ...d.data() }));
-    renderFinanceiro(vendas, despesas);
+    renderFinanceiro(vendas, despesas, folhaMensal);
   });
 }
 
@@ -332,32 +352,64 @@ const CAT_LABELS = {
   servico:'Serviço', salario:'Salário', outro:'Outro'
 };
 
-function renderFinanceiro(vendas, despesas) {
-  // Totais
-  const totalReceita  = vendas.reduce((s,v)   => s + (v.valor||0), 0);
-  const totalDespesas = despesas.reduce((s,d) => s + (d.valor||0), 0);
-  const lucro         = totalReceita - totalDespesas;
+function renderFinanceiro(vendas, despesas, folhaMensal=0) {
+  // ── CUSTO DE PRODUTOS VENDIDOS (CMV) ──────────────────────────
+  // Cada venda tem itens com preco (venda) e custo (do estoque)
+  // Calculamos o CMV somando o custo de cada item vendido
+  let cmvTotal = 0;
+  let lucroVenda = 0;
+  vendas.forEach(v => {
+    (v.itens || []).forEach(item => {
+      const custo = item.custo || 0;     // custo unitário salvo na venda
+      const preco = item.preco || 0;     // preço de venda
+      cmvTotal  += custo;
+      lucroVenda += (preco - custo);
+    });
+    // Se não tem custo nos itens, usa margem estimada de 40%
+    if ((v.itens||[]).every(i => !i.custo)) {
+      cmvTotal  += (v.valor||0) * 0.4;
+      lucroVenda += (v.valor||0) * 0.6;
+    }
+  });
 
-  document.getElementById('sh-receita').textContent  = `R$ ${totalReceita.toFixed(2)}`;
-  document.getElementById('sh-despesas').textContent = `R$ ${totalDespesas.toFixed(2)}`;
-  document.getElementById('sh-lucro').textContent    = `R$ ${lucro.toFixed(2)}`;
-  document.getElementById('sh-lucro').className      = `val ${lucro >= 0 ? 'verde' : 'vermelho'}`;
+  const totalReceita  = vendas.reduce((s,v) => s + (v.valor||0), 0);
+  const totalDespesas = despesas.reduce((s,d) => s + (d.valor||0), 0);
+  const lucroLiquido  = totalReceita - cmvTotal - totalDespesas - folhaMensal;
+
+  document.getElementById('sh-receita').textContent    = `R$ ${totalReceita.toFixed(2)}`;
+  document.getElementById('sh-custo-prod').textContent = `R$ ${cmvTotal.toFixed(2)}`;
+  document.getElementById('sh-despesas').textContent   = `R$ ${totalDespesas.toFixed(2)}`;
+  document.getElementById('sh-folha').textContent      = `R$ ${folhaMensal.toFixed(2)}`;
+  document.getElementById('sh-lucro').textContent      = `R$ ${lucroLiquido.toFixed(2)}`;
+  document.getElementById('sh-lucro').className        = `val ${lucroLiquido >= 0 ? 'verde' : 'vermelho'}`;
 
   document.getElementById('badge-entradas').textContent = `↑ R$ ${totalReceita.toFixed(2)}`;
-  document.getElementById('badge-saidas').textContent   = `↓ R$ ${totalDespesas.toFixed(2)}`;
+  document.getElementById('badge-saidas').textContent   = `↓ R$ ${(cmvTotal+totalDespesas+folhaMensal).toFixed(2)}`;
 
-  // ── GRÁFICO FLUXO ─────────────────────────────────────────────
+  // ── GRÁFICO — 3 barras: Receita / Custo Produto / Despesa ──────
   const dias = {};
-  [...vendas, ...despesas].forEach(l => {
-    const dt  = l.data?.toDate?.() || new Date();
+  vendas.forEach(v => {
+    const dt  = v.data?.toDate?.() || new Date();
     const key = dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
-    if (!dias[key]) dias[key] = { entrada:0, saida:0 };
-    dias[key][l.tipo] += l.valor||0;
+    if (!dias[key]) dias[key] = { receita:0, custo:0, despesa:0 };
+    dias[key].receita += v.valor||0;
+    // Custo proporcional desta venda
+    let custoDia = 0;
+    (v.itens||[]).forEach(i => { custoDia += i.custo||0; });
+    if ((v.itens||[]).every(i=>!i.custo)) custoDia = (v.valor||0)*0.4;
+    dias[key].custo += custoDia;
+  });
+  despesas.forEach(d => {
+    const dt  = d.data?.toDate?.() || new Date();
+    const key = dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
+    if (!dias[key]) dias[key] = { receita:0, custo:0, despesa:0 };
+    dias[key].despesa += d.valor||0;
   });
 
   const labels  = Object.keys(dias).sort();
-  const entAr   = labels.map(d => dias[d].entrada);
-  const saidaAr = labels.map(d => dias[d].saida);
+  const entAr   = labels.map(d => dias[d].receita);
+  const custoAr = labels.map(d => dias[d].custo);
+  const saidaAr = labels.map(d => dias[d].despesa);
 
   if (chartFluxo) chartFluxo.destroy();
   chartFluxo = new Chart(
@@ -367,8 +419,9 @@ function renderFinanceiro(vendas, despesas) {
       data:{
         labels,
         datasets:[
-          { label:'Receita', data:entAr,   backgroundColor:'rgba(52,211,153,.7)', borderRadius:4, borderSkipped:false },
-          { label:'Despesa', data:saidaAr, backgroundColor:'rgba(248,113,113,.7)', borderRadius:4, borderSkipped:false }
+          { label:'Receita',        data:entAr,   backgroundColor:'rgba(52,211,153,.75)',  borderRadius:4, borderSkipped:false },
+          { label:'Custo Produto',  data:custoAr, backgroundColor:'rgba(251,191,36,.75)',  borderRadius:4, borderSkipped:false },
+          { label:'Outras Despesas',data:saidaAr, backgroundColor:'rgba(248,113,113,.75)', borderRadius:4, borderSkipped:false }
         ]
       },
       options:{
@@ -402,11 +455,23 @@ function renderFinanceiro(vendas, despesas) {
     return;
   }
 
+  // Adiciona linha da folha salarial se > 0
+  if (folhaMensal > 0) {
+    todos.unshift({
+      tipo:'saida', categoria:'salario',
+      descricao:`Folha salarial (proporcional ao período)`,
+      valor: folhaMensal,
+      data: null, _folha: true
+    });
+  }
+
   lista.innerHTML = todos.map(l => {
     const dt     = l.data?.toDate?.();
-    const dtStr  = dt ? dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
+    const dtStr  = dt ? dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : 'Calculado';
     const icon   = l.tipo==='entrada' ? '💵' : (ICONS[l.categoria]||'💳');
-    const catLbl = l.tipo==='entrada' ? `Mesa ${l.mesa||'—'}` : (CAT_LABELS[l.categoria]||'Outro');
+    const catLbl = l.tipo==='entrada'
+      ? (l.itens?.length ? `Mesa ${l.mesa||'—'} · ${l.itens.length} itens` : `Mesa ${l.mesa||'—'}`)
+      : (CAT_LABELS[l.categoria]||'Outro');
     const desc   = l.tipo==='entrada' ? `Venda Mesa ${l.mesa||'—'}` : l.descricao;
 
     return `<div class="lanc-item">
@@ -419,8 +484,13 @@ function renderFinanceiro(vendas, despesas) {
         </div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
-        <div class="lanc-val ${l.tipo}">${l.tipo==='entrada' ? '+' : '−'} R$ ${(l.valor||0).toFixed(2)}</div>
-        ${l.tipo==='saida' ? `<button onclick="excluirDesp('${l.id}')" class="btn btn-ghost" style="padding:3px 8px;font-size:.65rem;">🗑️</button>` : ''}
+        ${l.tipo==='entrada' ? `
+          <div class="lanc-val entrada">+ R$ ${(l.valor||0).toFixed(2)}</div>
+          ${(()=>{ let c=0; (l.itens||[]).forEach(i=>c+=i.custo||0); if(c>0) return `<div style="font-size:.65rem;color:#F59E0B;font-weight:600;">CMV: R$ ${c.toFixed(2)} · Lucro: R$ ${((l.valor||0)-c).toFixed(2)}</div>`; return ''; })()}
+        ` : `
+          <div class="lanc-val saida">− R$ ${(l.valor||0).toFixed(2)}</div>
+          ${!l._folha ? `<button onclick="excluirDesp('${l.id}')" class="btn btn-ghost" style="padding:3px 8px;font-size:.65rem;">🗑️</button>` : ''}
+        `}
       </div>
     </div>`;
   }).join('');
