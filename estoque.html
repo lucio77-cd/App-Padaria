@@ -66,6 +66,19 @@
     .qbtn:hover{background:var(--border);}
     .qnum{flex:1;text-align:center;font-size:.85rem;font-weight:700;}
 
+    /* SALÃO TOGGLE */
+    .salao-toggle-row{display:flex;align-items:center;justify-content:space-between;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius-md);padding:12px 14px;}
+    .salao-toggle-info{display:flex;flex-direction:column;}
+    .salao-toggle-info .tt{font-size:.85rem;font-weight:700;color:var(--navy);}
+    .salao-toggle-info .ds{font-size:.7rem;color:var(--text-muted);margin-top:1px;}
+    .switch{position:relative;display:inline-block;width:46px;height:26px;flex-shrink:0;}
+    .switch input{opacity:0;width:0;height:0;}
+    .switch-slider{position:absolute;cursor:pointer;inset:0;background:var(--border);border-radius:999px;transition:.2s;}
+    .switch-slider:before{position:absolute;content:"";height:20px;width:20px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3);}
+    .switch input:checked + .switch-slider{background:var(--livre);}
+    .switch input:checked + .switch-slider:before{transform:translateX(20px);}
+    .salao-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:999px;font-size:.62rem;font-weight:700;background:#DBEAFE;color:#1E40AF;margin-top:3px;}
+
     /* MODAL */
     .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;align-items:center;justify-content:center;padding:16px;}
     .modal-overlay.open{display:flex;}
@@ -203,6 +216,20 @@
             <div class="preco-prev" id="preco-prev">
               <div><div class="pp-label">Preço de venda</div><div class="pp-val" id="pp-venda">R$ —</div></div>
               <div style="text-align:right;"><div class="pp-label">Lucro / un</div><div class="pp-lucro" id="pp-lucro">R$ —</div></div>
+            </div>
+          </div>
+
+          <!-- VENDER NO SALÃO -->
+          <div class="full">
+            <div class="salao-toggle-row">
+              <div class="salao-toggle-info">
+                <span class="tt">🪑 Vender no Salão</span>
+                <span class="ds">Aparece como botão no cardápio da Mesa (pedido.html)</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="f-vende-salao">
+                <span class="switch-slider"></span>
+              </label>
             </div>
           </div>
 
@@ -533,6 +560,7 @@ function preencherForm(item){
   document.getElementById('f-margem').value  = item.margem||'';
   document.getElementById('f-qtd').value     = item.qtd||0;
   document.getElementById('f-min').value     = item.minimo||5;
+  document.getElementById('f-vende-salao').checked = !!item.vendeSalao;
   catAtiva = item.categoria||categorias[0];
   document.getElementById('f-categoria').value = catAtiva;
   renderChips();
@@ -551,6 +579,7 @@ function limparForm(){
   document.getElementById('f-qtd').value  = '0';
   document.getElementById('f-min').value  = '5';
   document.getElementById('f-unidade').value = 'un';
+  document.getElementById('f-vende-salao').checked = false;
   document.getElementById('lote-box').style.display = 'none';
   document.getElementById('pp-venda').textContent = 'R$ —';
   document.getElementById('pp-lucro').textContent = 'R$ —';
@@ -624,6 +653,7 @@ auth.onAuthStateChanged(async user=>{
     const minimo   = parseInt(document.getElementById('f-min').value)||5;
     const unidade  = document.getElementById('f-unidade').value;
     const categoria= document.getElementById('f-categoria').value || catAtiva;
+    const vendeSalao = document.getElementById('f-vende-salao').checked;
 
     if(!nome)              { document.getElementById('msg-form').textContent='⚠️ Nome obrigatório.'; return; }
     if(!codigo)            { document.getElementById('msg-form').textContent='⚠️ Código obrigatório.'; return; }
@@ -631,7 +661,7 @@ auth.onAuthStateChanged(async user=>{
     if(isNaN(margem)||margem<0){ document.getElementById('msg-form').textContent='⚠️ Margem inválida.'; return; }
 
     const preco = Math.round(custo*(1+margem/100)*100)/100;
-    const dados = { codigo, nome, custo, margem, preco, qtd, minimo, unidade, categoria, updatedAt:serverTimestamp() };
+    const dados = { codigo, nome, custo, margem, preco, qtd, minimo, unidade, categoria, vendeSalao, updatedAt:serverTimestamp() };
 
     const btn = document.getElementById('btn-salvar');
     btn.disabled = true;
@@ -712,6 +742,14 @@ auth.onAuthStateChanged(async user=>{
     }catch(e){ toast('Erro.','error'); }
   };
 
+  // Toggle rápido "Vender no Salão" direto na tabela
+  window.toggleSalao = async(id, valorAtual)=>{
+    try{
+      await updateDoc(doc(db,`estoque_${user.uid}`,id),{vendeSalao: !valorAtual});
+      toast(!valorAtual ? '🪑 Agora vende no Salão' : '🚫 Removido do Salão','success');
+    }catch(e){ toast('Erro ao atualizar.','error'); }
+  };
+
   window.editarItem = id=>{ const it=itens.find(i=>i.id===id); if(it) preencherForm(it); };
 
   // LISTENER TEMPO REAL
@@ -761,11 +799,16 @@ function renderTabela(){
     const ico = CAT_ICONS[i.categoria]||'📦';
     const lucroUn = (i.preco||0)-(i.custo||0);
     const nomeSafe = (i.nome||'').replace(/'/g,"\\'");
+    const salaoOn = !!i.vendeSalao;
 
     return `<tr>
       <td>
         <div style="font-weight:700;font-size:.84rem;color:var(--navy);">${ico} ${i.nome}</div>
         <div style="font-size:.67rem;color:var(--text-muted);">${i.categoria||'—'} · ${i.unidade||'un'}</div>
+        <div class="salao-badge" style="cursor:pointer;${salaoOn?'':'background:#F1F5F9;color:#64748B;'}"
+          onclick="toggleSalao('${i.id}',${salaoOn})" title="Clique para ${salaoOn?'remover do':'colocar no'} Salão">
+          🪑 ${salaoOn?'No Salão':'Não vende no Salão'}
+        </div>
       </td>
       <td><span class="cod">${i.codigo||'—'}</span></td>
       <td>
