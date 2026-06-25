@@ -798,9 +798,25 @@ function renderLista(){
 window.editarPessoa = id=>{
   const p = todas.find(x=>x.id===id);
   if(!p) return;
+
+  // Define editId ANTES de tudo
   editId = id;
+
+  // setTipo ativa a seção correta mas vai gerar código novo — corrigimos depois
   setTipo(p.tipo);
 
+  // ── Restaura o código original (setTipo chamou gerarCodigo e sobrescreveu)
+  const partes = (p.codigo||'').match(/^([CF])(\d+)$/i);
+  if(partes){
+    document.getElementById('cod-numero').textContent   = partes[2];
+    document.getElementById('cod-completo').textContent = p.codigo;
+  }
+
+  // ── Ativa a seção que estava desabilitada para poder preencher
+  document.getElementById('secao-cliente').className     = p.tipo==='cliente' ? '' : 'secao-disabled';
+  document.getElementById('secao-funcionario').className = p.tipo==='funcionario' ? '' : 'secao-disabled';
+
+  // ── Preenche campos comuns
   ['nome','nascimento','sexo','email','endereco','cpf','obs'].forEach(k=>{
     const el = document.getElementById(`f-${k}`);
     if(el) el.value = p[k]||'';
@@ -808,12 +824,17 @@ window.editarPessoa = id=>{
   document.getElementById('f-tel').value   = p.telefone||'';
   document.getElementById('f-idade').value = p.idade||'';
 
+  // ── Preenche campos específicos
   if(p.tipo==='cliente'){
     document.getElementById('f-origem').value      = p.origem||'';
     document.getElementById('f-pref').value        = p.preferencia||'';
     document.getElementById('f-restricao').value   = p.restricao||'';
     document.getElementById('f-aniversario').value = p.aniversario||'';
   } else {
+    // Remove secao-disabled temporariamente para preencher valores
+    const secFun = document.getElementById('secao-funcionario');
+    secFun.classList.remove('secao-disabled');
+
     document.getElementById('f-funcao').value      = p.funcao||'';
     document.getElementById('f-contratacao').value = p.contratacao||'';
     document.getElementById('f-experiencia').value = p.fimExp||'';
@@ -827,11 +848,19 @@ window.editarPessoa = id=>{
     document.getElementById('f-pix').value         = p.pix||'';
     document.getElementById('f-status').value      = p.statusEmp||'ativo';
     document.getElementById('f-beneficios').value  = p.beneficios||'';
-    if(p.contratacao) document.getElementById('f-contratacao').dispatchEvent(new Event('change'));
+
+    // Recalcula banner de experiência
+    if(p.contratacao){
+      document.getElementById('f-contratacao').dispatchEvent(new Event('change'));
+    }
   }
 
+  // ── Atualiza título e botão
+  document.getElementById('form-titulo').innerHTML = `<span>${p.tipo==='cliente'?'👤':'👔'}</span> Editando: ${p.nome}`;
   document.getElementById('btn-salvar').textContent = '💾 Salvar Alterações';
-  window.scrollTo({top:0,behavior:'smooth'});
+
+  // Rola suavemente para o topo do form
+  document.getElementById('form-titulo').scrollIntoView({ behavior:'smooth', block:'start' });
 };
 
 window.excluirPessoa = async(id,nome)=>{
