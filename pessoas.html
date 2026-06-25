@@ -92,6 +92,21 @@
     .exp-banner .eb-val   { font-size: 1rem; font-weight: 800; }
     .exp-banner .eb-val.verde { color: #34D399; }
     .exp-banner .eb-val.amber { color: var(--amber); }
+    .exp-banner .eb-val.vermelho { color: #F87171; }
+
+    /* AVISO PRÉVIO BANNER */
+    .aviso-banner {
+      background: linear-gradient(135deg, #7C2D12, #C2410C);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      color: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 4px;
+    }
+    .aviso-banner .eb-label { font-size: .65rem; opacity: .65; margin-bottom: 2px; }
+    .aviso-banner .eb-val   { font-size: 1rem; font-weight: 800; }
 
     /* CARDS LISTA */
     .pessoas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
@@ -105,6 +120,7 @@
       transition: transform .15s, box-shadow .15s;
     }
     .pessoa-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .pessoa-card.desligado { opacity: .6; }
 
     .pessoa-card-header {
       padding: 14px 16px;
@@ -114,6 +130,7 @@
     }
     .pessoa-card-header.cli { background: linear-gradient(135deg, #0EA5E9, #0284C7); }
     .pessoa-card-header.fun { background: linear-gradient(135deg, var(--navy), #0F3460); }
+    .pessoa-card-header.fun.desligado-bg { background: linear-gradient(135deg, #4B5563, #374151); }
 
     .avatar {
       width: 46px; height: 46px;
@@ -405,8 +422,35 @@
                 <option value="ferias">Em férias</option>
                 <option value="afastado">Afastado</option>
                 <option value="experiencia">Em experiência</option>
-                <option value="desligado">Desligado</option>
+                <option value="aviso">Aviso Prévio</option>
+                <option value="desligado">Demitido</option>
               </select>
+            </div>
+
+            <!-- Campo: data início aviso prévio -->
+            <div class="form-group" id="grupo-aviso" style="display:none;">
+              <label class="form-label">Início do Aviso Prévio</label>
+              <input type="date" id="f-aviso-inicio" class="form-input">
+            </div>
+
+            <!-- Banner aviso prévio -->
+            <div class="full" id="aviso-banner-wrap" style="display:none;">
+              <div class="aviso-banner">
+                <div>
+                  <div class="eb-label">Aviso prévio (30 dias)</div>
+                  <div class="eb-val" id="aviso-status">—</div>
+                </div>
+                <div style="text-align:right;">
+                  <div class="eb-label">Termina em</div>
+                  <div class="eb-val" id="aviso-fim">—</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Campo: data de desligamento -->
+            <div class="form-group" id="grupo-desligamento" style="display:none;">
+              <label class="form-label">Data de Desligamento</label>
+              <input type="date" id="f-desligamento" class="form-input">
             </div>
 
             <div class="form-group">
@@ -490,7 +534,7 @@ function toast(msg, type=''){
 // ══════════════════════════════════════════════
 // TIPO TOGGLE (Cliente / Funcionário)
 // ══════════════════════════════════════════════
-window.setTipo = tipo => {
+window.setTipo = (tipo, manterCodigo=false) => {
   tipoAtivo = tipo;
   const eCli = tipo==='cliente';
 
@@ -506,9 +550,9 @@ window.setTipo = tipo => {
   // Código
   document.getElementById('cod-prefix').textContent = eCli?'C':'F';
   document.getElementById('cod-prefix').className   = `cod-prefix ${eCli?'cli':'fun'}`;
-  document.getElementById('cod-badge-full').className = `cod-badge-full ${eCli?'cli':'fun'}`;
+  document.getElementById('cod-completo').className = `cod-badge-full ${eCli?'cli':'fun'}`;
 
-  gerarCodigo();
+  if(!manterCodigo) gerarCodigo();
 };
 
 // ══════════════════════════════════════════════
@@ -545,8 +589,8 @@ document.getElementById('f-nascimento').addEventListener('change', e=>{
 // ══════════════════════════════════════════════
 // CONTRATAÇÃO → FIM EXPERIÊNCIA (90 dias)
 // ══════════════════════════════════════════════
-document.getElementById('f-contratacao').addEventListener('change', e=>{
-  const d = new Date(e.target.value);
+function calcularExperiencia(valorContratacao){
+  const d = new Date(valorContratacao+'T12:00:00');
   if(isNaN(d)) return;
 
   const exp = new Date(d); exp.setDate(exp.getDate()+90);
@@ -568,6 +612,56 @@ document.getElementById('f-contratacao').addEventListener('change', e=>{
     document.getElementById('exp-status').className   = 'eb-val verde';
     document.getElementById('exp-dias').textContent   = '0';
   }
+}
+document.getElementById('f-contratacao').addEventListener('change', e=>{
+  if(!e.target.value) return;
+  calcularExperiencia(e.target.value);
+});
+
+// ══════════════════════════════════════════════
+// AVISO PRÉVIO (30 dias automáticos)
+// ══════════════════════════════════════════════
+function calcularAviso(valorInicio){
+  const d = new Date(valorInicio+'T12:00:00');
+  if(isNaN(d)) return;
+
+  const fim = new Date(d); fim.setDate(fim.getDate()+30);
+  const fmt = dt => dt.toLocaleDateString('pt-BR');
+
+  const wrap = document.getElementById('aviso-banner-wrap');
+  wrap.style.display = '';
+
+  const hoje = new Date();
+  const dias = Math.ceil((fim-hoje)/(1000*60*60*24));
+
+  if(dias>0){
+    document.getElementById('aviso-status').textContent = `Em aviso prévio`;
+    document.getElementById('aviso-fim').textContent     = `${fmt(fim)} (${dias}d)`;
+  } else {
+    document.getElementById('aviso-status').textContent = 'Aviso encerrado ✓';
+    document.getElementById('aviso-fim').textContent     = fmt(fim);
+  }
+  return fmt(fim);
+}
+document.getElementById('f-aviso-inicio').addEventListener('change', e=>{
+  if(!e.target.value) return;
+  calcularAviso(e.target.value);
+});
+
+// ══════════════════════════════════════════════
+// STATUS → mostra/esconde campos de aviso/desligamento
+// ══════════════════════════════════════════════
+function aplicarVisibilidadeStatus(status){
+  const grupoAviso   = document.getElementById('grupo-aviso');
+  const bannerAviso  = document.getElementById('aviso-banner-wrap');
+  const grupoDeslig  = document.getElementById('grupo-desligamento');
+
+  grupoAviso.style.display  = status==='aviso' ? '' : 'none';
+  bannerAviso.style.display = (status==='aviso' && document.getElementById('f-aviso-inicio').value) ? '' : 'none';
+  grupoDeslig.style.display = status==='desligado' ? '' : 'none';
+}
+document.getElementById('f-status').addEventListener('change', e=>{
+  aplicarVisibilidadeStatus(e.target.value);
 });
 
 // ══════════════════════════════════════════════
@@ -608,6 +702,11 @@ auth.onAuthStateChanged(async user=>{
       if(!func){ document.getElementById('msg-form').textContent='⚠️ Função obrigatória.'; return; }
       if(isNaN(sal)||sal<=0){ document.getElementById('msg-form').textContent='⚠️ Salário obrigatório.'; return; }
       if(!cont){ document.getElementById('msg-form').textContent='⚠️ Data de contratação obrigatória.'; return; }
+
+      const status = document.getElementById('f-status').value;
+      if(status==='aviso' && !document.getElementById('f-aviso-inicio').value){
+        document.getElementById('msg-form').textContent='⚠️ Informe a data de início do aviso prévio.'; return;
+      }
     }
 
     document.getElementById('msg-form').textContent='';
@@ -637,20 +736,23 @@ auth.onAuthStateChanged(async user=>{
         aniversario:document.getElementById('f-aniversario').value||null,
       });
     } else {
+      const status = document.getElementById('f-status').value;
       Object.assign(dados,{
-        funcao:      document.getElementById('f-funcao').value,
-        contratacao: document.getElementById('f-contratacao').value,
-        fimExp:      document.getElementById('f-experiencia').value||null,
-        salario:     parseFloat(document.getElementById('f-salario').value)||0,
-        horaExtra:   parseFloat(document.getElementById('f-hora-extra').value)||0,
-        horario:     document.getElementById('f-horario').value||null,
-        dias:        document.getElementById('f-dias').value||null,
-        pis:         document.getElementById('f-pis').value.trim()||null,
-        ctps:        document.getElementById('f-ctps').value.trim()||null,
-        banco:       document.getElementById('f-banco').value.trim()||null,
-        pix:         document.getElementById('f-pix').value.trim()||null,
-        statusEmp:   document.getElementById('f-status').value,
-        beneficios:  document.getElementById('f-beneficios').value.trim()||null,
+        funcao:        document.getElementById('f-funcao').value,
+        contratacao:   document.getElementById('f-contratacao').value,
+        fimExp:        document.getElementById('f-experiencia').value||null,
+        salario:       parseFloat(document.getElementById('f-salario').value)||0,
+        horaExtra:     parseFloat(document.getElementById('f-hora-extra').value)||0,
+        horario:       document.getElementById('f-horario').value||null,
+        dias:          document.getElementById('f-dias').value||null,
+        pis:           document.getElementById('f-pis').value.trim()||null,
+        ctps:          document.getElementById('f-ctps').value.trim()||null,
+        banco:         document.getElementById('f-banco').value.trim()||null,
+        pix:           document.getElementById('f-pix').value.trim()||null,
+        statusEmp:     status,
+        avisoInicio:   status==='aviso' ? (document.getElementById('f-aviso-inicio').value||null) : null,
+        dataDesligamento: status==='desligado' ? (document.getElementById('f-desligamento').value||null) : null,
+        beneficios:    document.getElementById('f-beneficios').value.trim()||null,
       });
     }
 
@@ -680,7 +782,7 @@ auth.onAuthStateChanged(async user=>{
     todas.sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));
     renderLista();
     atualizarResumo();
-    gerarCodigo();
+    if(!editId) gerarCodigo();
   }, err=>{
     document.getElementById('pessoas-grid').innerHTML =
       `<div style="color:#DC2626;text-align:center;padding:32px;grid-column:1/-1;font-size:.85rem;">
@@ -733,6 +835,7 @@ function renderLista(){
   grid.innerHTML = lista.map(p=>{
     const eCli = p.tipo==='cliente';
     const ico  = eCli ? (SEXO_ICON[p.sexo||'']||'🧑') : (FUNCAO_ICON[p.funcao]||'👔');
+    const desligado = !eCli && p.statusEmp==='desligado';
 
     // Info principal
     let info1 = '', info2 = '', info3 = '', info4 = '';
@@ -740,15 +843,15 @@ function renderLista(){
     if(eCli){
       info1 = p.telefone ? `📱 ${p.telefone}` : '';
       info2 = p.preferencia ? `☕ ${p.preferencia}` : '';
-      info3 = p.nascimento ? `🎂 ${new Date(p.nascimento).toLocaleDateString('pt-BR')}` : '';
+      info3 = p.nascimento ? `🎂 ${new Date(p.nascimento+'T12:00:00').toLocaleDateString('pt-BR')}` : '';
       info4 = p.restricao ? `⚠️ ${p.restricao}` : '';
     } else {
-      info1 = p.salario ? `💰 R$ ${p.salario.toFixed(2)}` : '';
+      info1 = p.salario ? `💰 R$ ${Number(p.salario).toFixed(2)}` : '';
       info2 = p.horario ? `🕐 ${p.horario}` : '';
       info3 = p.contratacao ? `📅 Desde ${new Date(p.contratacao+'T12:00:00').toLocaleDateString('pt-BR')}` : '';
 
       // Alerta de experiência
-      if(p.fimExp){
+      if(p.statusEmp==='experiencia' && p.fimExp){
         const hoje = new Date();
         const fimParts = p.fimExp.split('/');
         const fim = fimParts.length===3
@@ -759,13 +862,29 @@ function renderLista(){
           info4 = `⏳ Exp. termina em ${dias} dias`;
         }
       }
+
+      // Alerta de aviso prévio
+      if(p.statusEmp==='aviso' && p.avisoInicio){
+        const inicio = new Date(p.avisoInicio+'T12:00:00');
+        const fim = new Date(inicio); fim.setDate(fim.getDate()+30);
+        const hoje = new Date();
+        const dias = Math.ceil((fim-hoje)/(1000*60*60*24));
+        info4 = dias>0
+          ? `📤 Aviso prévio — termina em ${dias} dias`
+          : `📤 Aviso prévio encerrado`;
+      }
+
+      // Data de desligamento
+      if(p.statusEmp==='desligado' && p.dataDesligamento){
+        info4 = `🚪 Desligado em ${new Date(p.dataDesligamento+'T12:00:00').toLocaleDateString('pt-BR')}`;
+      }
     }
 
-    const statusColor = {ativo:'#059669',ferias:'#0EA5E9',afastado:'#F59E0B',experiencia:'#8B5CF6',desligado:'#EF4444'};
-    const statusLabel = {ativo:'Ativo',ferias:'Férias',afastado:'Afastado',experiencia:'Em experiência',desligado:'Desligado'};
+    const statusColor = {ativo:'#059669',ferias:'#0EA5E9',afastado:'#F59E0B',experiencia:'#8B5CF6',aviso:'#EA580C',desligado:'#6B7280'};
+    const statusLabel = {ativo:'Ativo',ferias:'Férias',afastado:'Afastado',experiencia:'Em experiência',aviso:'Aviso Prévio',desligado:'Demitido'};
 
-    return `<div class="pessoa-card">
-      <div class="pessoa-card-header ${eCli?'cli':'fun'}">
+    return `<div class="pessoa-card${desligado?' desligado':''}">
+      <div class="pessoa-card-header ${eCli?'cli':'fun'}${desligado?' desligado-bg':''}">
         <div class="avatar">${ico}</div>
         <div style="flex:1;min-width:0;">
           <div class="pc-nome">${p.nome}</div>
@@ -799,42 +918,35 @@ window.editarPessoa = id=>{
   const p = todas.find(x=>x.id===id);
   if(!p) return;
 
-  // Define editId ANTES de tudo
+  // Define editId ANTES de tudo, para btn-salvar saber que é update
   editId = id;
 
-  // setTipo ativa a seção correta mas vai gerar código novo — corrigimos depois
-  setTipo(p.tipo);
+  // Ativa o tipo correto SEM gerar um código novo (mantemos o código original)
+  setTipo(p.tipo, true);
 
-  // ── Restaura o código original (setTipo chamou gerarCodigo e sobrescreveu)
-  const partes = (p.codigo||'').match(/^([CF])(\d+)$/i);
-  if(partes){
-    document.getElementById('cod-numero').textContent   = partes[2];
-    document.getElementById('cod-completo').textContent = p.codigo;
-  }
-
-  // ── Ativa a seção que estava desabilitada para poder preencher
+  // Garante que a seção certa esteja habilitada (setTipo já faz isso, repetimos por segurança)
   document.getElementById('secao-cliente').className     = p.tipo==='cliente' ? '' : 'secao-disabled';
   document.getElementById('secao-funcionario').className = p.tipo==='funcionario' ? '' : 'secao-disabled';
 
-  // ── Preenche campos comuns
-  ['nome','nascimento','sexo','email','endereco','cpf','obs'].forEach(k=>{
+  // Restaura o código original no display
+  document.getElementById('cod-numero').textContent   = (p.codigo||'').replace(/[CF]/i,'') || '0000';
+  document.getElementById('cod-completo').textContent = p.codigo || '—';
+
+  // Preenche campos comuns
+  ['nascimento','sexo','email','endereco','cpf','obs'].forEach(k=>{
     const el = document.getElementById(`f-${k}`);
     if(el) el.value = p[k]||'';
   });
+  document.getElementById('f-nome').value  = p.nome||'';
   document.getElementById('f-tel').value   = p.telefone||'';
   document.getElementById('f-idade').value = p.idade||'';
 
-  // ── Preenche campos específicos
   if(p.tipo==='cliente'){
     document.getElementById('f-origem').value      = p.origem||'';
     document.getElementById('f-pref').value        = p.preferencia||'';
     document.getElementById('f-restricao').value   = p.restricao||'';
     document.getElementById('f-aniversario').value = p.aniversario||'';
   } else {
-    // Remove secao-disabled temporariamente para preencher valores
-    const secFun = document.getElementById('secao-funcionario');
-    secFun.classList.remove('secao-disabled');
-
     document.getElementById('f-funcao').value      = p.funcao||'';
     document.getElementById('f-contratacao').value = p.contratacao||'';
     document.getElementById('f-experiencia').value = p.fimExp||'';
@@ -847,15 +959,21 @@ window.editarPessoa = id=>{
     document.getElementById('f-banco').value       = p.banco||'';
     document.getElementById('f-pix').value         = p.pix||'';
     document.getElementById('f-status').value      = p.statusEmp||'ativo';
+    document.getElementById('f-aviso-inicio').value   = p.avisoInicio||'';
+    document.getElementById('f-desligamento').value   = p.dataDesligamento||'';
     document.getElementById('f-beneficios').value  = p.beneficios||'';
 
-    // Recalcula banner de experiência
-    if(p.contratacao){
-      document.getElementById('f-contratacao').dispatchEvent(new Event('change'));
-    }
+    // Recalcula banner de experiência (a seção já está habilitada, então isso funciona)
+    if(p.contratacao) calcularExperiencia(p.contratacao);
+
+    // Recalcula banner de aviso prévio, se aplicável
+    if(p.statusEmp==='aviso' && p.avisoInicio) calcularAviso(p.avisoInicio);
+
+    // Mostra/esconde campos de aviso/desligamento conforme status salvo
+    aplicarVisibilidadeStatus(p.statusEmp||'ativo');
   }
 
-  // ── Atualiza título e botão
+  // Atualiza título e botão
   document.getElementById('form-titulo').innerHTML = `<span>${p.tipo==='cliente'?'👤':'👔'}</span> Editando: ${p.nome}`;
   document.getElementById('btn-salvar').textContent = '💾 Salvar Alterações';
 
@@ -881,12 +999,16 @@ function limparForm(){
   const ids = ['f-nome','f-nascimento','f-sexo','f-tel','f-email','f-endereco','f-cpf','f-obs',
     'f-origem','f-pref','f-restricao','f-aniversario',
     'f-funcao','f-contratacao','f-experiencia','f-salario','f-hora-extra',
-    'f-horario','f-dias','f-pis','f-ctps','f-banco','f-pix','f-beneficios'];
+    'f-horario','f-dias','f-pis','f-ctps','f-banco','f-pix','f-beneficios',
+    'f-aviso-inicio','f-desligamento'];
   ids.forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('f-idade').value='';
   document.getElementById('f-status').value='ativo';
   document.getElementById('exp-banner-wrap').style.display='none';
-  gerarCodigo();
+  document.getElementById('aviso-banner-wrap').style.display='none';
+  document.getElementById('grupo-aviso').style.display='none';
+  document.getElementById('grupo-desligamento').style.display='none';
+  setTipo(tipoAtivo);
 }
 
 // ══════════════════════════════════════════════
@@ -900,3 +1022,4 @@ function atualizarResumo(){
 </script>
 </body>
 </html>
+
