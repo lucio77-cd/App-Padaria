@@ -386,7 +386,8 @@
 
         // Adiciona à mesa usando o preço de venda do estoque
         const preco   = prod.preco || 0;
-        const novoItem = { nome: prod.nome, preco, hora: Date.now(), codigo };
+        const custo   = prod.custo || 0;  // custo unitário para CMV
+        const novoItem = { nome: prod.nome, preco, custo, hora: Date.now(), codigo };
 
         const mesaSnap = await getDoc(mesaRef);
         if (mesaSnap.exists()) {
@@ -430,7 +431,7 @@
 
         try {
           const mesaSnap = await getDoc(mesaRef);
-          const novoItem = { nome: p.nome, preco: preco, hora: Date.now() };
+          const novoItem = { nome: p.nome, preco: preco, custo: 0, hora: Date.now() };
 
           if (mesaSnap.exists()) {
             const totalAtual = mesaSnap.data().total || 0;
