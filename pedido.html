@@ -105,6 +105,18 @@
       animation: addFlash 0.4s ease;
     }
 
+    .produto-btn.sem-estoque {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background: var(--bg);
+      border-color: var(--border);
+    }
+    .produto-btn.sem-estoque:hover {
+      transform: none;
+      box-shadow: var(--shadow-sm);
+      border-color: var(--border);
+    }
+
     @keyframes addFlash {
       0%   { transform: scale(0.96); }
       60%  { transform: scale(1.04); }
@@ -124,6 +136,14 @@
       font-weight: 800;
       color: var(--amber-dark);
     }
+
+    .produto-estoque {
+      font-size: 0.66rem;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+    .produto-estoque.baixo { color: var(--amber-dark); }
+    .produto-estoque.zero  { color: var(--ocupada); }
 
     /* ITENS DA MESA */
     .itens-lista {
@@ -250,7 +270,7 @@
   import { db, auth } from './firebase.js';
   import {
     doc, onSnapshot, updateDoc, arrayUnion,
-    collection, getDocs, getDoc, setDoc
+    collection, getDocs, getDoc, setDoc, increment, query, where
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const params = new URLSearchParams(window.location.search);
@@ -306,14 +326,53 @@
       }
     });
 
-    // CARDÁPIO
-    const pSnap = await getDocs(collection(db, `produtos_${user.uid}`));
-    const cardapioDiv = document.getElementById('lista-cardapio');
-    cardapioDiv.innerHTML = '';
+    // ─── ADICIONAR POR CÓDIGO (estoque) ────────────────────────
+    async function adicionarPorCodigo(codigo) {
+      if (!codigo) return;
+      try {
+        const estoqueSnap = await getDocs(
+          query(collection(db, `estoque_${user.uid}`), where('codigo', '==', codigo))
+        );
 
-    if (pSnap.empty) {
-      cardapioDiv.innerHTML = '<div style="color:var(--text-muted); font-size:0.85rem; grid-column:1/-1;">Nenhum produto cadastrado. <a href="produtos.html">Cadastrar →</a></div>';
-      return;
+        if (estoqueSnap.empty) {
+          showToast(`❌ Código ${codigo} não encontrado no estoque.`, 'error');
+          return;
+        }
+
+        const eDoc  = estoqueSnap.docs[0];
+        const prod  = eDoc.data();
+        const qtdAt = prod.qtd || 0;
+
+        if (qtdAt <= 0) {
+          showToast(`⚠️ ${prod.nome}: sem estoque!`, 'error');
+          return;
+        }
+
+        // Desconta 1 do estoque
+        await updateDoc(doc(db, `estoque_${user.uid}`, eDoc.id), { qtd: increment(-1) });
+
+        // Adiciona à mesa usando o preço de venda do estoque
+        const preco   = prod.preco || 0;
+        const custo   = prod.custo || 0;  // custo unitário para CMV
+        const novoItem = { nome: prod.nome, preco, custo, hora: Date.now(), codigo };
+
+        const mesaSnap = await getDoc(mesaRef);
+        if (mesaSnap.exists()) {
+          await updateDoc(mesaRef, {
+            ocupada: true,
+            total: somarPreco(mesaSnap.data().total || 0, preco),
+            itens: arrayUnion(novoItem)
+          });
+        } else {
+          await setDoc(mesaRef, { ocupada: true, total: preco, itens: [novoItem], abertoEm: Date.now() });
+        }
+
+        showToast(`✅ ${prod.nome} — R$ ${preco.toFixed(2)} (estoque: ${qtdAt-1})`, 'success');
+        document.getElementById('campo-codigo').value = '';
+      } catch(e) {
+        console.error(e);
+        showToast('Erro ao buscar no estoque.', 'error');
+      }
     }
 
     // ─── SCANNER PEDIDO ─────────────────────────────────────────
@@ -354,113 +413,177 @@
       }
     });
 
-    // ─── ADICIONAR POR CÓDIGO (estoque) ────────────────────────
-    async function adicionarPorCodigo(codigo) {
-      if (!codigo) return;
-      try {
-        const { collection: col2, getDocs, query: q2, where }
-          = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+    // ══════════════════════════════════════════════
+    // CARDÁPIO — combina produtos_${uid} (Cardápio puro,
+    // sem controle de estoque) + estoque_${uid} com
+    // vendeSalao === true (desconta estoque ao vender)
+    // ══════════════════════════════════════════════
+    const cardapioDiv = document.getElementById('lista-cardapio');
 
-        const estoqueSnap = await getDocs(
-          q2(col2(db, `estoque_${user.uid}`), where('codigo', '==', codigo))
-        );
+    async function carregarCardapio() {
+      cardapioDiv.innerHTML = '<div style="color:var(--text-muted); font-size:0.85rem; grid-column:1/-1;">Carregando cardápio...</div>';
 
-        if (estoqueSnap.empty) {
-          showToast(`❌ Código ${codigo} não encontrado no estoque.`, 'error');
-          return;
-        }
+      const [pSnap, eSnap] = await Promise.all([
+        getDocs(collection(db, `produtos_${user.uid}`)),
+        getDocs(query(collection(db, `estoque_${user.uid}`), where('vendeSalao', '==', true)))
+      ]);
 
-        const eDoc  = estoqueSnap.docs[0];
-        const prod  = eDoc.data();
-        const qtdAt = prod.qtd || 0;
+      cardapioDiv.innerHTML = '';
 
-        if (qtdAt <= 0) {
-          showToast(`⚠️ ${prod.nome}: sem estoque!`, 'error');
-          return;
-        }
+      const temCardapio = !pSnap.empty;
+      const temEstoque  = !eSnap.empty;
 
-        // Desconta 1 do estoque
-        const { updateDoc: upd2, doc: doc2, increment: inc }
-          = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-        await upd2(doc2(db, `estoque_${user.uid}`, eDoc.id), { qtd: inc(-1) });
-
-        // Adiciona à mesa usando o preço de venda do estoque
-        const preco   = prod.preco || 0;
-        const custo   = prod.custo || 0;  // custo unitário para CMV
-        const novoItem = { nome: prod.nome, preco, custo, hora: Date.now(), codigo };
-
-        const mesaSnap = await getDoc(mesaRef);
-        if (mesaSnap.exists()) {
-          await updateDoc(mesaRef, {
-            ocupada: true,
-            total: somarPreco(mesaSnap.data().total || 0, preco),
-            itens: arrayUnion(novoItem)
-          });
-        } else {
-          await setDoc(mesaRef, { ocupada: true, total: preco, itens: [novoItem], abertoEm: Date.now() });
-        }
-
-        showToast(`✅ ${prod.nome} — R$ ${preco.toFixed(2)} (estoque: ${qtdAt-1})`, 'success');
-        document.getElementById('campo-codigo').value = '';
-      } catch(e) {
-        console.error(e);
-        showToast('Erro ao buscar no estoque.', 'error');
+      if (!temCardapio && !temEstoque) {
+        cardapioDiv.innerHTML = '<div style="color:var(--text-muted); font-size:0.85rem; grid-column:1/-1;">Nenhum produto cadastrado. <a href="produtos.html">Cadastrar →</a></div>';
+        return;
       }
+
+      // ─── Botões vindos do Cardápio puro (produtos_${uid}) ───
+      // Não têm controle de estoque: clicar apenas adiciona à mesa.
+      pSnap.forEach(pDoc => {
+        const p = pDoc.data();
+        if (isNaN(p.preco)) return;
+        const preco = parseFloat(p.preco);
+
+        const btn = document.createElement('button');
+        btn.className = 'produto-btn';
+        btn.innerHTML = `
+          <div class="produto-nome">${p.nome}</div>
+          <div class="produto-preco">R$ ${preco.toFixed(2)}</div>
+        `;
+
+        let adicionando = false;
+
+        btn.onclick = async () => {
+          if (adicionando) return; // evita clique duplo
+          adicionando = true;
+          btn.classList.add('adding');
+          btn.disabled = true;
+
+          try {
+            const mesaSnap = await getDoc(mesaRef);
+            const novoItem = { nome: p.nome, preco: preco, custo: 0, hora: Date.now() };
+
+            if (mesaSnap.exists()) {
+              const totalAtual = mesaSnap.data().total || 0;
+              await updateDoc(mesaRef, {
+                ocupada: true,
+                total: somarPreco(totalAtual, preco),
+                itens: arrayUnion(novoItem)
+              });
+            } else {
+              await setDoc(mesaRef, {
+                ocupada: true,
+                total: preco,
+                itens: [novoItem]
+              });
+            }
+            showToast(`✅ ${p.nome} adicionado`, 'success');
+          } catch (e) {
+            showToast('Erro ao adicionar item.', 'error');
+          } finally {
+            setTimeout(() => {
+              btn.classList.remove('adding');
+              btn.disabled = false;
+              adicionando = false;
+            }, 500);
+          }
+        };
+
+        cardapioDiv.appendChild(btn);
+      });
+
+      // ─── Botões vindos do Estoque (vendeSalao === true) ───
+      // Ao clicar: desconta 1 unidade do estoque, igual ao scanner.
+      // Se qtd <= 0: botão fica desabilitado/cinza.
+      eSnap.forEach(eDoc => {
+        const prod = eDoc.data();
+        if (isNaN(prod.preco)) return;
+        const preco = parseFloat(prod.preco);
+        const estoqueId = eDoc.id;
+        let qtdAtual = prod.qtd || 0;
+        const minimo = prod.minimo || 5;
+
+        const btn = document.createElement('button');
+
+        function statusClasse(q) {
+          if (q <= 0) return 'zero';
+          if (q <= minimo) return 'baixo';
+          return '';
+        }
+
+        function render() {
+          const semEstoque = qtdAtual <= 0;
+          btn.className = `produto-btn${semEstoque ? ' sem-estoque' : ''}`;
+          const stCls = statusClasse(qtdAtual);
+          btn.innerHTML = `
+            <div class="produto-nome">${prod.nome}</div>
+            <div class="produto-preco">R$ ${preco.toFixed(2)}</div>
+            <div class="produto-estoque${stCls ? ' ' + stCls : ''}">
+              ${semEstoque ? '🔴 sem estoque' : `📦 ${qtdAtual} un`}
+            </div>
+          `;
+          btn.disabled = semEstoque;
+        }
+        render();
+
+        let adicionando = false;
+
+        btn.onclick = async () => {
+          if (adicionando || qtdAtual <= 0) return;
+          adicionando = true;
+          btn.classList.add('adding');
+          btn.disabled = true;
+
+          try {
+            // Re-checa estoque atual antes de descontar (evita vender no negativo
+            // se duas pessoas clicarem quase ao mesmo tempo)
+            const eRef = doc(db, `estoque_${user.uid}`, estoqueId);
+            const eAtualSnap = await getDoc(eRef);
+            const qtdReal = eAtualSnap.exists() ? (eAtualSnap.data().qtd || 0) : 0;
+
+            if (qtdReal <= 0) {
+              showToast(`⚠️ ${prod.nome}: sem estoque!`, 'error');
+              qtdAtual = 0;
+              render();
+              return;
+            }
+
+            await updateDoc(eRef, { qtd: increment(-1) });
+            qtdAtual = qtdReal - 1;
+
+            const novoItem = { nome: prod.nome, preco, custo: prod.custo || 0, hora: Date.now(), codigo: prod.codigo || '' };
+
+            const mesaSnap = await getDoc(mesaRef);
+            if (mesaSnap.exists()) {
+              await updateDoc(mesaRef, {
+                ocupada: true,
+                total: somarPreco(mesaSnap.data().total || 0, preco),
+                itens: arrayUnion(novoItem)
+              });
+            } else {
+              await setDoc(mesaRef, { ocupada: true, total: preco, itens: [novoItem], abertoEm: Date.now() });
+            }
+
+            showToast(`✅ ${prod.nome} — R$ ${preco.toFixed(2)} (estoque: ${qtdAtual})`, 'success');
+            render();
+          } catch (e) {
+            console.error(e);
+            showToast('Erro ao adicionar item.', 'error');
+          } finally {
+            setTimeout(() => {
+              btn.classList.remove('adding');
+              if (qtdAtual > 0) btn.disabled = false;
+              adicionando = false;
+            }, 500);
+          }
+        };
+
+        cardapioDiv.appendChild(btn);
+      });
     }
 
-    // ─── CARDÁPIO (produtos sem código de barras) ───────────────
-    pSnap.forEach(pDoc => {
-      const p = pDoc.data();
-      if (isNaN(p.preco)) return;
-      const preco = parseFloat(p.preco);
-
-      const btn = document.createElement('button');
-      btn.className = 'produto-btn';
-      btn.innerHTML = `
-        <div class="produto-nome">${p.nome}</div>
-        <div class="produto-preco">R$ ${preco.toFixed(2)}</div>
-      `;
-
-      let adicionando = false;
-
-      btn.onclick = async () => {
-        if (adicionando) return; // evita clique duplo
-        adicionando = true;
-        btn.classList.add('adding');
-        btn.disabled = true;
-
-        try {
-          const mesaSnap = await getDoc(mesaRef);
-          const novoItem = { nome: p.nome, preco: preco, custo: 0, hora: Date.now() };
-
-          if (mesaSnap.exists()) {
-            const totalAtual = mesaSnap.data().total || 0;
-            await updateDoc(mesaRef, {
-              ocupada: true,
-              total: somarPreco(totalAtual, preco),
-              itens: arrayUnion(novoItem)
-            });
-          } else {
-            await setDoc(mesaRef, {
-              ocupada: true,
-              total: preco,
-              itens: [novoItem]
-            });
-          }
-          showToast(`✅ ${p.nome} adicionado`, 'success');
-        } catch (e) {
-          showToast('Erro ao adicionar item.', 'error');
-        } finally {
-          setTimeout(() => {
-            btn.classList.remove('adding');
-            btn.disabled = false;
-            adicionando = false;
-          }, 500);
-        }
-      };
-
-      cardapioDiv.appendChild(btn);
-    });
+    await carregarCardapio();
   });
 </script>
 </body>
