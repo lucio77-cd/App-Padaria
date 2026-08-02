@@ -269,7 +269,7 @@
 <script type="module">
   import { db, auth } from './firebase.js';
   import {
-    doc, onSnapshot, updateDoc, arrayUnion,
+    doc, onSnapshot, updateDoc, arrayUnion, runTransaction,
     collection, getDocs, getDoc, setDoc, increment, query, where
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
@@ -327,8 +327,13 @@
     });
 
     // ─── ADICIONAR POR CÓDIGO (estoque) ────────────────────────
+    let processandoCodigo = false; // trava contra chamada dupla (Enter + scanner)
+
     async function adicionarPorCodigo(codigo) {
-      if (!codigo) return;
+      if (!codigo || processandoCodigo) return;
+      processandoCodigo = true;
+      document.getElementById('campo-codigo').disabled = true;
+
       try {
         const estoqueSnap = await getDocs(
           query(collection(db, `estoque_${user.uid}`), where('codigo', '==', codigo))
@@ -339,39 +344,49 @@
           return;
         }
 
-        const eDoc  = estoqueSnap.docs[0];
-        const prod  = eDoc.data();
-        const qtdAt = prod.qtd || 0;
+        const eRef = doc(db, `estoque_${user.uid}`, estoqueSnap.docs[0].id);
+        let precoVendido = 0, nomeVendido = '';
 
-        if (qtdAt <= 0) {
-          showToast(`⚠️ ${prod.nome}: sem estoque!`, 'error');
-          return;
-        }
+        // Transação: lê estoque + mesa, decide, e grava os dois juntos.
+        // Se outra aba/dispositivo mexer no meio, o Firestore reexecuta
+        // automaticamente com dados frescos — sem venda "meia registrada".
+        await runTransaction(db, async (tx) => {
+          const eSnapTx = await tx.get(eRef);
+          if (!eSnapTx.exists() || (eSnapTx.data().qtd || 0) <= 0) {
+            throw new Error('sem-estoque');
+          }
+          const prod = eSnapTx.data();
+          precoVendido = prod.preco || 0;
+          nomeVendido = prod.nome;
 
-        // Desconta 1 do estoque
-        await updateDoc(doc(db, `estoque_${user.uid}`, eDoc.id), { qtd: increment(-1) });
+          const mesaSnapTx = await tx.get(mesaRef);
+          const novoItem = { nome: prod.nome, preco: precoVendido, custo: prod.custo || 0, hora: Date.now(), codigo };
 
-        // Adiciona à mesa usando o preço de venda do estoque
-        const preco   = prod.preco || 0;
-        const custo   = prod.custo || 0;  // custo unitário para CMV
-        const novoItem = { nome: prod.nome, preco, custo, hora: Date.now(), codigo };
+          tx.update(eRef, { qtd: increment(-1) });
 
-        const mesaSnap = await getDoc(mesaRef);
-        if (mesaSnap.exists()) {
-          await updateDoc(mesaRef, {
-            ocupada: true,
-            total: somarPreco(mesaSnap.data().total || 0, preco),
-            itens: arrayUnion(novoItem)
-          });
-        } else {
-          await setDoc(mesaRef, { ocupada: true, total: preco, itens: [novoItem], abertoEm: Date.now() });
-        }
+          if (mesaSnapTx.exists()) {
+            tx.update(mesaRef, {
+              ocupada: true,
+              total: somarPreco(mesaSnapTx.data().total || 0, precoVendido),
+              itens: arrayUnion(novoItem)
+            });
+          } else {
+            tx.set(mesaRef, { ocupada: true, total: precoVendido, itens: [novoItem], abertoEm: Date.now() });
+          }
+        });
 
-        showToast(`✅ ${prod.nome} — R$ ${preco.toFixed(2)} (estoque: ${qtdAt-1})`, 'success');
+        showToast(`✅ ${nomeVendido} — R$ ${precoVendido.toFixed(2)}`, 'success');
         document.getElementById('campo-codigo').value = '';
-      } catch(e) {
-        console.error(e);
-        showToast('Erro ao buscar no estoque.', 'error');
+      } catch (e) {
+        if (e.message === 'sem-estoque') {
+          showToast(`⚠️ Sem estoque para este código!`, 'error');
+        } else {
+          console.error(e);
+          showToast('Erro ao buscar no estoque.', 'error');
+        }
+      } finally {
+        processandoCodigo = false;
+        document.getElementById('campo-codigo').disabled = false;
       }
     }
 
@@ -388,13 +403,15 @@
       }
       wrap.style.display = 'block';
       scannerPedido = new Html5Qrcode('reader-pedido');
+      let jaLido = false; // trava: html5-qrcode pode disparar o callback mais de uma vez pro mesmo código antes do stop() terminar
       scannerPedido.start(
         { facingMode: 'environment' },
         { fps: 10, qrbox: { width: 260, height: 100 } },
         async codigo => {
+          if (jaLido) return;
+          jaLido = true;
           document.getElementById('campo-codigo').value = codigo;
-          scannerPedido.stop().catch(()=>{});
-          scannerPedido = null;
+          if (scannerPedido) { scannerPedido.stop().catch(()=>{}); scannerPedido = null; }
           wrap.style.display = 'none';
           await adicionarPorCodigo(codigo);
         },
@@ -494,7 +511,7 @@
       });
 
       // ─── Botões vindos do Estoque (vendeSalao === true) ───
-      // Ao clicar: desconta 1 unidade do estoque, igual ao scanner.
+      // Ao clicar: transação atômica desconta 1 do estoque e grava na mesa juntos.
       // Se qtd <= 0: botão fica desabilitado/cinza.
       eSnap.forEach(eDoc => {
         const prod = eDoc.data();
@@ -536,40 +553,43 @@
           btn.disabled = true;
 
           try {
-            // Re-checa estoque atual antes de descontar (evita vender no negativo
-            // se duas pessoas clicarem quase ao mesmo tempo)
             const eRef = doc(db, `estoque_${user.uid}`, estoqueId);
-            const eAtualSnap = await getDoc(eRef);
-            const qtdReal = eAtualSnap.exists() ? (eAtualSnap.data().qtd || 0) : 0;
 
-            if (qtdReal <= 0) {
-              showToast(`⚠️ ${prod.nome}: sem estoque!`, 'error');
-              qtdAtual = 0;
-              render();
-              return;
-            }
+            // Transação: recheca estoque real + grava mesa juntos, atômico.
+            await runTransaction(db, async (tx) => {
+              const eAtualSnap = await tx.get(eRef);
+              const qtdReal = eAtualSnap.exists() ? (eAtualSnap.data().qtd || 0) : 0;
+              if (qtdReal <= 0) throw new Error('sem-estoque');
 
-            await updateDoc(eRef, { qtd: increment(-1) });
-            qtdAtual = qtdReal - 1;
+              const mesaSnapTx = await tx.get(mesaRef);
+              const novoItem = { nome: prod.nome, preco, custo: prod.custo || 0, hora: Date.now(), codigo: prod.codigo || '' };
 
-            const novoItem = { nome: prod.nome, preco, custo: prod.custo || 0, hora: Date.now(), codigo: prod.codigo || '' };
+              tx.update(eRef, { qtd: increment(-1) });
 
-            const mesaSnap = await getDoc(mesaRef);
-            if (mesaSnap.exists()) {
-              await updateDoc(mesaRef, {
-                ocupada: true,
-                total: somarPreco(mesaSnap.data().total || 0, preco),
-                itens: arrayUnion(novoItem)
-              });
-            } else {
-              await setDoc(mesaRef, { ocupada: true, total: preco, itens: [novoItem], abertoEm: Date.now() });
-            }
+              if (mesaSnapTx.exists()) {
+                tx.update(mesaRef, {
+                  ocupada: true,
+                  total: somarPreco(mesaSnapTx.data().total || 0, preco),
+                  itens: arrayUnion(novoItem)
+                });
+              } else {
+                tx.set(mesaRef, { ocupada: true, total: preco, itens: [novoItem], abertoEm: Date.now() });
+              }
+
+              qtdAtual = qtdReal - 1;
+            });
 
             showToast(`✅ ${prod.nome} — R$ ${preco.toFixed(2)} (estoque: ${qtdAtual})`, 'success');
             render();
           } catch (e) {
-            console.error(e);
-            showToast('Erro ao adicionar item.', 'error');
+            if (e.message === 'sem-estoque') {
+              showToast(`⚠️ ${prod.nome}: sem estoque!`, 'error');
+              qtdAtual = 0;
+              render();
+            } else {
+              console.error(e);
+              showToast('Erro ao adicionar item.', 'error');
+            }
           } finally {
             setTimeout(() => {
               btn.classList.remove('adding');
