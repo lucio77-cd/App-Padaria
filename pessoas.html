@@ -557,7 +557,7 @@
 import { db, auth } from './firebase.js';
 import {
   collection, doc, addDoc, updateDoc, deleteDoc,
-  onSnapshot, serverTimestamp
+  onSnapshot, serverTimestamp, runTransaction
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 // ══════════════════════════════════════════════
@@ -604,7 +604,7 @@ window.setTipo = (tipo, manterCodigo=false) => {
 };
 
 // ══════════════════════════════════════════════
-// GERAR CÓDIGO AUTOMÁTICO
+// GERAR CÓDIGO (PREVIEW) — aproximado, só cosmético em tela
 // ══════════════════════════════════════════════
 function gerarCodigo(){
   const prefixo = tipoAtivo==='cliente' ? 'C' : 'F';
@@ -619,6 +619,40 @@ function gerarCodigo(){
   document.getElementById('cod-numero').textContent  = num;
   document.getElementById('cod-completo').textContent = `${prefixo}${num}`;
   return `${prefixo}${num}`;
+}
+
+// ══════════════════════════════════════════════
+// GERAR CÓDIGO ATÔMICO — usado só na hora de salvar de verdade
+// gerarCodigo() acima continua servindo pro preview em tela
+// (aproximado); esta função reserva o número real via transação,
+// contra um contador em contadores_${uid}/pessoas, evitando que
+// dois cadastros simultâneos gerem o mesmo código (bug B3 do mapa).
+// ══════════════════════════════════════════════
+async function gerarCodigoAtomico(tipo){
+  const prefixo = tipo === 'cliente' ? 'C' : 'F';
+  const campo   = tipo === 'cliente' ? 'proximoCliente' : 'proximoFuncionario';
+  const counterRef = doc(db, `contadores_${currentUser.uid}`, 'pessoas');
+
+  // Seed local — só usado se o contador ainda não existir no Firestore
+  // (primeira vez que essa correção roda), pra não colidir com códigos já emitidos.
+  let maxExistente = 0;
+  todas.filter(p=>p.tipo===tipo).forEach(p=>{
+    const n = parseInt((p.codigo||'0').replace(/[CF]/i,''));
+    if(n>maxExistente) maxExistente = n;
+  });
+
+  const num = await runTransaction(db, async (tx) => {
+    const snap = await tx.get(counterRef);
+    const atual = (snap.exists() && snap.data()[campo]) ? snap.data()[campo] : (maxExistente + 1);
+    const proximo = atual + 1;
+
+    if (snap.exists()) tx.update(counterRef, { [campo]: proximo });
+    else tx.set(counterRef, { [campo]: proximo });
+
+    return atual;
+  });
+
+  return `${prefixo}${String(num).padStart(4,'0')}`;
 }
 
 // ══════════════════════════════════════════════
@@ -775,7 +809,7 @@ auth.onAuthStateChanged(async user=>{
 
     const codigo = editId
       ? todas.find(p=>p.id===editId)?.codigo
-      : gerarCodigo();
+      : await gerarCodigoAtomico(tipoAtivo);
 
     // Valida funcionário
     let diaPagamento = null;
@@ -1136,4 +1170,4 @@ function atualizarResumo(){
 }
 </script>
 </body>
-</html>
+  </html>
