@@ -8,7 +8,6 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="style.css">
   <style>
-    /* GRID DE MESAS */
     .mesas-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -63,7 +62,6 @@
     .mesa-card.livre   .mesa-valor { font-size: 0.72rem; font-weight: 500; color: #065F46; }
     .mesa-card.ocupada .mesa-valor { color: #991B1B; }
 
-    /* STATUS PILLS */
     .status-bar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
     .status-pill {
       display: flex; align-items: center; gap: 8px;
@@ -76,7 +74,6 @@
     .dot-livre   { background: var(--livre); }
     .dot-ocupada { background: var(--ocupada); }
 
-    /* MODAL CONFIG MESAS */
     .modal-overlay {
       display: none;
       position: fixed; inset: 0;
@@ -164,19 +161,15 @@
       <span class="logo-icon">🍞</span>
       <div><div class="logo-text">Sistema Cris</div><span class="logo-sub">Padaria</span></div>
     </div>
-      🤲
-<nav class="bottom-nav">
-    <div class="bottom-nav-inner">
-      <a href="salao.html" class="bnav-item"><span class="bnav-icon">🪑</span>Salão</a>
-      <a href="caixa.html" class="bnav-item"><span class="bnav-icon">💰</span>Caixa</a>
-      <a href="estoque.html" class="bnav-item"><span class="bnav-icon">📦</span>Estoque</a>
-      <a href="financeiro.html" class="bnav-item"><span class="bnav-icon">💳</span>Financeiro</a>
-      <a href="pessoas.html" class="bnav-item"><span class="bnav-icon">👥</span>Pessoas</a>
-      <a href="dashboard.html" class="bnav-item"><span class="bnav-icon">📊</span>Dashboard</a>
-      <a href="produtos.html" class="bnav-item"><span class="bnav-icon">🛍️</span>Cardápio</a>
-    </div>
-</nav>
-      📈
+    <nav class="sidebar-nav">
+      <a href="salao.html" class="nav-item active"><span class="nav-icon">🪑</span> Salão</a>
+      <a href="caixa.html" class="nav-item"><span class="nav-icon">💰</span> Caixa</a>
+      <a href="estoque.html" class="nav-item"><span class="nav-icon">📦</span> Estoque</a>
+      <a href="financeiro.html" class="nav-item"><span class="nav-icon">💳</span> Financeiro</a>
+      <a href="pessoas.html" class="nav-item"><span class="nav-icon">👥</span> Pessoas</a>
+      <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="produtos.html" class="nav-item"><span class="nav-icon">🛍️</span> Cardápio</a>
+    </nav>
     <div class="sidebar-bottom" style="padding:16px 12px;border-top:1px solid rgba(255,255,255,0.08);">
       <button id="btn-sair" class="nav-item" style="color:rgba(255,255,255,0.5);border:none;background:none;width:100%;cursor:pointer;">
         <span class="nav-icon">🚪</span> Sair
@@ -220,8 +213,10 @@
       <a href="salao.html" class="bnav-item active"><span class="bnav-icon">🪑</span>Salão</a>
       <a href="caixa.html" class="bnav-item"><span class="bnav-icon">💰</span>Caixa</a>
       <a href="estoque.html" class="bnav-item"><span class="bnav-icon">📦</span>Estoque</a>
-      <a href="pessoas.html" class="bnav-item"><span class="bnav-icon">👥</span>Pessoas</a>
       <a href="financeiro.html" class="bnav-item"><span class="bnav-icon">💳</span>Financeiro</a>
+      <a href="pessoas.html" class="bnav-item"><span class="bnav-icon">👥</span>Pessoas</a>
+      <a href="dashboard.html" class="bnav-item"><span class="bnav-icon">📊</span>Dashboard</a>
+      <a href="produtos.html" class="bnav-item"><span class="bnav-icon">🛍️</span>Cardápio</a>
     </div>
   </nav>
 </div>
@@ -238,157 +233,4 @@
       <button class="qty-btn" id="qty-mais">+</button>
     </div>
 
-    <div class="modal-actions">
-      <button class="btn btn-ghost" id="modal-cancelar">Cancelar</button>
-      <button class="btn btn-primary" id="modal-salvar">Salvar</button>
-    </div>
-  </div>
-</div>
-
-<div class="toast-container" id="toast-container"></div>
-
-<script type="module">
-  import { db, auth } from './firebase.js';
-  import { collection, onSnapshot, doc, getDoc, setDoc } from
-    "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-  import { signOut } from
-    "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-
-  // ─── ESTADO GLOBAL ──────────────────────────────────────────────
-  let qtdMesas   = 11;       // número de mesas configurado
-  let dadosMesas = {};       // último snapshot das mesas do Firestore
-
-  // ─── TOAST ──────────────────────────────────────────────────────
-  function showToast(msg, type = '') {
-    const el = document.createElement('div');
-    el.className = `toast ${type}`;
-    el.textContent = msg;
-    document.getElementById('toast-container').appendChild(el);
-    setTimeout(() => el.remove(), 3000);
-  }
-
-  // ─── RENDER — chamado sempre que mesas ou config mudam ──────────
-  function renderMesas() {
-    const container = document.getElementById('container-mesas');
-    container.innerHTML = '';
-    let ocupadas = 0;
-
-    for (let i = 1; i <= qtdMesas; i++) {
-      const mesa  = dadosMesas[`mesa_${i}`] || { ocupada: false, total: 0 };
-      const total = mesa.total || 0;
-
-      if (mesa.ocupada) ocupadas++;
-
-      const card = document.createElement('div');
-      card.className = `mesa-card ${mesa.ocupada ? 'ocupada' : 'livre'}`;
-      card.innerHTML = `
-        <div class="mesa-num">Mesa ${i}</div>
-        <div class="mesa-icon">${mesa.ocupada ? '🔴' : '🟢'}</div>
-        <div class="mesa-valor">
-          ${mesa.ocupada ? 'R$ ' + total.toFixed(2) : 'Livre'}
-        </div>
-      `;
-      card.onclick = () => { window.location.href = `pedido.html?mesa=${i}`; };
-      container.appendChild(card);
-    }
-
-    const livres = qtdMesas - ocupadas;
-    document.getElementById('cnt-ocupadas').textContent =
-      `${ocupadas} ocupada${ocupadas !== 1 ? 's' : ''}`;
-    document.getElementById('cnt-livres').textContent =
-      `${livres} livre${livres !== 1 ? 's' : ''}`;
-  }
-
-  // ─── MODAL ──────────────────────────────────────────────────────
-  document.getElementById('btn-config-mesas').onclick = () => {
-    document.getElementById('qty-num').textContent = qtdMesas;
-    document.getElementById('modal-mesas').classList.add('open');
-  };
-  document.getElementById('modal-cancelar').onclick = () =>
-    document.getElementById('modal-mesas').classList.remove('open');
-  document.getElementById('qty-menos').onclick = () => {
-    const v = parseInt(document.getElementById('qty-num').textContent);
-    if (v > 1) document.getElementById('qty-num').textContent = v - 1;
-  };
-  document.getElementById('qty-mais').onclick = () => {
-    const v = parseInt(document.getElementById('qty-num').textContent);
-    if (v < 50) document.getElementById('qty-num').textContent = v + 1;
-  };
-
-  // ─── FIREBASE ───────────────────────────────────────────────────
-  auth.onAuthStateChanged(async user => {
-    if (!user) { location.href = 'index.html'; return; }
-
-    // Botão Sair (sidebar desktop + topbar mobile)
-    const fnSair = async () => {
-      if (confirm('Deseja sair do sistema?')) {
-        await signOut(auth);
-        location.href = 'index.html';
-      }
-    };
-    const elSair = document.getElementById('btn-sair'); if(elSair) elSair.onclick = fnSair;
-    document.getElementById('btn-sair-mobile').onclick = fnSair;
-
-    const configRef = doc(db, `config_${user.uid}`, 'salao');
-    const mesasRef  = collection(db, `mesas_${user.uid}`);
-
-    // 1. Carrega config salva (aguarda antes de qualquer render)
-    try {
-      const snap = await getDoc(configRef);
-      qtdMesas = snap.exists() ? (snap.data().totalMesas || 11) : 11;
-      if (!snap.exists()) await setDoc(configRef, { totalMesas: 11 });
-    } catch(e) {
-      qtdMesas = 11;
-    }
-
-    // 2. Primeira renderização imediata (sem esperar Firestore de mesas)
-    renderMesas();
-
-    // 3. Listener de mesas — atualiza dadosMesas e re-renderiza
-    onSnapshot(mesasRef, snap => {
-      dadosMesas = {};
-      snap.forEach(d => { dadosMesas[d.id] = d.data(); });
-      renderMesas();
-    });
-
-    // 4. Botão Salvar do modal — grava no Firestore e re-renderiza na hora
-    document.getElementById('modal-salvar').onclick = async () => {
-      const novoTotal = parseInt(document.getElementById('qty-num').textContent);
-
-      // Trava: não deixa reduzir o número de mesas se alguma mesa acima
-      // do novo limite estiver ocupada — antes ela simplesmente sumia
-      // da tela com a conta em aberto, mas continuava existindo (e
-      // cobrando) no Firestore, sem jeito de fechar pela interface.
-      if (novoTotal < qtdMesas) {
-        const mesasQueSumiriam = [];
-        for (let i = novoTotal + 1; i <= qtdMesas; i++) {
-          const mesa = dadosMesas[`mesa_${i}`];
-          if (mesa && mesa.ocupada) mesasQueSumiriam.push(i);
-        }
-        if (mesasQueSumiriam.length > 0) {
-          showToast(`⚠️ Feche a conta da mesa ${mesasQueSumiriam.join(', ')} antes de reduzir o número de mesas.`, 'error');
-          return;
-        }
-      }
-
-      const btn = document.getElementById('modal-salvar');
-      btn.disabled = true;
-      btn.textContent = 'Salvando...';
-
-      try {
-        await setDoc(configRef, { totalMesas: novoTotal });
-        qtdMesas = novoTotal;              // atualiza estado local
-        renderMesas();                     // re-renderiza IMEDIATAMENTE
-        document.getElementById('modal-mesas').classList.remove('open');
-        showToast(`✅ ${novoTotal} mesas configuradas!`, 'success');
-      } catch(e) {
-        showToast('Erro ao salvar. Tente novamente.', 'error');
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Salvar';
-      }
-    };
-  });
-</script>
-</body>
-</html>
+    <div
