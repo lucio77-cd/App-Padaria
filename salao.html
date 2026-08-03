@@ -233,4 +233,143 @@
       <button class="qty-btn" id="qty-mais">+</button>
     </div>
 
-    <div
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="modal-cancelar">Cancelar</button>
+      <button class="btn btn-primary" id="modal-salvar">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script type="module">
+  import { db, auth } from './firebase.js';
+  import { collection, onSnapshot, doc, getDoc, setDoc } from
+    "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { signOut } from
+    "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+  let qtdMesas   = 11;
+  let dadosMesas = {};
+
+  function showToast(msg, type = '') {
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.textContent = msg;
+    document.getElementById('toast-container').appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+  }
+
+  function renderMesas() {
+    const container = document.getElementById('container-mesas');
+    container.innerHTML = '';
+    let ocupadas = 0;
+
+    for (let i = 1; i <= qtdMesas; i++) {
+      const mesa  = dadosMesas[`mesa_${i}`] || { ocupada: false, total: 0 };
+      const total = mesa.total || 0;
+
+      if (mesa.ocupada) ocupadas++;
+
+      const card = document.createElement('div');
+      card.className = `mesa-card ${mesa.ocupada ? 'ocupada' : 'livre'}`;
+      card.innerHTML = `
+        <div class="mesa-num">Mesa ${i}</div>
+        <div class="mesa-icon">${mesa.ocupada ? '🔴' : '🟢'}</div>
+        <div class="mesa-valor">
+          ${mesa.ocupada ? 'R$ ' + total.toFixed(2) : 'Livre'}
+        </div>
+      `;
+      card.onclick = () => { window.location.href = `pedido.html?mesa=${i}`; };
+      container.appendChild(card);
+    }
+
+    const livres = qtdMesas - ocupadas;
+    document.getElementById('cnt-ocupadas').textContent =
+      `${ocupadas} ocupada${ocupadas !== 1 ? 's' : ''}`;
+    document.getElementById('cnt-livres').textContent =
+      `${livres} livre${livres !== 1 ? 's' : ''}`;
+  }
+
+  document.getElementById('btn-config-mesas').onclick = () => {
+    document.getElementById('qty-num').textContent = qtdMesas;
+    document.getElementById('modal-mesas').classList.add('open');
+  };
+  document.getElementById('modal-cancelar').onclick = () =>
+    document.getElementById('modal-mesas').classList.remove('open');
+  document.getElementById('qty-menos').onclick = () => {
+    const v = parseInt(document.getElementById('qty-num').textContent);
+    if (v > 1) document.getElementById('qty-num').textContent = v - 1;
+  };
+  document.getElementById('qty-mais').onclick = () => {
+    const v = parseInt(document.getElementById('qty-num').textContent);
+    if (v < 50) document.getElementById('qty-num').textContent = v + 1;
+  };
+
+  auth.onAuthStateChanged(async user => {
+    if (!user) { location.href = 'index.html'; return; }
+
+    const fnSair = async () => {
+      if (confirm('Deseja sair do sistema?')) {
+        await signOut(auth);
+        location.href = 'index.html';
+      }
+    };
+    const elSair = document.getElementById('btn-sair'); if(elSair) elSair.onclick = fnSair;
+    document.getElementById('btn-sair-mobile').onclick = fnSair;
+
+    const configRef = doc(db, `config_${user.uid}`, 'salao');
+    const mesasRef  = collection(db, `mesas_${user.uid}`);
+
+    try {
+      const snap = await getDoc(configRef);
+      qtdMesas = snap.exists() ? (snap.data().totalMesas || 11) : 11;
+      if (!snap.exists()) await setDoc(configRef, { totalMesas: 11 });
+    } catch(e) {
+      qtdMesas = 11;
+    }
+
+    renderMesas();
+
+    onSnapshot(mesasRef, snap => {
+      dadosMesas = {};
+      snap.forEach(d => { dadosMesas[d.id] = d.data(); });
+      renderMesas();
+    });
+
+    document.getElementById('modal-salvar').onclick = async () => {
+      const novoTotal = parseInt(document.getElementById('qty-num').textContent);
+
+      if (novoTotal < qtdMesas) {
+        const mesasQueSumiriam = [];
+        for (let i = novoTotal + 1; i <= qtdMesas; i++) {
+          const mesa = dadosMesas[`mesa_${i}`];
+          if (mesa && mesa.ocupada) mesasQueSumiriam.push(i);
+        }
+        if (mesasQueSumiriam.length > 0) {
+          showToast(`⚠️ Feche a conta da mesa ${mesasQueSumiriam.join(', ')} antes de reduzir o número de mesas.`, 'error');
+          return;
+        }
+      }
+
+      const btn = document.getElementById('modal-salvar');
+      btn.disabled = true;
+      btn.textContent = 'Salvando...';
+
+      try {
+        await setDoc(configRef, { totalMesas: novoTotal });
+        qtdMesas = novoTotal;
+        renderMesas();
+        document.getElementById('modal-mesas').classList.remove('open');
+        showToast(`✅ ${novoTotal} mesas configuradas!`, 'success');
+      } catch(e) {
+        showToast('Erro ao salvar. Tente novamente.', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Salvar';
+      }
+    };
+  });
+</script>
+</body>
+</html>
