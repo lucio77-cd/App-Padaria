@@ -350,6 +350,23 @@
     // 4. Botão Salvar do modal — grava no Firestore e re-renderiza na hora
     document.getElementById('modal-salvar').onclick = async () => {
       const novoTotal = parseInt(document.getElementById('qty-num').textContent);
+
+      // Trava: não deixa reduzir o número de mesas se alguma mesa acima
+      // do novo limite estiver ocupada — antes ela simplesmente sumia
+      // da tela com a conta em aberto, mas continuava existindo (e
+      // cobrando) no Firestore, sem jeito de fechar pela interface.
+      if (novoTotal < qtdMesas) {
+        const mesasQueSumiriam = [];
+        for (let i = novoTotal + 1; i <= qtdMesas; i++) {
+          const mesa = dadosMesas[`mesa_${i}`];
+          if (mesa && mesa.ocupada) mesasQueSumiriam.push(i);
+        }
+        if (mesasQueSumiriam.length > 0) {
+          showToast(`⚠️ Feche a conta da mesa ${mesasQueSumiriam.join(', ')} antes de reduzir o número de mesas.`, 'error');
+          return;
+        }
+      }
+
       const btn = document.getElementById('modal-salvar');
       btn.disabled = true;
       btn.textContent = 'Salvando...';
