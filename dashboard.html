@@ -9,7 +9,6 @@
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
-    /* FILTRO */
     .filtro-card {
       background: var(--card);
       border: 1px solid var(--border);
@@ -28,7 +27,6 @@
 
     .filtro-row .form-group { margin-bottom: 0; flex: 1; min-width: 130px; }
 
-    /* FIX: input date no mobile */
     input[type="date"] {
       -webkit-appearance: none;
       appearance: none;
@@ -47,7 +45,6 @@
       box-shadow: 0 0 0 3px rgba(232,168,124,0.2);
     }
 
-    /* ATALHOS DE PERÍODO */
     .periodo-chips {
       display: flex;
       gap: 8px;
@@ -71,7 +68,6 @@
       border-color: var(--navy);
     }
 
-    /* GRID MÉTRICAS */
     .metrics-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -128,7 +124,6 @@
       font-weight: 500;
     }
 
-    /* CHART CARDS */
     .chart-card {
       background: var(--card);
       border: 1px solid var(--border);
@@ -165,7 +160,6 @@
 
     canvas { max-height: 220px; }
 
-    /* TOP PRODUTOS */
     .top-list { display: flex; flex-direction: column; gap: 8px; }
 
     .top-item {
@@ -190,7 +184,6 @@
     .top-bar { height: 6px; border-radius: 999px; background: var(--amber); }
     .top-qtd { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); min-width: 28px; text-align: right; }
 
-    /* PERMANÊNCIA */
     .perm-lista { display: flex; flex-direction: column; gap: 8px; }
 
     .perm-item {
@@ -211,7 +204,6 @@
     }
     .perm-valor { font-size: 0.78rem; color: var(--text-muted); font-weight: 600; }
 
-    /* EMPTY */
     .empty-dash {
       text-align: center;
       padding: 48px 20px;
@@ -220,7 +212,6 @@
     .empty-dash .ei { font-size: 3rem; margin-bottom: 12px; }
     .empty-dash p   { font-size: 0.88rem; line-height: 1.6; }
 
-    /* SEÇÃO TITLE */
     .section-row {
       display: flex;
       align-items: center;
@@ -254,17 +245,15 @@
       <span class="logo-icon">🍞</span>
       <div><div class="logo-text">Sistema Cris</div><span class="logo-sub">Padaria</span></div>
     </div>
-    <nav class="bottom-nav">
-    <div class="bottom-nav-inner">
-      <a href="salao.html" class="bnav-item"><span class="bnav-icon">🪑</span>Salão</a>
-      <a href="caixa.html" class="bnav-item"><span class="bnav-icon">💰</span>Caixa</a>
-      <a href="estoque.html" class="bnav-item"><span class="bnav-icon">📦</span>Estoque</a>
-      <a href="financeiro.html" class="bnav-item"><span class="bnav-icon">💳</span>Financeiro</a>
-      <a href="pessoas.html" class="bnav-item"><span class="bnav-icon">👥</span>Pessoas</a>
-      <a href="dashboard.html" class="bnav-item"><span class="bnav-icon">📊</span>Dashboard</a>
-      <a href="produtos.html" class="bnav-item"><span class="bnav-icon">🛍️</span>Cardápio</a>
-    </div>
-  </nav>
+    <nav class="sidebar-nav">
+      <a href="salao.html" class="nav-item"><span class="nav-icon">🪑</span> Salão</a>
+      <a href="caixa.html" class="nav-item"><span class="nav-icon">💰</span> Caixa</a>
+      <a href="estoque.html" class="nav-item"><span class="nav-icon">📦</span> Estoque</a>
+      <a href="financeiro.html" class="nav-item"><span class="nav-icon">💳</span> Financeiro</a>
+      <a href="pessoas.html" class="nav-item"><span class="nav-icon">👥</span> Pessoas</a>
+      <a href="dashboard.html" class="nav-item active"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="produtos.html" class="nav-item"><span class="nav-icon">🛍️</span> Cardápio</a>
+    </nav>
   </aside>
 
   <!-- CONTEÚDO -->
@@ -277,7 +266,6 @@
 
       <!-- FILTRO -->
       <div class="filtro-card">
-        <!-- Atalhos rápidos -->
         <div class="periodo-chips">
           <div class="chip active" data-d="0">Hoje</div>
           <div class="chip" data-d="6">7 dias</div>
@@ -309,7 +297,6 @@
       <!-- RESULTADOS (ocultos até filtrar) -->
       <div id="resultados" style="display:none;">
 
-        <!-- MÉTRICAS PRINCIPAIS -->
         <div class="metrics-grid">
           <div class="metric-card" data-icon="💰">
             <div class="metric-label">Total no período</div>
@@ -343,7 +330,6 @@
           </div>
         </div>
 
-        <!-- GRÁFICO VENDAS POR HORA -->
         <div class="chart-card">
           <div class="chart-header">
             <span class="chart-title">💹 Vendas por horário</span>
@@ -352,7 +338,6 @@
           <canvas id="grafico-hora"></canvas>
         </div>
 
-        <!-- GRÁFICO VENDAS POR DIA -->
         <div class="chart-card" id="wrap-dia" style="display:none;">
           <div class="chart-header">
             <span class="chart-title">📆 Vendas por dia</span>
@@ -361,7 +346,6 @@
           <canvas id="grafico-dia"></canvas>
         </div>
 
-        <!-- TOP PRODUTOS -->
         <div class="chart-card">
           <div class="chart-header">
             <span class="chart-title">🏆 Produtos mais pedidos</span>
@@ -369,7 +353,6 @@
           <div id="top-list" class="top-list"></div>
         </div>
 
-        <!-- PERMANÊNCIA POR ATENDIMENTO -->
         <div class="chart-card">
           <div class="chart-header">
             <span class="chart-title">⏱️ Permanência por atendimento</span>
@@ -378,18 +361,20 @@
           <div id="perm-lista" class="perm-lista"></div>
         </div>
 
-      </div><!-- /resultados -->
+      </div>
     </div>
   </div>
 
   <!-- BOTTOM NAV MOBILE -->
-        <nav class="bottom-nav">
+      <nav class="bottom-nav">
     <div class="bottom-nav-inner">
       <a href="salao.html" class="bnav-item"><span class="bnav-icon">🪑</span>Salão</a>
       <a href="caixa.html" class="bnav-item"><span class="bnav-icon">💰</span>Caixa</a>
       <a href="estoque.html" class="bnav-item"><span class="bnav-icon">📦</span>Estoque</a>
-      <a href="pessoas.html" class="bnav-item"><span class="bnav-icon">👥</span>Pessoas</a>
       <a href="financeiro.html" class="bnav-item"><span class="bnav-icon">💳</span>Financeiro</a>
+      <a href="pessoas.html" class="bnav-item"><span class="bnav-icon">👥</span>Pessoas</a>
+      <a href="dashboard.html" class="bnav-item active"><span class="bnav-icon">📊</span>Dashboard</a>
+      <a href="produtos.html" class="bnav-item"><span class="bnav-icon">🛍️</span>Cardápio</a>
     </div>
   </nav>
 </div>
@@ -401,7 +386,6 @@
   import { collection, query, where, getDocs, orderBy, Timestamp }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  // ─── CHARTS ───────────────────────────────────────────────────
   let chartHora, chartDia;
 
   function destroyCharts() {
@@ -409,7 +393,6 @@
     if (chartDia)  { chartDia.destroy();  chartDia  = null; }
   }
 
-  // ─── TOAST ────────────────────────────────────────────────────
   function showToast(msg, type = '') {
     const el = document.createElement('div');
     el.className = `toast ${type}`;
@@ -418,7 +401,6 @@
     setTimeout(() => el.remove(), 3500);
   }
 
-  // ─── CHIPS DE PERÍODO ─────────────────────────────────────────
   function setDatas(dias) {
     const hoje = new Date();
     const ini  = new Date();
@@ -447,13 +429,11 @@
 
   document.getElementById('btn-filtrar').onclick = buscarDados;
 
-  // ─── FIREBASE ─────────────────────────────────────────────────
   let currentUser = null;
 
   auth.onAuthStateChanged(user => {
     if (!user) { location.href = 'index.html'; return; }
     currentUser = user;
-    // Carrega "Hoje" ao abrir
     setDatas(0);
     buscarDados();
   });
@@ -490,7 +470,6 @@
     }
   }
 
-  // ─── PROCESSAR ────────────────────────────────────────────────
   function processarDados(snap, inicio, fim) {
     destroyCharts();
 
@@ -500,9 +479,8 @@
     const horas     = {};
     const dias      = {};
     const diasSet   = new Set();
-    const permanencias = []; // [{mesa, duracaoMin, valor, hora}]
+    const permanencias = [];
 
-    // Init horas 6h–23h
     for (let i = 6; i <= 23; i++) horas[`${String(i).padStart(2,'0')}h`] = 0;
 
     snap.forEach(d => {
@@ -515,20 +493,16 @@
       totalGeral += valor;
       diasSet.add(dt.toLocaleDateString('pt-BR'));
 
-      // Por hora
       const hKey = `${String(dt.getHours()).padStart(2,'0')}h`;
       horas[hKey] = (horas[hKey] || 0) + valor;
 
-      // Por dia
       const dKey = dt.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' });
       dias[dKey] = (dias[dKey] || 0) + valor;
 
-      // Produtos
       (v.itens || []).forEach(i => {
         produtos[i.nome] = (produtos[i.nome] || 0) + 1;
       });
 
-      // Permanência
       if (v.duracaoMin != null && v.duracaoMin >= 0) {
         permanencias.push({
           mesa:       v.mesa,
@@ -540,7 +514,6 @@
       }
     });
 
-    // ── MÉTRICAS ──────────────────────────────────────────────
     const numDias  = diasSet.size || 1;
     const media    = totalGeral / numDias;
     const ticket   = totalGeral / (fechamentos || 1);
@@ -548,11 +521,9 @@
       ? permanencias.reduce((s, p) => s + p.duracaoMin, 0) / permanencias.length
       : null;
 
-    // Pico de hora
     const picoEntry = Object.entries(horas).sort((a,b) => b[1]-a[1])[0];
     const picoHora  = picoEntry && picoEntry[1] > 0 ? picoEntry[0] : null;
 
-    // Preenche cards
     document.getElementById('m-total').textContent       = `R$ ${totalGeral.toFixed(2)}`;
     document.getElementById('m-total-sub').textContent   = `em ${numDias} dia${numDias>1?'s':''}`;
     document.getElementById('m-fechamentos').textContent  = fechamentos;
@@ -575,7 +546,6 @@
       document.getElementById('m-perm-sub').textContent = 'dados indisponíveis';
     }
 
-    // ── GRÁFICO HORA ──────────────────────────────────────────
     const hLabels = Object.keys(horas);
     const hVals   = hLabels.map(h => horas[h]);
     const maxH    = Math.max(...hVals);
@@ -610,7 +580,6 @@
     );
     document.getElementById('badge-hora').textContent = picoHora ? `Pico: ${picoHora}` : '—';
 
-    // ── GRÁFICO DIA (só se > 1 dia) ───────────────────────────
     const dLabels = Object.keys(dias);
     if (dLabels.length > 1) {
       document.getElementById('wrap-dia').style.display = '';
@@ -650,7 +619,6 @@
       document.getElementById('wrap-dia').style.display = 'none';
     }
 
-    // ── TOP PRODUTOS ──────────────────────────────────────────
     const topP  = Object.entries(produtos).sort((a,b) => b[1]-a[1]).slice(0,7);
     const maxQtd = topP[0]?.[1] || 1;
     document.getElementById('top-list').innerHTML = topP.length === 0
@@ -666,7 +634,6 @@
           </div>
         `).join('');
 
-    // ── PERMANÊNCIA ───────────────────────────────────────────
     const ultimos = [...permanencias].reverse().slice(0, 10);
     document.getElementById('perm-lista').innerHTML = ultimos.length === 0
       ? '<div style="color:var(--text-muted);font-size:0.85rem;text-align:center;padding:12px;">Dados de permanência disponíveis a partir do próximo atendimento.</div>'
