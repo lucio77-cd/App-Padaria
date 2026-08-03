@@ -36,7 +36,6 @@
     .add-row .form-group { flex: 2; min-width: 140px; margin-bottom: 0; }
     .add-row .form-group:last-of-type { flex: 1; min-width: 100px; }
 
-    /* LISTA DE PRODUTOS */
     .produtos-lista {
       display: flex;
       flex-direction: column;
@@ -78,7 +77,6 @@
       white-space: nowrap;
     }
 
-    /* Contagem */
     .lista-header {
       display: flex;
       justify-content: space-between;
@@ -112,17 +110,15 @@
       <span class="logo-icon">🍞</span>
       <div><div class="logo-text">Sistema Cris</div><span class="logo-sub">Padaria</span></div>
     </div>
-   <nav class="bottom-nav">
-    <div class="bottom-nav-inner">
-      <a href="salao.html" class="bnav-item"><span class="bnav-icon">🪑</span>Salão</a>
-      <a href="caixa.html" class="bnav-item"><span class="bnav-icon">💰</span>Caixa</a>
-      <a href="estoque.html" class="bnav-item"><span class="bnav-icon">📦</span>Estoque</a>
-      <a href="financeiro.html" class="bnav-item"><span class="bnav-icon">💳</span>Financeiro</a>
-      <a href="pessoas.html" class="bnav-item"><span class="bnav-icon">👥</span>Pessoas</a>
-      <a href="dashboard.html" class="bnav-item"><span class="bnav-icon">📊</span>Dashboard</a>
-      <a href="produtos.html" class="bnav-item"><span class="bnav-icon">🛍️</span>Cardápio</a>
-    </div>
-  </nav>
+    <nav class="sidebar-nav">
+      <a href="salao.html" class="nav-item"><span class="nav-icon">🪑</span> Salão</a>
+      <a href="caixa.html" class="nav-item"><span class="nav-icon">💰</span> Caixa</a>
+      <a href="estoque.html" class="nav-item"><span class="nav-icon">📦</span> Estoque</a>
+      <a href="financeiro.html" class="nav-item"><span class="nav-icon">💳</span> Financeiro</a>
+      <a href="pessoas.html" class="nav-item"><span class="nav-icon">👥</span> Pessoas</a>
+      <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="produtos.html" class="nav-item active"><span class="nav-icon">🛍️</span> Cardápio</a>
+    </nav>
   </aside>
 
   <!-- CONTEÚDO -->
@@ -168,13 +164,15 @@
   </div>
 
   <!-- BOTTOM NAV MOBILE -->
-        <nav class="bottom-nav">
+      <nav class="bottom-nav">
     <div class="bottom-nav-inner">
       <a href="salao.html" class="bnav-item"><span class="bnav-icon">🪑</span>Salão</a>
       <a href="caixa.html" class="bnav-item"><span class="bnav-icon">💰</span>Caixa</a>
       <a href="estoque.html" class="bnav-item"><span class="bnav-icon">📦</span>Estoque</a>
-      <a href="pessoas.html" class="bnav-item"><span class="bnav-icon">👥</span>Pessoas</a>
       <a href="financeiro.html" class="bnav-item"><span class="bnav-icon">💳</span>Financeiro</a>
+      <a href="pessoas.html" class="bnav-item"><span class="bnav-icon">👥</span>Pessoas</a>
+      <a href="dashboard.html" class="bnav-item"><span class="bnav-icon">📊</span>Dashboard</a>
+      <a href="produtos.html" class="bnav-item active"><span class="bnav-icon">🛍️</span>Cardápio</a>
     </div>
   </nav>
 </div>
@@ -204,7 +202,6 @@
 
     const colRef = collection(db, `produtos_${user.uid}`);
 
-    // SALVAR
     document.getElementById('btn-salvar').onclick = async () => {
       const nome  = document.getElementById('nome').value.trim();
       const preco = parseFloat(document.getElementById('preco').value);
@@ -225,7 +222,6 @@
         showToast(`✅ "${nome}" cadastrado!`, 'success');
       } catch (e) {
         console.error('Erro Firestore:', e);
-        // Mostra o código de erro real para diagnóstico
         if (e.code === 'permission-denied') {
           setMsg('❌ Sem permissão. Verifique as regras do Firestore no Firebase Console.');
         } else if (e.code === 'unavailable') {
@@ -240,7 +236,6 @@
       }
     };
 
-    // LISTAR
     onSnapshot(colRef, snap => {
       const lista = document.getElementById('lista');
       const total = snap.size;
