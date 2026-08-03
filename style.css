@@ -179,30 +179,38 @@ body {
   border-top: 2px solid rgba(232,168,124,0.3);
 }
 
+/* Correção Viagem 5: agora com 7 destinos (antes só cabiam/apareciam 5),
+   o nav vira rolável na horizontal em vez de espremer ou cortar itens.
+   Sem JS, sem hambúrguer — só scroll, que em mobile é um gesto natural. */
 .bottom-nav-inner {
   display: flex;
-  justify-content: space-around;
+  justify-content: flex-start;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
+.bottom-nav-inner::-webkit-scrollbar { display: none; }
 
 .bnav-item {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  padding: 6px 16px;
+  padding: 6px 13px;
   border: none;
   background: none;
   color: rgba(255,255,255,0.55);
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   font-weight: 600;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   cursor: pointer;
   text-decoration: none;
   transition: color 0.15s;
+  flex: 0 0 auto;
 }
 
-.bnav-item .bnav-icon { font-size: 1.3rem; }
+.bnav-item .bnav-icon { font-size: 1.25rem; }
 
 .bnav-item:hover,
 .bnav-item.active { color: var(--amber); }
@@ -424,4 +432,4 @@ body {
 
 @media (min-width: 769px) {
   .bottom-nav { display: none !important; }
-}
+   }
