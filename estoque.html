@@ -12,14 +12,12 @@
     .f2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
     .f2 .full{grid-column:1/-1;}
 
-    /* CATEGORIA CHIPS */
     .cat-wrap{margin-bottom:14px;}
     .cat-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
     .cat-chip{padding:6px 12px;border-radius:999px;border:1.5px solid var(--border);font-size:.75rem;font-weight:600;cursor:pointer;background:var(--card);color:var(--text-muted);transition:all .15s;white-space:nowrap;user-select:none;}
     .cat-chip.ativo{background:var(--navy);color:#fff;border-color:var(--navy);}
     .nova-cat-row{display:flex;gap:8px;}
 
-    /* LOTE */
     .lote-box{background:linear-gradient(135deg,#0F3460,var(--navy));border-radius:var(--radius-md);padding:14px;color:#fff;margin-top:6px;}
     .lote-title{font-size:.65rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:10px;}
     .lote-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
@@ -31,13 +29,11 @@
     .lp-val.am{color:var(--amber);}
     .lp-label{font-size:.62rem;color:rgba(255,255,255,.5);}
 
-    /* PREVIEW PREÇO */
     .preco-prev{background:linear-gradient(135deg,var(--navy),#0F3460);border-radius:var(--radius-md);padding:14px 16px;display:flex;justify-content:space-between;color:#fff;}
     .preco-prev .pp-label{font-size:.62rem;opacity:.5;margin-bottom:3px;}
     .preco-prev .pp-val{font-size:1.2rem;font-weight:800;}
     .preco-prev .pp-lucro{font-size:.78rem;color:var(--amber);font-weight:700;}
 
-    /* SCAN */
     .scan-area{border-radius:var(--radius-md);overflow:hidden;margin-bottom:10px;display:none;position:relative;background:#000;min-height:160px;align-items:center;justify-content:center;}
     .scan-area.aberto{display:flex;flex-direction:column;}
     .scan-area video{width:100%;max-height:220px;object-fit:cover;}
@@ -46,7 +42,6 @@
     @keyframes scan-move{0%{top:30%}50%{top:70%}100%{top:30%}}
     .scan-hint{color:rgba(255,255,255,.7);font-size:.75rem;text-align:center;padding:8px;}
 
-    /* TABELA */
     .table-wrap{overflow-x:auto;}
     .tbl{width:100%;border-collapse:collapse;}
     .tbl th{text-align:left;font-size:.62rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);padding:8px 10px;border-bottom:2px solid var(--border);white-space:nowrap;}
@@ -60,13 +55,11 @@
     .qbaixo{background:#FEF3C7;color:#92400E;}
     .qzero{background:#FEE2E2;color:#991B1B;}
 
-    /* +/- inline */
     .qctrl{display:flex;align-items:center;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;overflow:hidden;width:90px;}
     .qbtn{width:30px;height:32px;border:none;background:none;font-size:1rem;font-weight:700;cursor:pointer;color:var(--navy);}
     .qbtn:hover{background:var(--border);}
     .qnum{flex:1;text-align:center;font-size:.85rem;font-weight:700;}
 
-    /* SALÃO TOGGLE */
     .salao-toggle-row{display:flex;align-items:center;justify-content:space-between;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius-md);padding:12px 14px;}
     .salao-toggle-info{display:flex;flex-direction:column;}
     .salao-toggle-info .tt{font-size:.85rem;font-weight:700;color:var(--navy);}
@@ -79,7 +72,6 @@
     .switch input:checked + .switch-slider:before{transform:translateX(20px);}
     .salao-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:999px;font-size:.62rem;font-weight:700;background:#DBEAFE;color:#1E40AF;margin-top:3px;}
 
-    /* MODAL */
     .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;align-items:center;justify-content:center;padding:16px;}
     .modal-overlay.open{display:flex;}
     .modal-box{background:var(--card);border-radius:var(--radius-lg);padding:20px;width:100%;max-width:380px;box-shadow:var(--shadow-lg);max-height:90vh;overflow-y:auto;}
@@ -104,17 +96,15 @@
       <span class="logo-icon">🍞</span>
       <div><div class="logo-text">Sistema Cris</div><span class="logo-sub">Padaria</span></div>
     </div>
-   <nav class="bottom-nav">
-    <div class="bottom-nav-inner">
-      <a href="salao.html" class="bnav-item"><span class="bnav-icon">🪑</span>Salão</a>
-      <a href="caixa.html" class="bnav-item"><span class="bnav-icon">💰</span>Caixa</a>
-      <a href="estoque.html" class="bnav-item"><span class="bnav-icon">📦</span>Estoque</a>
-      <a href="financeiro.html" class="bnav-item"><span class="bnav-icon">💳</span>Financeiro</a>
-      <a href="pessoas.html" class="bnav-item"><span class="bnav-icon">👥</span>Pessoas</a>
-      <a href="dashboard.html" class="bnav-item"><span class="bnav-icon">📊</span>Dashboard</a>
-      <a href="produtos.html" class="bnav-item"><span class="bnav-icon">🛍️</span>Cardápio</a>
-    </div>
-  </nav>
+    <nav class="sidebar-nav">
+      <a href="salao.html" class="nav-item"><span class="nav-icon">🪑</span> Salão</a>
+      <a href="caixa.html" class="nav-item"><span class="nav-icon">💰</span> Caixa</a>
+      <a href="estoque.html" class="nav-item active"><span class="nav-icon">📦</span> Estoque</a>
+      <a href="financeiro.html" class="nav-item"><span class="nav-icon">💳</span> Financeiro</a>
+      <a href="pessoas.html" class="nav-item"><span class="nav-icon">👥</span> Pessoas</a>
+      <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="produtos.html" class="nav-item"><span class="nav-icon">🛍️</span> Cardápio</a>
+    </nav>
   </aside>
 
   <div class="main-content">
@@ -138,24 +128,20 @@
         <div class="form-card-title" id="form-titulo">Cadastrar Produto</div>
         <div class="f2">
 
-          <!-- Código + Scan -->
           <div class="form-group full">
             <label class="form-label">Código de Barras</label>
             <div style="display:flex;gap:8px;">
               <input type="text" id="f-codigo" class="form-input" placeholder="Ex: 7891234567890" style="flex:1;font-family:monospace;" inputmode="numeric">
               <button id="btn-scan" class="btn btn-dark" style="padding:10px 14px;white-space:nowrap;min-width:80px;">📷 Scan</button>
             </div>
-            <!-- Fallback: input file câmera para Android -->
             <input type="file" id="scan-file" accept="image/*" capture="environment" style="display:none;">
           </div>
 
-          <!-- Nome -->
           <div class="form-group full">
             <label class="form-label">Nome do Produto</label>
             <input type="text" id="f-nome" class="form-input" placeholder="Ex: Coca-Cola 350ml">
           </div>
 
-          <!-- CATEGORIA CHIPS -->
           <div class="full cat-wrap">
             <label class="form-label">Categoria</label>
             <div id="cat-chips" class="cat-chips"><!-- gerado por JS --></div>
@@ -166,7 +152,6 @@
             <input type="hidden" id="f-categoria" value="">
           </div>
 
-          <!-- Unidade -->
           <div class="form-group full">
             <label class="form-label">Como chega / é vendido</label>
             <select id="f-unidade" class="form-input">
@@ -180,7 +165,6 @@
             </select>
           </div>
 
-          <!-- LOTE (caixa/fardo) -->
           <div class="full" id="lote-box" style="display:none;">
             <div class="lote-box">
               <div class="lote-title">📦 Detalhes do Lote</div>
@@ -201,19 +185,16 @@
             </div>
           </div>
 
-          <!-- Custo un -->
           <div class="form-group">
             <label class="form-label">Custo por unidade (R$)</label>
             <input type="number" id="f-custo" class="form-input" placeholder="3.50" step="0.01" min="0">
           </div>
 
-          <!-- Margem -->
           <div class="form-group">
             <label class="form-label">Margem de lucro (%)</label>
             <input type="number" id="f-margem" class="form-input" placeholder="40" step="1" min="0">
           </div>
 
-          <!-- Preview -->
           <div class="full">
             <div class="preco-prev" id="preco-prev">
               <div><div class="pp-label">Preço de venda</div><div class="pp-val" id="pp-venda">R$ —</div></div>
@@ -221,7 +202,6 @@
             </div>
           </div>
 
-          <!-- VENDER NO SALÃO -->
           <div class="full">
             <div class="salao-toggle-row">
               <div class="salao-toggle-info">
@@ -235,7 +215,6 @@
             </div>
           </div>
 
-          <!-- Qtd + Mínimo -->
           <div class="form-group">
             <label class="form-label">Qtd em estoque</label>
             <input type="number" id="f-qtd" class="form-input" value="0" min="0" step="1">
@@ -245,7 +224,6 @@
             <input type="number" id="f-min" class="form-input" value="5" min="0" step="1">
           </div>
 
-          <!-- Botões -->
           <div class="full" style="display:flex;gap:8px;margin-top:4px;">
             <button id="btn-salvar" class="btn btn-primary btn-lg" style="flex:1;">+ Cadastrar</button>
             <button id="btn-limpar" class="btn btn-ghost" style="padding:14px;">✕</button>
@@ -254,7 +232,6 @@
         <p id="msg-form" style="color:var(--ocupada);font-size:.8rem;margin-top:8px;min-height:18px;"></p>
       </div>
 
-      <!-- FILTROS -->
       <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
         <input type="text" id="busca" class="form-input" placeholder="🔍 Buscar produto ou código..." style="flex:1;min-width:140px;">
         <select id="f-filtro-cat" class="form-input" style="width:130px;"></select>
@@ -265,7 +242,6 @@
         </select>
       </div>
 
-      <!-- TABELA -->
       <div class="card">
         <div class="card-header">
           <span class="card-title">Produtos</span>
@@ -281,16 +257,18 @@
         </div>
       </div>
 
-    </div><!-- /page-body -->
-  </div><!-- /main-content -->
+    </div>
+  </div>
 
       <nav class="bottom-nav">
     <div class="bottom-nav-inner">
       <a href="salao.html" class="bnav-item"><span class="bnav-icon">🪑</span>Salão</a>
       <a href="caixa.html" class="bnav-item"><span class="bnav-icon">💰</span>Caixa</a>
       <a href="estoque.html" class="bnav-item active"><span class="bnav-icon">📦</span>Estoque</a>
-      <a href="pessoas.html" class="bnav-item"><span class="bnav-icon">👥</span>Pessoas</a>
       <a href="financeiro.html" class="bnav-item"><span class="bnav-icon">💳</span>Financeiro</a>
+      <a href="pessoas.html" class="bnav-item"><span class="bnav-icon">👥</span>Pessoas</a>
+      <a href="dashboard.html" class="bnav-item"><span class="bnav-icon">📊</span>Dashboard</a>
+      <a href="produtos.html" class="bnav-item"><span class="bnav-icon">🛍️</span>Cardápio</a>
     </div>
   </nav>
 </div>
@@ -337,9 +315,6 @@ import {
   serverTimestamp, Timestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// ══════════════════════════════════════════════
-// CONSTANTES — definidas UMA VEZ no topo
-// ══════════════════════════════════════════════
 const CAT_ICONS = {
   bebida:'🥤', padaria:'🍞', salgado:'🥨', doce:'🍰',
   limpeza:'🧹', higiene:'🧴', frios:'❄️', hortifruti:'🥦',
@@ -348,9 +323,6 @@ const CAT_ICONS = {
 
 const UNIDADE_LOTE = ['fardo','cx','pacote','duzia'];
 
-// ══════════════════════════════════════════════
-// ESTADO
-// ══════════════════════════════════════════════
 let itens       = [];
 let categorias  = Object.keys(CAT_ICONS);
 let catAtiva    = categorias[0];
@@ -361,9 +333,6 @@ let currentUser = null;
 let scanStream  = null;
 let barcodeReader = null;
 
-// ══════════════════════════════════════════════
-// TOAST
-// ══════════════════════════════════════════════
 function toast(msg, type=''){
   const el = document.createElement('div');
   el.className = `toast ${type}`; el.textContent = msg;
@@ -371,11 +340,7 @@ function toast(msg, type=''){
   setTimeout(()=>el.remove(), 3200);
 }
 
-// ══════════════════════════════════════════════
-// CATEGORIAS CHIPS
-// ══════════════════════════════════════════════
 function renderChips(){
-  // Chips seletores
   document.getElementById('cat-chips').innerHTML = categorias.map(c=>`
     <div class="cat-chip${c===catAtiva?' ativo':''}" data-cat="${c}">
       ${CAT_ICONS[c]||'📦'} ${c.charAt(0).toUpperCase()+c.slice(1)}
@@ -389,7 +354,6 @@ function renderChips(){
     };
   });
 
-  // Filtro de categoria
   const sel = document.getElementById('f-filtro-cat');
   const ant = sel.value;
   sel.innerHTML = '<option value="">Todas cats</option>' +
@@ -409,14 +373,9 @@ document.getElementById('btn-add-cat').onclick = ()=>{
   if(currentUser) setDoc(doc(db,`config_${currentUser.uid}`,'categorias'),{lista:categorias});
 };
 
-// Inicializa chips imediatamente
 renderChips();
 document.getElementById('f-categoria').value = catAtiva;
 
-// ══════════════════════════════════════════════
-// SCANNER — usa BarcodeDetector API (nativo Android Chrome)
-// com fallback para input de câmera
-// ══════════════════════════════════════════════
 const scanArea  = document.getElementById('scan-area');
 const scanVideo = document.getElementById('scan-video');
 const scanFile  = document.getElementById('scan-file');
@@ -431,7 +390,6 @@ function fecharScanner(){
 document.getElementById('scan-close').onclick = fecharScanner;
 
 async function iniciarScanner(){
-  // Tenta BarcodeDetector (Chrome Android 83+)
   if('BarcodeDetector' in window){
     try{
       scanStream = await navigator.mediaDevices.getUserMedia({
@@ -462,17 +420,14 @@ async function iniciarScanner(){
     }
   }
 
-  // Fallback: abre câmera via input file (funciona em qualquer Android)
   toast('Abrindo câmera...','');
   scanFile.click();
 }
 
-// Fallback: lê imagem e tenta ZXing via CDN
 scanFile.onchange = async (e)=>{
   const file = e.target.files[0];
   if(!file) return;
 
-  // Tenta ler o código com BarcodeDetector na imagem
   if('BarcodeDetector' in window){
     try{
       const img = await createImageBitmap(file);
@@ -489,27 +444,21 @@ scanFile.onchange = async (e)=>{
     }catch(e){}
   }
 
-  // Último fallback: mostra imagem para o usuário digitar
   toast('Não foi possível ler automaticamente. Digite o código manualmente.','error');
   scanFile.value='';
 };
 
 btnScan.onclick = iniciarScanner;
 
-// Busca produto existente pelo código
 function buscarPorCodigo(codigo){
   const found = itens.find(i=>i.codigo===codigo);
   if(found){ preencherForm(found); toast(`Produto encontrado: ${found.nome}`,'success'); }
 }
 
-// Enter no campo código também busca
 document.getElementById('f-codigo').addEventListener('keydown', e=>{
   if(e.key==='Enter') buscarPorCodigo(e.target.value.trim());
 });
 
-// ══════════════════════════════════════════════
-// LOTE
-// ══════════════════════════════════════════════
 document.getElementById('f-unidade').addEventListener('change', e=>{
   const usa = UNIDADE_LOTE.includes(e.target.value);
   document.getElementById('lote-box').style.display = usa ? '' : 'none';
@@ -528,9 +477,6 @@ function calcLote(){
 ['f-lote-qtd','f-lote-custo'].forEach(id=>
   document.getElementById(id).addEventListener('input', calcLote));
 
-// ══════════════════════════════════════════════
-// PREVIEW PREÇO
-// ══════════════════════════════════════════════
 function calcPreco(){
   const custo  = parseFloat(document.getElementById('f-custo').value)||0;
   const margem = parseFloat(document.getElementById('f-margem').value)||0;
@@ -549,9 +495,6 @@ function calcPreco(){
 document.getElementById('f-custo').addEventListener('input', calcPreco);
 document.getElementById('f-margem').addEventListener('input', calcPreco);
 
-// ══════════════════════════════════════════════
-// FORM — preencher / limpar
-// ══════════════════════════════════════════════
 function preencherForm(item){
   editId = item.id;
   document.getElementById('form-titulo').textContent = '✏️ Editar Produto';
@@ -591,9 +534,6 @@ function limparForm(){
 
 document.getElementById('btn-limpar').onclick = limparForm;
 
-// ══════════════════════════════════════════════
-// MODAL AJUSTE
-// ══════════════════════════════════════════════
 const TABS = {
   ent:{ label:'Qtd a adicionar',  desc:'➕ Chegou mercadoria — adiciona ao estoque atual', ativo:true  },
   sai:{ label:'Qtd a remover',    desc:'➖ Quebra ou perda — remove do estoque atual',     ativo:false },
@@ -626,14 +566,10 @@ document.getElementById('mq-cancelar').onclick = ()=>{
   ajusteId = null;
 };
 
-// ══════════════════════════════════════════════
-// FIREBASE
-// ══════════════════════════════════════════════
 auth.onAuthStateChanged(async user=>{
   if(!user){ location.href='index.html'; return; }
   currentUser = user;
 
-  // Carrega categorias salvas
   try{
     const snap = await getDoc(doc(db,`config_${user.uid}`,'categorias'));
     if(snap.exists() && snap.data().lista?.length){
@@ -645,7 +581,6 @@ auth.onAuthStateChanged(async user=>{
 
   const colRef = collection(db,`estoque_${user.uid}`);
 
-  // SALVAR
   document.getElementById('btn-salvar').onclick = async()=>{
     const codigo   = document.getElementById('f-codigo').value.trim();
     const nome     = document.getElementById('f-nome').value.trim();
@@ -689,7 +624,6 @@ auth.onAuthStateChanged(async user=>{
     } finally{ btn.disabled=false; }
   };
 
-  // CONFIRMAR AJUSTE
   document.getElementById('mq-confirmar').onclick = async()=>{
     const val    = parseInt(document.getElementById('mq-val').value)||0;
     const custo  = parseFloat(document.getElementById('mq-custo').value)||0;
@@ -727,7 +661,6 @@ auth.onAuthStateChanged(async user=>{
     finally{ btn.disabled=false; ajusteId=null; }
   };
 
-  // EXCLUIR
   window.excluir = async(id,nome)=>{
     if(!confirm(`Excluir "${nome}"?`)) return;
     try{
@@ -736,7 +669,6 @@ auth.onAuthStateChanged(async user=>{
     }catch(e){ toast('Erro ao excluir.','error'); }
   };
 
-  // +/- rápido
   window.ajRap = async(id,delta,qtdAt)=>{
     if(qtdAt+delta<0){ toast('Estoque não pode ser negativo.','error'); return; }
     try{
@@ -744,7 +676,6 @@ auth.onAuthStateChanged(async user=>{
     }catch(e){ toast('Erro.','error'); }
   };
 
-  // Toggle rápido "Vender no Salão" direto na tabela
   window.toggleSalao = async(id, valorAtual)=>{
     try{
       await updateDoc(doc(db,`estoque_${user.uid}`,id),{vendeSalao: !valorAtual});
@@ -754,7 +685,6 @@ auth.onAuthStateChanged(async user=>{
 
   window.editarItem = id=>{ const it=itens.find(i=>i.id===id); if(it) preencherForm(it); };
 
-  // LISTENER TEMPO REAL
   onSnapshot(colRef, snap=>{
     itens = [];
     snap.forEach(d=>itens.push({id:d.id,...d.data()}));
@@ -763,14 +693,10 @@ auth.onAuthStateChanged(async user=>{
     resumoTop();
   });
 
-  // FILTROS
   ['busca','f-filtro-cat','f-filtro-st'].forEach(id=>
     document.getElementById(id).addEventListener('input',renderTabela));
 });
 
-// ══════════════════════════════════════════════
-// RENDER TABELA
-// ══════════════════════════════════════════════
 function renderTabela(){
   const busca = document.getElementById('busca').value.toLowerCase();
   const cat   = document.getElementById('f-filtro-cat').value;
