@@ -208,13 +208,15 @@
   </div>
 
   <!-- BOTTOM NAV MOBILE -->
-        <nav class="bottom-nav">
+      <nav class="bottom-nav">
     <div class="bottom-nav-inner">
       <a href="salao.html" class="bnav-item"><span class="bnav-icon">🪑</span>Salão</a>
       <a href="caixa.html" class="bnav-item active"><span class="bnav-icon">💰</span>Caixa</a>
       <a href="estoque.html" class="bnav-item"><span class="bnav-icon">📦</span>Estoque</a>
-      <a href="pessoas.html" class="bnav-item"><span class="bnav-icon">👥</span>Pessoas</a>
       <a href="financeiro.html" class="bnav-item"><span class="bnav-icon">💳</span>Financeiro</a>
+      <a href="pessoas.html" class="bnav-item"><span class="bnav-icon">👥</span>Pessoas</a>
+      <a href="dashboard.html" class="bnav-item"><span class="bnav-icon">📊</span>Dashboard</a>
+      <a href="produtos.html" class="bnav-item"><span class="bnav-icon">🛍️</span>Cardápio</a>
     </div>
   </nav>
 </div>
@@ -224,7 +226,7 @@
 <script type="module">
   import { db, auth } from './firebase.js';
   import {
-    doc, onSnapshot, updateDoc,
+    doc, onSnapshot, updateDoc, getDoc,
     addDoc, collection, serverTimestamp
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
@@ -327,9 +329,9 @@
         const abertoEm = window._abertoEm || agora;
         const duracaoMin = Math.round((agora - abertoEm) / 60000); // minutos
 
-        // 1. Salva no histórico com permanência
-        const mesaSnap = await (await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js")
-          .then(m => m.getDoc(mesaRef)));
+        // Correção Viagem 5: usa o getDoc já importado no topo,
+        // em vez de reimportar o módulo inteiro do Firestore dentro do clique.
+        const mesaSnap = await getDoc(mesaRef);
         await addDoc(collection(db, `vendas_${user.uid}`), {
           valor:       totalAtual,
           mesa:        mesaId,
