@@ -414,6 +414,11 @@ const GRUPO_CATEGORIA = {
   outro:          'outro'
 };
 
+// Estimativa padrão de custo quando um item não tem custo próprio
+// cadastrado (ex: itens do Cardápio puro, sem controle de estoque).
+// Aplicada por ITEM, não por venda inteira — ver Viagem 3 do mapa de bugs.
+const CMV_FALLBACK_PCT = 0.4;
+
 let chartFluxo = null, chartComposicao = null, chartLucroAcum = null,
     chartTicket = null, chartComparativo = null, chartMargem = null;
 let currentUser = null;
@@ -538,20 +543,26 @@ auth.onAuthStateChanged(async user => {
 
 // ══════════════════════════════════════════════
 // FOLHA SALARIAL AUTOMÁTICA
-// Para cada funcionário ativo com diaPagamento definido:
-// se hoje >= diaPagamento E ainda não existe a despesa
+// Para cada funcionário ativo com salário cadastrado:
+// se hoje >= dia de pagamento E ainda não existe a despesa
 // deste funcionário neste mês, cria automaticamente.
+//
+// Funcionário SEM diaPagamento definido usa o último dia do
+// mês como padrão — assim toda folha vira lançamento real e
+// persistido, sem estimativa recalculada a cada visualização
+// (correção do bug "revisão histórica silenciosa", Viagem 3).
 // ══════════════════════════════════════════════
 async function gerarFolhasAutomaticas(user) {
   try {
     const pessoasSnap = await getDocs(collection(db, `pessoas_${user.uid}`));
     const hoje = new Date();
     const anoMes = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,'0')}`;
+    const ultimoDiaDoMes = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0).getDate();
 
     const funcionarios = [];
     pessoasSnap.forEach(d => {
       const p = d.data();
-      if (p.tipo === 'funcionario' && p.statusEmp !== 'desligado' && p.salario > 0 && p.diaPagamento) {
+      if (p.tipo === 'funcionario' && p.statusEmp !== 'desligado' && p.salario > 0) {
         funcionarios.push({ id: d.id, ...p });
       }
     });
@@ -572,16 +583,21 @@ async function gerarFolhasAutomaticas(user) {
 
     for (const f of funcionarios) {
       if (jaGeradas.has(f.id)) continue;
-      if (hoje.getDate() < f.diaPagamento) continue;
 
-      const dataPagamento = new Date(hoje.getFullYear(), hoje.getMonth(), f.diaPagamento, 12);
+      const diaDefinidoPeloUsuario = !!f.diaPagamento;
+      const diaEfetivo = f.diaPagamento || ultimoDiaDoMes;
+      if (hoje.getDate() < diaEfetivo) continue;
+
+      const dataPagamento = new Date(hoje.getFullYear(), hoje.getMonth(), diaEfetivo, 12);
 
       await addDoc(collection(db, `despesas_${user.uid}`), {
         descricao:     `Salário — ${f.nome}`,
         valor:         f.salario,
         categoria:     'salario',
         status:        'pago',
-        obs:           'Gerado automaticamente pelo dia de pagamento cadastrado',
+        obs:           diaDefinidoPeloUsuario
+                          ? 'Gerado automaticamente pelo dia de pagamento cadastrado'
+                          : 'Gerado automaticamente no último dia do mês (sem dia de pagamento cadastrado)',
         funcionarioId: f.id,
         competencia:   anoMes,
         automatico:    true,
@@ -631,7 +647,7 @@ function carregarDados() {
     where('data', '>=', tsIni), where('data', '<=', tsFim), orderBy('data','asc')
   );
 
-  let vendas = [], despesas = [], folhaMensal = 0;
+  let vendas = [], despesas = [];
 
   // Vendas não existem no modo "futuro" (vendas futuras não fazem sentido)
   if (!modoFuturo) {
@@ -642,33 +658,16 @@ function carregarDados() {
     unsubVendas = onSnapshot(qVendas, snap => {
       vendas = [];
       snap.forEach(d => vendas.push({ id:d.id, tipo:'entrada', ...d.data() }));
-      renderFinanceiro(vendas, despesas, folhaMensal);
+      renderFinanceiro(vendas, despesas);
     });
   } else {
     unsubVendas = null;
   }
 
-  // Busca funcionários ativos SEM diaPagamento (fallback estimado proporcional)
-  // Funcionários COM diaPagamento já entram via despesa real gerada automaticamente,
-  // então não duplicamos o cálculo proporcional para eles.
-  if (!modoFuturo) {
-    getDocs(collection(db, `pessoas_${currentUser.uid}`)).then(snap => {
-      folhaMensal = 0;
-      snap.forEach(d => {
-        const p = d.data();
-        if (p.tipo === 'funcionario' && p.statusEmp !== 'desligado' && p.salario > 0 && !p.diaPagamento) {
-          const diasPeriodo = Math.round((periodoFim - periodoInicio) / (1000*60*60*24)) + 1;
-          folhaMensal += (p.salario / 30) * diasPeriodo;
-        }
-      });
-      renderFinanceiro(vendas, despesas, folhaMensal);
-    }).catch(() => { /* sem funcionários ainda */ });
-  }
-
   unsubDesp = onSnapshot(qDesp, snap => {
     despesas = [];
     snap.forEach(d => despesas.push({ id:d.id, tipo:'saida', ...d.data() }));
-    renderFinanceiro(vendas, despesas, folhaMensal);
+    renderFinanceiro(vendas, despesas);
   });
 
   carregarPendentes();
@@ -744,25 +743,37 @@ const CAT_LABELS = {
   servico:'Serviço', salario:'Salário', outro:'Outro'
 };
 
-let ultimosDados = { vendas:[], despesas:[], folhaMensal:0 };
+// Custo efetivo de um item de venda: usa o custo real se existir,
+// senão aplica a estimativa padrão — SEMPRE por item, nunca por
+// venda inteira. Reaproveitada nos dois lugares que calculam CMV
+// (totais do período + gráfico de fluxo diário), pra não haver
+// duas fórmulas diferentes no mesmo sistema.
+function custoEfetivoItem(item) {
+  const preco = item.preco || 0;
+  if (item.custo && item.custo > 0) return item.custo;
+  return preco * CMV_FALLBACK_PCT;
+}
 
-function renderFinanceiro(vendas, despesas, folhaMensal=0) {
-  ultimosDados = { vendas, despesas, folhaMensal };
+let ultimosDados = { vendas:[], despesas:[] };
+
+function renderFinanceiro(vendas, despesas) {
+  ultimosDados = { vendas, despesas };
 
   // ── CUSTO DE PRODUTOS VENDIDOS (CMV) ──────────────────────────
+  // Correção Viagem 3: antes, a estimativa de 40% só era aplicada
+  // quando TODOS os itens da venda não tinham custo — o que fazia
+  // itens do Cardápio (custo sempre 0) escaparem da estimativa em
+  // vendas mistas com itens do Estoque. Agora o custo é decidido
+  // item a item, de forma consistente.
   let cmvTotal = 0;
   let lucroVenda = 0;
   vendas.forEach(v => {
     (v.itens || []).forEach(item => {
-      const custo = item.custo || 0;
       const preco = item.preco || 0;
-      cmvTotal  += custo;
+      const custo = custoEfetivoItem(item);
+      cmvTotal   += custo;
       lucroVenda += (preco - custo);
     });
-    if ((v.itens||[]).every(i => !i.custo)) {
-      cmvTotal  += (v.valor||0) * 0.4;
-      lucroVenda += (v.valor||0) * 0.6;
-    }
   });
 
   const totalReceita  = vendas.reduce((s,v) => s + (v.valor||0), 0);
@@ -777,8 +788,6 @@ function renderFinanceiro(vendas, despesas, folhaMensal=0) {
     else if (grupo === 'produto')   investProduto   += d.valor||0;
     else investOutro += d.valor||0;
   });
-  // Folha estimada (funcionários sem diaPagamento) soma em Pessoas
-  investPessoas += folhaMensal;
   // CMV (custo do produto vendido) soma em Produto
   investProduto += cmvTotal;
 
@@ -830,8 +839,7 @@ function renderFinanceiro(vendas, despesas, folhaMensal=0) {
     dias[key].receita += v.valor||0;
     dias[key].nVendas += 1;
     let custoDia = 0;
-    (v.itens||[]).forEach(i => { custoDia += i.custo||0; });
-    if ((v.itens||[]).every(i=>!i.custo)) custoDia = (v.valor||0)*0.4;
+    (v.itens||[]).forEach(i => { custoDia += custoEfetivoItem(i); });
     dias[key].custo += custoDia;
   });
   despesas.forEach(d => {
@@ -1013,16 +1021,6 @@ function renderFinanceiro(vendas, despesas, folhaMensal=0) {
 
   const lista = document.getElementById('lista-lanc');
 
-  // Adiciona linha da folha salarial estimada se > 0 (apenas fora do modo futuro)
-  if (folhaMensal > 0 && !modoFuturo) {
-    todos.unshift({
-      tipo:'saida', categoria:'salario',
-      descricao:`Folha estimada (funcionários sem dia de pagamento definido)`,
-      valor: folhaMensal, status:'pago',
-      data: null, _folha: true
-    });
-  }
-
   if (todos.length === 0) {
     lista.innerHTML = `<div class="empty-lanc">${modoFuturo ? 'Nenhuma conta a vencer nos próximos 30 dias.' : 'Nenhum lançamento no período.'}</div>`;
     return;
@@ -1038,7 +1036,7 @@ function renderFinanceiro(vendas, despesas, folhaMensal=0) {
     const desc   = l.tipo==='entrada' ? `Venda Mesa ${l.mesa||'—'}` : l.descricao;
     const isFuturoItem = dt && dt > new Date();
     const isAuto = l.tipo==='saida' && l.automatico;
-    const statusPill = l.tipo==='saida' && !l._folha
+    const statusPill = l.tipo==='saida'
       ? `<span class="status-pill ${l.status==='pendente'?'pendente':'pago'}">${l.status==='pendente'?'⏳ A pagar':'✅ Pago'}</span>`
       : '';
     const autoPill = isAuto ? `<span class="status-pill auto">🤖 Automático</span>` : '';
@@ -1056,15 +1054,13 @@ function renderFinanceiro(vendas, despesas, folhaMensal=0) {
       <div class="lanc-actions">
         ${l.tipo==='entrada' ? `
           <div class="lanc-val entrada">+ R$ ${(l.valor||0).toFixed(2)}</div>
-          ${(()=>{ let c=0; (l.itens||[]).forEach(i=>c+=i.custo||0); if(c>0) return `<div style="font-size:.65rem;color:#F59E0B;font-weight:600;">CMV: R$ ${c.toFixed(2)} · Lucro: R$ ${((l.valor||0)-c).toFixed(2)}</div>`; return ''; })()}
+          ${(()=>{ let c=0; (l.itens||[]).forEach(i=>c+=custoEfetivoItem(i)); if(c>0) return `<div style="font-size:.65rem;color:#F59E0B;font-weight:600;">CMV: R$ ${c.toFixed(2)} · Lucro: R$ ${((l.valor||0)-c).toFixed(2)}</div>`; return ''; })()}
         ` : `
           <div class="lanc-val saida">− R$ ${(l.valor||0).toFixed(2)}</div>
-          ${!l._folha ? `
-            <div class="lanc-btns">
-              <button onclick='editarDesp(${JSON.stringify({id:l.id, descricao:l.descricao, valor:l.valor, categoria:l.categoria, obs:l.obs||'', status:l.status||'pago', data: dt ? dt.toISOString().split('T')[0] : ''})})' class="btn btn-ghost" style="padding:3px 8px;font-size:.65rem;">✏️</button>
-              <button onclick="excluirDesp('${l.id}')" class="btn btn-ghost" style="padding:3px 8px;font-size:.65rem;">🗑️</button>
-            </div>
-          ` : ''}
+          <div class="lanc-btns">
+            <button onclick='editarDesp(${JSON.stringify({id:l.id, descricao:l.descricao, valor:l.valor, categoria:l.categoria, obs:l.obs||'', status:l.status||'pago', data: dt ? dt.toISOString().split('T')[0] : ''})})' class="btn btn-ghost" style="padding:3px 8px;font-size:.65rem;">✏️</button>
+            <button onclick="excluirDesp('${l.id}')" class="btn btn-ghost" style="padding:3px 8px;font-size:.65rem;">🗑️</button>
+          </div>
         `}
       </div>
     </div>`;
@@ -1076,7 +1072,7 @@ function atualizarGraficoComparativo() {
   if (modoFuturo) return;
 
   const receitaAtual = ultimosDados.vendas.reduce((s,v)=>s+(v.valor||0),0);
-  const despesaAtual = ultimosDados.despesas.reduce((s,d)=>s+(d.valor||0),0) + (ultimosDados.folhaMensal||0);
+  const despesaAtual = ultimosDados.despesas.reduce((s,d)=>s+(d.valor||0),0);
 
   const receitaAnt = vendasAnterior.reduce((s,v)=>s+(v.valor||0),0);
   const despesaAnt = despesasAnterior.reduce((s,d)=>s+(d.valor||0),0);
