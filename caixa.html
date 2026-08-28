@@ -154,7 +154,8 @@
 
 <script type="module">
   import { db, auth } from './firebase.js';
-  import { collection, onSnapshot, doc, getDoc } from
+  import { col, docIn } from './db-paths.js';
+  import { onSnapshot, getDoc } from
     "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   function showToast(msg, type = '') {
@@ -214,14 +215,14 @@
 
     // 1. Carrega config de mesas e renderiza imediatamente
     try {
-      const configSnap = await getDoc(doc(db, `config_${user.uid}`, 'salao'));
+      const configSnap = await getDoc(docIn(user.uid, 'config', 'salao'));
       if (configSnap.exists()) qtdMesas = configSnap.data().totalMesas || 11;
     } catch (e) { qtdMesas = 11; }
 
     renderCaixa(); // mostra as mesas na hora (todas livres inicialmente)
 
     // 2. Listener de mesas em tempo real
-    onSnapshot(collection(db, `mesas_${user.uid}`), snap => {
+    onSnapshot(col(user.uid, 'mesas'), snap => {
       dadosMesas = {};
       snap.forEach(d => { dadosMesas[d.id] = d.data(); });
       renderCaixa();
