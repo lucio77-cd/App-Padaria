@@ -557,8 +557,9 @@
 
 <script type="module">
 import { db, auth } from './firebase.js';
+import { col, docIn } from './db-paths.js';
 import {
-  collection, doc, addDoc, updateDoc, deleteDoc,
+  addDoc, updateDoc, deleteDoc,
   onSnapshot, serverTimestamp, runTransaction
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
@@ -627,13 +628,13 @@ function gerarCodigo(){
 // GERAR CÓDIGO ATÔMICO — usado só na hora de salvar de verdade
 // gerarCodigo() acima continua servindo pro preview em tela
 // (aproximado); esta função reserva o número real via transação,
-// contra um contador em contadores_${uid}/pessoas, evitando que
-// dois cadastros simultâneos gerem o mesmo código (bug B3 do mapa).
+// contra um contador em /users/{uid}/contadores/pessoas, evitando
+// que dois cadastros simultâneos gerem o mesmo código (bug B3).
 // ══════════════════════════════════════════════
 async function gerarCodigoAtomico(tipo){
   const prefixo = tipo === 'cliente' ? 'C' : 'F';
   const campo   = tipo === 'cliente' ? 'proximoCliente' : 'proximoFuncionario';
-  const counterRef = doc(db, `contadores_${currentUser.uid}`, 'pessoas');
+  const counterRef = docIn(currentUser.uid, 'contadores', 'pessoas');
 
   // Seed local — só usado se o contador ainda não existir no Firestore
   // (primeira vez que essa correção roda), pra não colidir com códigos já emitidos.
@@ -802,7 +803,7 @@ auth.onAuthStateChanged(async user=>{
   if(!user){ location.href='index.html'; return; }
   currentUser = user;
 
-  const colRef = collection(db, `pessoas_${user.uid}`);
+  const colRef = col(user.uid, 'pessoas');
 
   // SALVAR
   document.getElementById('btn-salvar').onclick = async()=>{
@@ -884,7 +885,7 @@ auth.onAuthStateChanged(async user=>{
 
     try{
       if(editId){
-        await updateDoc(doc(db,`pessoas_${user.uid}`,editId), dados);
+        await updateDoc(docIn(user.uid,'pessoas',editId), dados);
         toast(`✅ "${nome}" atualizado!`,'success');
       } else {
         await addDoc(colRef,{...dados, createdAt:serverTimestamp()});
@@ -913,7 +914,7 @@ auth.onAuthStateChanged(async user=>{
     document.getElementById('pessoas-grid').innerHTML =
       `<div style="color:#DC2626;text-align:center;padding:32px;grid-column:1/-1;font-size:.85rem;">
         ❌ ${err.code==='permission-denied'
-          ? 'Sem permissão — vá ao Firebase Console → Firestore → Regras e publique: allow read, write: if request.auth != null;'
+          ? 'Sem permissão — verifique se as regras do Firestore foram publicadas.'
           : 'Erro: ' + err.message}
       </div>`;
   });
@@ -1132,7 +1133,7 @@ window.editarPessoa = id=>{
 window.excluirPessoa = async(id,nome)=>{
   if(!confirm(`Excluir "${nome}"? Esta ação é permanente.`)) return;
   try{
-    await deleteDoc(doc(db,`pessoas_${currentUser.uid}`,id));
+    await deleteDoc(docIn(currentUser.uid,'pessoas',id));
     toast(`"${nome}" removido.`,'');
   }catch(e){ toast('Erro ao excluir.','error'); }
 };
