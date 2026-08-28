@@ -309,8 +309,9 @@
 
 <script type="module">
 import { db, auth } from './firebase.js';
+import { col, docIn } from './db-paths.js';
 import {
-  collection, doc, addDoc, updateDoc, deleteDoc,
+  addDoc, updateDoc, deleteDoc,
   onSnapshot, getDoc, setDoc, increment,
   serverTimestamp, Timestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -370,7 +371,7 @@ document.getElementById('btn-add-cat').onclick = ()=>{
   document.getElementById('nova-cat').value = '';
   renderChips();
   toast(`✅ Categoria "${v}" criada!`,'success');
-  if(currentUser) setDoc(doc(db,`config_${currentUser.uid}`,'categorias'),{lista:categorias});
+  if(currentUser) setDoc(docIn(currentUser.uid,'config','categorias'),{lista:categorias});
 };
 
 renderChips();
@@ -571,7 +572,7 @@ auth.onAuthStateChanged(async user=>{
   currentUser = user;
 
   try{
-    const snap = await getDoc(doc(db,`config_${user.uid}`,'categorias'));
+    const snap = await getDoc(docIn(user.uid,'config','categorias'));
     if(snap.exists() && snap.data().lista?.length){
       const extra = snap.data().lista.filter(c=>!categorias.includes(c));
       categorias.push(...extra);
@@ -579,7 +580,7 @@ auth.onAuthStateChanged(async user=>{
     }
   }catch(e){}
 
-  const colRef = collection(db,`estoque_${user.uid}`);
+  const colRef = col(user.uid,'estoque');
 
   document.getElementById('btn-salvar').onclick = async()=>{
     const codigo   = document.getElementById('f-codigo').value.trim();
@@ -606,7 +607,7 @@ auth.onAuthStateChanged(async user=>{
 
     try{
       if(editId){
-        await updateDoc(doc(db,`estoque_${user.uid}`,editId), dados);
+        await updateDoc(docIn(user.uid,'estoque',editId), dados);
         toast(`✅ "${nome}" atualizado!`,'success');
       } else {
         if(itens.find(i=>i.codigo===codigo)){
@@ -641,10 +642,10 @@ auth.onAuthStateChanged(async user=>{
       else if(ajusteTipo==='sai') novaQtd = increment(-val);
       else                        novaQtd = val;
 
-      await updateDoc(doc(db,`estoque_${user.uid}`,ajusteId),{qtd:novaQtd});
+      await updateDoc(docIn(user.uid,'estoque',ajusteId),{qtd:novaQtd});
 
       if(ajusteTipo==='ent' && custo>0){
-        await addDoc(collection(db,`despesas_${user.uid}`),{
+        await addDoc(col(user.uid,'despesas'),{
           descricao:`Entrada: ${item?.nome||'?'} (${val} un)`,
           valor:custo, categoria:'compra_estoque',
           fornecedor:fornec, data:Timestamp.fromDate(new Date()),
@@ -664,7 +665,7 @@ auth.onAuthStateChanged(async user=>{
   window.excluir = async(id,nome)=>{
     if(!confirm(`Excluir "${nome}"?`)) return;
     try{
-      await deleteDoc(doc(db,`estoque_${user.uid}`,id));
+      await deleteDoc(docIn(user.uid,'estoque',id));
       toast(`"${nome}" removido.`,'');
     }catch(e){ toast('Erro ao excluir.','error'); }
   };
@@ -672,13 +673,13 @@ auth.onAuthStateChanged(async user=>{
   window.ajRap = async(id,delta,qtdAt)=>{
     if(qtdAt+delta<0){ toast('Estoque não pode ser negativo.','error'); return; }
     try{
-      await updateDoc(doc(db,`estoque_${user.uid}`,id),{qtd:increment(delta)});
+      await updateDoc(docIn(user.uid,'estoque',id),{qtd:increment(delta)});
     }catch(e){ toast('Erro.','error'); }
   };
 
   window.toggleSalao = async(id, valorAtual)=>{
     try{
-      await updateDoc(doc(db,`estoque_${user.uid}`,id),{vendeSalao: !valorAtual});
+      await updateDoc(docIn(user.uid,'estoque',id),{vendeSalao: !valorAtual});
       toast(!valorAtual ? '🪑 Agora vende no Salão' : '🚫 Removido do Salão','success');
     }catch(e){ toast('Erro ao atualizar.','error'); }
   };
