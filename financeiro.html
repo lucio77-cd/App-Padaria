@@ -398,8 +398,9 @@
 
 <script type="module">
 import { db, auth } from './firebase.js';
+import { col, docIn } from './db-paths.js';
 import {
-  collection, addDoc, updateDoc, deleteDoc, doc,
+  addDoc, updateDoc, deleteDoc,
   query, where, onSnapshot, orderBy, Timestamp, serverTimestamp,
   getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -484,6 +485,11 @@ auth.onAuthStateChanged(async user => {
   currentUser = user;
 
   // Gera folhas salariais automáticas (dia de pagamento já passou neste mês?)
+  // NOTA (Frente 2, ainda pendente): este fluxo continua rodando no cliente,
+  // no caminho de leitura da tela — é exatamente o ponto que o Cap. 3 do
+  // livro recomenda mover para uma Cloud Function agendada. Nesta frente
+  // (0.1) só o caminho de dados foi migrado; a disciplina transacional
+  // deste trecho específico é trabalho da próxima frente.
   await gerarFolhasAutomaticas(user);
 
   // Lançar / Atualizar despesa
@@ -512,11 +518,11 @@ auth.onAuthStateChanged(async user => {
       };
 
       if (editandoId) {
-        await updateDoc(doc(db, `despesas_${user.uid}`, editandoId), payload);
+        await updateDoc(docIn(user.uid, 'despesas', editandoId), payload);
         toast('✅ Despesa atualizada!', 'success');
         cancelarEdicao();
       } else {
-        await addDoc(collection(db, `despesas_${user.uid}`), {
+        await addDoc(col(user.uid, 'despesas'), {
           ...payload,
           createdAt: serverTimestamp()
         });
@@ -556,7 +562,7 @@ auth.onAuthStateChanged(async user => {
 // ══════════════════════════════════════════════
 async function gerarFolhasAutomaticas(user) {
   try {
-    const pessoasSnap = await getDocs(collection(db, `pessoas_${user.uid}`));
+    const pessoasSnap = await getDocs(col(user.uid, 'pessoas'));
     const hoje = new Date();
     const anoMes = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,'0')}`;
     const ultimoDiaDoMes = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0).getDate();
@@ -573,7 +579,7 @@ async function gerarFolhasAutomaticas(user) {
 
     // Busca despesas de salário já geradas automaticamente este mês
     const despSnap = await getDocs(
-      query(collection(db, `despesas_${user.uid}`), where('categoria', '==', 'salario'))
+      query(col(user.uid, 'despesas'), where('categoria', '==', 'salario'))
     );
     const jaGeradas = new Set();
     despSnap.forEach(d => {
@@ -592,7 +598,7 @@ async function gerarFolhasAutomaticas(user) {
 
       const dataPagamento = new Date(hoje.getFullYear(), hoje.getMonth(), diaEfetivo, 12);
 
-      await addDoc(collection(db, `despesas_${user.uid}`), {
+      await addDoc(col(user.uid, 'despesas'), {
         descricao:     `Salário — ${f.nome}`,
         valor:         f.salario,
         categoria:     'salario',
@@ -645,7 +651,7 @@ function carregarDados() {
   const tsFim = Timestamp.fromDate(periodoFim);
 
   const qDesp = query(
-    collection(db, `despesas_${currentUser.uid}`),
+    col(currentUser.uid, 'despesas'),
     where('data', '>=', tsIni), where('data', '<=', tsFim), orderBy('data','asc')
   );
 
@@ -654,7 +660,7 @@ function carregarDados() {
   // Vendas não existem no modo "futuro" (vendas futuras não fazem sentido)
   if (!modoFuturo) {
     const qVendas = query(
-      collection(db, `vendas_${currentUser.uid}`),
+      col(currentUser.uid, 'vendas'),
       where('data', '>=', tsIni), where('data', '<=', tsFim), orderBy('data','asc')
     );
     unsubVendas = onSnapshot(qVendas, snap => {
@@ -688,8 +694,8 @@ function carregarPeriodoAnterior() {
   const tsFimA = Timestamp.fromDate(fimAnt);
 
   Promise.all([
-    getDocs(query(collection(db, `vendas_${currentUser.uid}`), where('data','>=',tsIniA), where('data','<=',tsFimA))),
-    getDocs(query(collection(db, `despesas_${currentUser.uid}`), where('data','>=',tsIniA), where('data','<=',tsFimA)))
+    getDocs(query(col(currentUser.uid, 'vendas'), where('data','>=',tsIniA), where('data','<=',tsFimA))),
+    getDocs(query(col(currentUser.uid, 'despesas'), where('data','>=',tsIniA), where('data','<=',tsFimA)))
   ]).then(([vSnap, dSnap]) => {
     vendasAnterior = []; vSnap.forEach(d => vendasAnterior.push(d.data()));
     despesasAnterior = []; dSnap.forEach(d => despesasAnterior.push(d.data()));
@@ -704,7 +710,7 @@ function carregarPendentes() {
   const limite = new Date(); limite.setDate(limite.getDate() + 30);
 
   const qPend = query(
-    collection(db, `despesas_${currentUser.uid}`),
+    col(currentUser.uid, 'despesas'),
     where('data', '>=', Timestamp.fromDate(agora)),
     where('data', '<=', Timestamp.fromDate(limite)),
     orderBy('data','asc')
@@ -1126,7 +1132,7 @@ window.editarDesp = (item) => {
 window.excluirDesp = async id => {
   if (!confirm('Excluir este lançamento?')) return;
   try {
-    await deleteDoc(doc(db, `despesas_${currentUser.uid}`, id));
+    await deleteDoc(docIn(currentUser.uid, 'despesas', id));
     toast('Lançamento removido.', '');
   } catch(e) { toast('Erro ao excluir.', 'error'); }
 };
