@@ -181,8 +181,9 @@
 
 <script type="module">
   import { db, auth } from './firebase.js';
+  import { col, docIn } from './db-paths.js';
   import {
-    collection, addDoc, onSnapshot, doc, deleteDoc
+    addDoc, onSnapshot, deleteDoc
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   function showToast(msg, type = '') {
@@ -200,7 +201,7 @@
   auth.onAuthStateChanged(user => {
     if (!user) { location.href = 'index.html'; return; }
 
-    const colRef = collection(db, `produtos_${user.uid}`);
+    const colRef = col(user.uid, 'cardapio');
 
     document.getElementById('btn-salvar').onclick = async () => {
       const nome  = document.getElementById('nome').value.trim();
@@ -269,7 +270,7 @@
 
         div.querySelector('button').onclick = async () => {
           if (confirm(`Excluir "${p.nome}" do cardápio?`)) {
-            await deleteDoc(doc(db, `produtos_${user.uid}`, pDoc.id));
+            await deleteDoc(docIn(user.uid, 'cardapio', pDoc.id));
             showToast(`"${p.nome}" removido.`, '');
           }
         };
