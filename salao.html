@@ -244,7 +244,8 @@
 
 <script type="module">
   import { db, auth } from './firebase.js';
-  import { collection, onSnapshot, doc, getDoc, setDoc } from
+  import { col, docIn } from './db-paths.js';
+  import { onSnapshot, getDoc, setDoc } from
     "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
   import { signOut } from
     "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -318,8 +319,8 @@
     const elSair = document.getElementById('btn-sair'); if(elSair) elSair.onclick = fnSair;
     document.getElementById('btn-sair-mobile').onclick = fnSair;
 
-    const configRef = doc(db, `config_${user.uid}`, 'salao');
-    const mesasRef  = collection(db, `mesas_${user.uid}`);
+    const configRef = docIn(user.uid, 'config', 'salao');
+    const mesasRef  = col(user.uid, 'mesas');
 
     try {
       const snap = await getDoc(configRef);
