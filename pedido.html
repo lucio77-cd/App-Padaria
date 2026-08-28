@@ -270,9 +270,10 @@
 
 <script type="module">
   import { db, auth } from './firebase.js';
+  import { col, docIn } from './db-paths.js';
   import {
-    doc, onSnapshot, updateDoc, arrayUnion, runTransaction,
-    collection, getDocs, getDoc, setDoc, increment, query, where
+    onSnapshot, updateDoc, arrayUnion, runTransaction,
+    getDocs, getDoc, setDoc, increment, query, where
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const params = new URLSearchParams(window.location.search);
@@ -302,7 +303,8 @@
     if (!user) { location.href = 'index.html'; return; }
     if (!mesaId) { showToast('Mesa não identificada!', 'error'); return; }
 
-    const mesaRef = doc(db, `mesas_${user.uid}`, `mesa_${mesaId}`);
+    // Frente 0.1 — era doc(db, `mesas_${user.uid}`, `mesa_${mesaId}`)
+    const mesaRef = docIn(user.uid, 'mesas', `mesa_${mesaId}`);
 
     // TOTAL EM TEMPO REAL + ITENS
     onSnapshot(mesaRef, snap => {
@@ -337,8 +339,9 @@
       document.getElementById('campo-codigo').disabled = true;
 
       try {
+        // Frente 0.1 — era collection(db, `estoque_${user.uid}`)
         const estoqueSnap = await getDocs(
-          query(collection(db, `estoque_${user.uid}`), where('codigo', '==', codigo))
+          query(col(user.uid, 'estoque'), where('codigo', '==', codigo))
         );
 
         if (estoqueSnap.empty) {
@@ -346,7 +349,8 @@
           return;
         }
 
-        const eRef = doc(db, `estoque_${user.uid}`, estoqueSnap.docs[0].id);
+        // Frente 0.1 — era doc(db, `estoque_${user.uid}`, id)
+        const eRef = docIn(user.uid, 'estoque', estoqueSnap.docs[0].id);
         let precoVendido = 0, nomeVendido = '';
 
         // Transação: lê estoque + mesa, decide, e grava os dois juntos.
@@ -433,8 +437,8 @@
     });
 
     // ══════════════════════════════════════════════
-    // CARDÁPIO — combina produtos_${uid} (Cardápio puro,
-    // sem controle de estoque) + estoque_${uid} com
+    // CARDÁPIO — combina cardapio/{uid} (Cardápio puro,
+    // sem controle de estoque) + estoque/{uid} com
     // vendeSalao === true (desconta estoque ao vender)
     // ══════════════════════════════════════════════
     const cardapioDiv = document.getElementById('lista-cardapio');
@@ -442,9 +446,10 @@
     async function carregarCardapio() {
       cardapioDiv.innerHTML = '<div style="color:var(--text-muted); font-size:0.85rem; grid-column:1/-1;">Carregando cardápio...</div>';
 
+      // Frente 0.1 — era produtos_${user.uid} e estoque_${user.uid}
       const [pSnap, eSnap] = await Promise.all([
-        getDocs(collection(db, `produtos_${user.uid}`)),
-        getDocs(query(collection(db, `estoque_${user.uid}`), where('vendeSalao', '==', true)))
+        getDocs(col(user.uid, 'cardapio')),
+        getDocs(query(col(user.uid, 'estoque'), where('vendeSalao', '==', true)))
       ]);
 
       cardapioDiv.innerHTML = '';
@@ -457,7 +462,7 @@
         return;
       }
 
-      // ─── Botões vindos do Cardápio puro (produtos_${uid}) ───
+      // ─── Botões vindos do Cardápio puro (cardapio/{uid}) ───
       // Não têm controle de estoque: clicar apenas adiciona à mesa.
       pSnap.forEach(pDoc => {
         const p = pDoc.data();
@@ -555,7 +560,8 @@
           btn.disabled = true;
 
           try {
-            const eRef = doc(db, `estoque_${user.uid}`, estoqueId);
+            // Frente 0.1 — era doc(db, `estoque_${user.uid}`, estoqueId)
+            const eRef = docIn(user.uid, 'estoque', estoqueId);
 
             // Transação: recheca estoque real + grava mesa juntos, atômico.
             await runTransaction(db, async (tx) => {
