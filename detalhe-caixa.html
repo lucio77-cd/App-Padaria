@@ -227,9 +227,9 @@
 
 <script type="module">
   import { db, auth } from './firebase.js';
+  import { col, docIn, novoDocIn } from './db-paths.js';
   import {
-    doc, onSnapshot, updateDoc, getDoc,
-    addDoc, collection, serverTimestamp
+    onSnapshot, serverTimestamp, runTransaction
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const mesaId = new URLSearchParams(window.location.search).get('mesa');
@@ -266,7 +266,7 @@
     if (!user) { location.href = 'index.html'; return; }
     if (!mesaId) { location.href = 'caixa.html'; return; }
 
-    const mesaRef = doc(db, `mesas_${user.uid}`, `mesa_${mesaId}`);
+    const mesaRef = docIn(user.uid, 'mesas', `mesa_${mesaId}`);
 
     // BUG CORRIGIDO: flag para evitar alert em loop
     let redirecionado = false;
@@ -327,30 +327,48 @@
       btn.textContent = 'Processando...';
 
       try {
-        const agora    = Date.now();
-        const abertoEm = window._abertoEm || agora;
-        const duracaoMin = Math.round((agora - abertoEm) / 60000); // minutos
+        const agora = Date.now();
 
-        // Correção Viagem 5: usa o getDoc já importado no topo,
-        // em vez de reimportar o módulo inteiro do Firestore dentro do clique.
-        const mesaSnap = await getDoc(mesaRef);
-        await addDoc(collection(db, `vendas_${user.uid}`), {
-          valor:       totalAtual,
-          mesa:        mesaId,
-          data:        serverTimestamp(),
-          abertoEm:    abertoEm,
-          fechadoEm:   agora,
-          duracaoMin:  duracaoMin,
-          itens:       mesaSnap.data()?.itens || []
+        // Frente 2 (Cap. 3): leitura da mesa + criação da venda + limpeza
+        // da mesa agora acontecem dentro de uma única transação. Antes,
+        // getDoc/addDoc/updateDoc eram três chamadas separadas — se outro
+        // dispositivo adicionasse um item entre a leitura e a gravação,
+        // a venda podia registrar um valor já desatualizado (Cap. 3, 3.4).
+        await runTransaction(db, async (tx) => {
+          const mesaSnap = await tx.get(mesaRef);
+          if (!mesaSnap.exists() || !mesaSnap.data().ocupada) {
+            throw new Error('mesa-ja-liberada');
+          }
+
+          const dataAtual   = mesaSnap.data();
+          const totalReal   = dataAtual.total || 0;
+          const itensReais  = dataAtual.itens || [];
+          const abertoEm    = dataAtual.abertoEm || agora;
+          const duracaoMin  = Math.round((agora - abertoEm) / 60000);
+
+          const vendaRef = novoDocIn(user.uid, 'vendas');
+          tx.set(vendaRef, {
+            valor:      totalReal,
+            mesa:       mesaId,
+            data:       serverTimestamp(),
+            abertoEm:   abertoEm,
+            fechadoEm:  agora,
+            duracaoMin: duracaoMin,
+            itens:      itensReais
+          });
+
+          tx.update(mesaRef, { ocupada: false, total: 0, itens: [], abertoEm: null });
         });
-
-        // 2. Limpa a mesa
-        await updateDoc(mesaRef, { ocupada: false, total: 0, itens: [], abertoEm: null });
 
         showToast('✅ Pagamento finalizado!', 'success');
         setTimeout(() => location.href = 'caixa.html', 1200);
       } catch (e) {
-        showToast('Erro ao finalizar. Tente novamente.', 'error');
+        if (e.message === 'mesa-ja-liberada') {
+          showToast('Esta mesa já foi finalizada em outro dispositivo.', '');
+          setTimeout(() => location.href = 'caixa.html', 1200);
+        } else {
+          showToast('Erro ao finalizar. Tente novamente.', 'error');
+        }
         btn.disabled = false;
         btn.textContent = '✅ Finalizar Pagamento';
       }
