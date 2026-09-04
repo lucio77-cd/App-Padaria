@@ -75,6 +75,13 @@
     .chart-legendas span { display:flex; align-items:center; gap:6px; }
     .chart-legendas i { width:12px; height:12px; border-radius:3px; display:inline-block; }
 
+    .pe-destaque {
+      background:linear-gradient(135deg,#4C1D95,#7C3AED); border-radius:var(--radius-md);
+      padding:14px 16px; color:#fff; margin-bottom:14px; text-align:center;
+    }
+    .pe-destaque .pe-linha { font-size:.68rem; opacity:.75; letter-spacing:.02em; margin-bottom:4px; }
+    .pe-destaque .pe-num   { font-size:1.4rem; font-weight:800; }
+
     @media(max-width:768px){
       .f2 { grid-template-columns:1fr; }
       .f2 .full { grid-column:1; }
@@ -227,11 +234,16 @@
       <div class="chart-card">
         <div class="form-card-title" style="margin-bottom:4px;">📈 Receita x Custo</div>
         <div class="form-card-desc">Onde a linha de receita cruza a de custo total é o seu ponto de equilíbrio.</div>
+        <div class="pe-destaque" id="pe-destaque">
+          <div class="pe-linha">Custos Fixos ÷ Margem de Contribuição unitária = Ponto de Equilíbrio</div>
+          <div class="pe-num" id="pe-num">—</div>
+        </div>
         <canvas id="grafico-equilibrio" height="220"></canvas>
         <div class="chart-legendas">
-          <span><i style="background:#059669;"></i> Receita</span>
-          <span><i style="background:#DC2626;"></i> Custo total</span>
-          <span><i style="background:#F59E0B;"></i> Custo fixo (mínimo pra ficar aberto)</span>
+          <span><i style="background:#059669;"></i> Receita Total</span>
+          <span><i style="background:#DC2626;"></i> Custo Total</span>
+          <span><i style="background:#F59E0B;"></i> Custos Fixos (mínimo pra ficar aberto)</span>
+          <span><i style="background:#7C3AED;border-radius:50%;"></i> Ponto de Equilíbrio</span>
         </div>
       </div>
 
@@ -413,29 +425,29 @@ async function carregarVendasEsperadas(uid) {
 let chart = null;
 function atualizarGrafico(custoFixoMensal, vendasEmpate, vendasMeta) {
   const maxX = Math.max(vendasMeta, vendasEmpate, 10) * 1.4;
-  const passos = 12;
-  const labels = [];
+  const passos = 20;
   const receita = [];
   const custoTotal = [];
   const custoFixoLinha = [];
 
   for (let i = 0; i <= passos; i++) {
     const vendas = (maxX / passos) * i;
-    labels.push(Math.round(vendas));
-    receita.push(vendas * ticketMedioAuto);
-    custoTotal.push(custoFixoMensal + vendas * custoVariavelAuto);
-    custoFixoLinha.push(custoFixoMensal);
+    receita.push({ x: vendas, y: vendas * ticketMedioAuto });
+    custoTotal.push({ x: vendas, y: custoFixoMensal + vendas * custoVariavelAuto });
+    custoFixoLinha.push({ x: vendas, y: custoFixoMensal });
   }
+
+  const pontoEquilibrio = [{ x: vendasEmpate, y: custoFixoMensal + vendasEmpate * custoVariavelAuto }];
 
   if (chart) chart.destroy();
   chart = new Chart($('grafico-equilibrio').getContext('2d'), {
     type: 'line',
     data: {
-      labels,
       datasets: [
-        { label: 'Receita', data: receita, borderColor: '#059669', backgroundColor: 'transparent', tension: .2, pointRadius: 0 },
-        { label: 'Custo total', data: custoTotal, borderColor: '#DC2626', backgroundColor: 'transparent', tension: .2, pointRadius: 0 },
-        { label: 'Custo fixo', data: custoFixoLinha, borderColor: '#F59E0B', borderDash: [6,4], backgroundColor: 'transparent', pointRadius: 0 },
+        { type: 'line', label: 'Receita Total', data: receita, borderColor: '#059669', backgroundColor: 'transparent', tension: .15, pointRadius: 0 },
+        { type: 'line', label: 'Custo Total', data: custoTotal, borderColor: '#DC2626', backgroundColor: 'transparent', tension: .15, pointRadius: 0 },
+        { type: 'line', label: 'Custos Fixos', data: custoFixoLinha, borderColor: '#F59E0B', borderDash: [6,4], backgroundColor: 'transparent', pointRadius: 0 },
+        { type: 'scatter', label: 'Ponto de Equilíbrio', data: pontoEquilibrio, backgroundColor: '#7C3AED', borderColor: '#7C3AED', pointRadius: 7, pointHoverRadius: 9 },
       ]
     },
     options: {
@@ -445,7 +457,7 @@ function atualizarGrafico(custoFixoMensal, vendasEmpate, vendasMeta) {
         tooltip: { callbacks: { label: c => `${c.dataset.label}: ${fmt(c.parsed.y)}` } }
       },
       scales: {
-        x: { title: { display: true, text: 'Vendas no mês', font:{size:10} }, ticks:{font:{size:9}} },
+        x: { type: 'linear', title: { display: true, text: 'Unidades vendidas por mês', font:{size:10} }, ticks:{font:{size:9}} },
         y: { beginAtZero: true, ticks: { font:{size:9}, callback: v => 'R$'+v } }
       }
     }
@@ -476,6 +488,7 @@ function calcular() {
   if (ticketMedioAuto <= 0 || qtdProdutosBase === 0) {
     resEmpateEl.innerHTML = '<div class="rc-vazio">Cadastre produtos no Cardápio ou Estoque pra ver o resultado.</div>';
     resMetaEl.innerHTML   = '<div class="rc-vazio">Cadastre produtos no Cardápio ou Estoque pra ver o resultado.</div>';
+    $('pe-num').textContent = '—';
     atualizarGrafico(custoFixoMensal, 0, 0);
     return;
   }
@@ -484,6 +497,7 @@ function calcular() {
   if (margemRS <= 0) {
     resEmpateEl.innerHTML = '<div class="rc-vazio">Corrija a margem acima — com o custo maior que o preço, nenhuma venda gera lucro.</div>';
     resMetaEl.innerHTML   = '<div class="rc-vazio">Corrija a margem acima antes de calcular a meta.</div>';
+    $('pe-num').textContent = '—';
     atualizarGrafico(custoFixoMensal, 0, 0);
     return;
   }
@@ -494,6 +508,8 @@ function calcular() {
   const vendasDiaEmpate = dias > 0 ? vendasMesEmpate / dias : 0;
   const fatDiaEmpate = dias > 0 ? fatMesEmpate / dias : 0;
   const clientesHoraEmpate = horas > 0 ? vendasDiaEmpate / horas : 0;
+
+  $('pe-num').textContent = `${fmt(custoFixoMensal)} ÷ ${fmt(margemRS)} = ${Math.ceil(vendasMesEmpate)} unidades/mês`;
 
   resEmpateEl.innerHTML = `
     <div class="rc-linha"><span class="rl-desc">Faturamento necessário / mês</span><span class="rl-val">${fmt(fatMesEmpate)}</span></div>
