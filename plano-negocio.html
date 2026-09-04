@@ -7,16 +7,29 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     .form-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius-md); padding:18px 20px; margin-bottom:18px; box-shadow:var(--shadow-sm); }
     .form-card-title { font-size:.72rem; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--text-muted); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+    .form-card-desc { font-size:.78rem; color:var(--text-muted); margin:-8px 0 14px; line-height:1.5; }
     .f2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
     .f2 .full { grid-column:1/-1; }
     .subtotal-row {
       display:flex; justify-content:space-between; align-items:center;
       background:var(--bg); border-radius:var(--radius-sm); padding:10px 14px;
-      margin-top:4px; font-size:.85rem; font-weight:700; color:var(--navy);
+      margin-top:10px; font-size:.85rem; font-weight:700; color:var(--navy);
     }
+
+    /* VENDAS ESPERADAS (AUTOMÁTICO) */
+    .auto-box { background:var(--bg); border:1.5px dashed var(--border); border-radius:var(--radius-md); padding:14px 16px; }
+    .auto-box .ab-fonte { font-size:.72rem; color:var(--text-muted); margin-bottom:10px; }
+    .auto-box .ab-linha { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border); }
+    .auto-box .ab-linha:last-child { border-bottom:none; }
+    .auto-box .ab-desc { font-size:.8rem; color:var(--text-muted); }
+    .auto-box .ab-val  { font-size:.9rem; font-weight:800; color:var(--navy); }
+    .auto-box.vazio { text-align:center; padding:24px 16px; }
+    .auto-box.vazio p { font-size:.82rem; color:var(--text-muted); line-height:1.6; }
+    .auto-box.vazio a { color:var(--amber-dark); font-weight:700; }
 
     .aviso-margem {
       background:#FEF3C7; border:1px solid #FCD34D; color:#92400E;
@@ -25,11 +38,22 @@
     }
     .aviso-margem.show { display:block; }
 
+    /* DIAS DA SEMANA */
+    .dias-chips { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
+    .dia-chip {
+      padding:9px 0; width:44px; text-align:center; border-radius:999px; border:1.5px solid var(--border);
+      font-size:.75rem; font-weight:700; cursor:pointer; background:var(--card); color:var(--text-muted);
+      transition:all .15s; user-select:none;
+    }
+    .dia-chip.ativo { background:var(--navy); color:#fff; border-color:var(--navy); }
+
+    .pct-slider-row { display:flex; align-items:center; gap:14px; }
+    .pct-slider-row input[type="range"] { flex:1; }
+    .pct-valor { font-size:1.3rem; font-weight:800; color:var(--navy); min-width:64px; text-align:right; }
+
     /* RESULTADOS */
     .resultados-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:16px; }
-    .resultado-card {
-      border-radius:var(--radius-lg); padding:20px; color:#fff;
-    }
+    .resultado-card { border-radius:var(--radius-lg); padding:20px; color:#fff; }
     .resultado-card.empate { background:linear-gradient(135deg,var(--navy) 0%,#0F3460 100%); }
     .resultado-card.meta   { background:linear-gradient(135deg,#065F46,#059669); }
     .resultado-card .rc-label { font-size:.65rem; opacity:.65; letter-spacing:.08em; text-transform:uppercase; margin-bottom:12px; }
@@ -37,24 +61,25 @@
     .rc-linha:last-child { border-bottom:none; }
     .rc-linha .rl-desc { font-size:.75rem; opacity:.75; }
     .rc-linha .rl-val  { font-size:1.05rem; font-weight:800; }
+    .rc-linha.destaque .rl-val { color:var(--amber); }
     .rc-vazio { font-size:.8rem; opacity:.7; line-height:1.5; padding:8px 0; }
 
-    .payback-card {
-      background:linear-gradient(135deg,#7C2D12,#C2410C);
-      border-radius:var(--radius-md); padding:16px 18px; color:#fff;
-      display:flex; justify-content:space-between; align-items:center; gap:14px;
-      margin-bottom:20px;
+    .funcionamento-info {
+      display:flex; gap:14px; flex-wrap:wrap; background:var(--bg); border-radius:var(--radius-sm);
+      padding:10px 14px; margin-top:10px; font-size:.78rem; color:var(--text-muted);
     }
-    .payback-card .pc-label { font-size:.65rem; opacity:.7; letter-spacing:.05em; text-transform:uppercase; margin-bottom:4px; }
-    .payback-card .pc-desc  { font-size:.72rem; opacity:.85; max-width:260px; }
-    .payback-card .pc-num   { font-size:1.9rem; font-weight:800; line-height:1; }
-    .payback-card .pc-sub   { font-size:.65rem; opacity:.8; margin-top:2px; }
+    .funcionamento-info b { color:var(--navy); }
+
+    .chart-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius-md); padding:18px 20px; margin-bottom:18px; box-shadow:var(--shadow-sm); }
+    .chart-legendas { display:flex; gap:16px; flex-wrap:wrap; margin-top:12px; font-size:.75rem; color:var(--text-muted); }
+    .chart-legendas span { display:flex; align-items:center; gap:6px; }
+    .chart-legendas i { width:12px; height:12px; border-radius:3px; display:inline-block; }
 
     @media(max-width:768px){
       .f2 { grid-template-columns:1fr; }
       .f2 .full { grid-column:1; }
       .resultados-grid { grid-template-columns:1fr; }
-      .payback-card { flex-direction:column; align-items:flex-start; }
+      .dia-chip { width:38px; padding:8px 0; font-size:.68rem; }
     }
   </style>
 </head>
@@ -86,7 +111,6 @@
 
       <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:18px;line-height:1.5;">
         Simule quanto você precisa vender por dia, com base no que pretende investir e gastar todo mês.
-        Os números aqui são estimativas suas — não dependem de nenhuma venda ou despesa já cadastrada no sistema.
       </p>
 
       <!-- INVESTIMENTO INICIAL -->
@@ -94,16 +118,16 @@
         <div class="form-card-title">💰 Investimento Inicial (uma vez só)</div>
         <div class="f2">
           <div class="form-group">
-            <label class="form-label">Reforma / Equipamentos (R$)</label>
-            <input type="number" id="inv-reforma" class="form-input" placeholder="0.00" step="0.01" min="0">
+            <label class="form-label">Reforma / Equipamentos</label>
+            <input type="text" inputmode="decimal" id="inv-reforma" class="form-input moeda" placeholder="R$ 0,00">
           </div>
           <div class="form-group">
-            <label class="form-label">Estoque inicial (R$)</label>
-            <input type="number" id="inv-estoque" class="form-input" placeholder="0.00" step="0.01" min="0">
+            <label class="form-label">Estoque inicial</label>
+            <input type="text" inputmode="decimal" id="inv-estoque" class="form-input moeda" placeholder="R$ 0,00">
           </div>
           <div class="form-group full">
-            <label class="form-label">Outros gastos de abertura (R$)</label>
-            <input type="number" id="inv-outros" class="form-input" placeholder="0.00" step="0.01" min="0">
+            <label class="form-label">Outros gastos de abertura</label>
+            <input type="text" inputmode="decimal" id="inv-outros" class="form-input moeda" placeholder="R$ 0,00">
           </div>
         </div>
         <div class="subtotal-row">
@@ -112,25 +136,33 @@
         </div>
       </div>
 
-      <!-- CUSTOS FIXOS MENSAIS -->
+      <!-- CUSTOS FIXOS MENSAIS (campos separados) -->
       <div class="form-card">
         <div class="form-card-title">🏠 Custos Fixos Mensais</div>
         <div class="f2">
           <div class="form-group">
-            <label class="form-label">Aluguel (R$/mês)</label>
-            <input type="number" id="cf-aluguel" class="form-input" placeholder="0.00" step="0.01" min="0">
+            <label class="form-label">Aluguel</label>
+            <input type="text" inputmode="decimal" id="cf-aluguel" class="form-input moeda" placeholder="R$ 0,00">
           </div>
           <div class="form-group">
-            <label class="form-label">Funcionários (R$/mês)</label>
-            <input type="number" id="cf-funcionarios" class="form-input" placeholder="0.00" step="0.01" min="0">
+            <label class="form-label">Água</label>
+            <input type="text" inputmode="decimal" id="cf-agua" class="form-input moeda" placeholder="R$ 0,00">
           </div>
           <div class="form-group">
-            <label class="form-label">Contas (água, luz, internet...) (R$/mês)</label>
-            <input type="number" id="cf-contas" class="form-input" placeholder="0.00" step="0.01" min="0">
+            <label class="form-label">Luz</label>
+            <input type="text" inputmode="decimal" id="cf-luz" class="form-input moeda" placeholder="R$ 0,00">
           </div>
           <div class="form-group">
-            <label class="form-label">Outros custos fixos (R$/mês)</label>
-            <input type="number" id="cf-outros" class="form-input" placeholder="0.00" step="0.01" min="0">
+            <label class="form-label">Internet</label>
+            <input type="text" inputmode="decimal" id="cf-internet" class="form-input moeda" placeholder="R$ 0,00">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Funcionários</label>
+            <input type="text" inputmode="decimal" id="cf-funcionarios" class="form-input moeda" placeholder="R$ 0,00">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Outros custos fixos</label>
+            <input type="text" inputmode="decimal" id="cf-outros" class="form-input moeda" placeholder="R$ 0,00">
           </div>
         </div>
         <div class="subtotal-row">
@@ -139,44 +171,42 @@
         </div>
       </div>
 
-      <!-- VENDAS ESPERADAS -->
+      <!-- VENDAS ESPERADAS (AUTOMÁTICO, com mediana) -->
       <div class="form-card">
         <div class="form-card-title">🧾 Vendas Esperadas</div>
-        <div class="f2">
-          <div class="form-group">
-            <label class="form-label">Ticket médio esperado (R$)</label>
-            <input type="number" id="ve-ticket" class="form-input" placeholder="Ex: 18.00" step="0.01" min="0">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Custo variável médio por venda (R$)</label>
-            <input type="number" id="ve-custovar" class="form-input" placeholder="Ex: 7.00" step="0.01" min="0">
-          </div>
-        </div>
-        <div class="subtotal-row">
-          <span>Margem de contribuição</span>
-          <span id="sub-margem">R$ 0,00 (0%)</span>
-        </div>
-        <div class="aviso-margem" id="aviso-margem">
-          ⚠️ Com esses números, cada venda perde dinheiro (o custo variável é maior ou igual ao ticket médio).
-          Revise o preço ou o custo antes de continuar — nenhuma quantidade de vendas vai cobrir os custos fixos assim.
+        <div id="auto-vendas" class="auto-box vazio">
+          <p>Carregando produtos cadastrados...</p>
         </div>
       </div>
 
-      <!-- META -->
+      <!-- FUNCIONAMENTO -->
       <div class="form-card">
-        <div class="form-card-title">🎯 Sua Meta</div>
+        <div class="form-card-title">🕐 Funcionamento</div>
+        <label class="form-label">Dias que funciona</label>
+        <div class="dias-chips" id="dias-chips"><!-- gerado por JS --></div>
         <div class="f2">
           <div class="form-group">
-            <label class="form-label">Lucro mensal desejado (R$)</label>
-            <input type="number" id="meta-lucro" class="form-input" placeholder="Ex: 3000.00" step="0.01" min="0">
+            <label class="form-label">Horário de abertura</label>
+            <input type="time" id="hr-abertura" class="form-input" value="08:00">
           </div>
           <div class="form-group">
-            <label class="form-label">Dias de funcionamento por mês</label>
-            <input type="number" id="meta-dias" class="form-input" placeholder="26" step="1" min="1" max="31" value="26">
+            <label class="form-label">Horário de fechamento</label>
+            <input type="time" id="hr-fechamento" class="form-input" value="18:00">
           </div>
         </div>
-        <div class="full" style="margin-top:4px;">
-          <button id="btn-salvar" class="btn btn-primary btn-lg btn-full">💾 Salvar e Calcular</button>
+        <div class="funcionamento-info" id="funcionamento-info"></div>
+      </div>
+
+      <!-- SUA META -->
+      <div class="form-card">
+        <div class="form-card-title">🎯 Sua Meta</div>
+        <div class="form-card-desc">Em vez de chutar um valor de lucro, diz o quanto acima do ponto de equilíbrio você espera vender — o lucro é calculado a partir disso.</div>
+        <div class="pct-slider-row">
+          <input type="range" id="pct-meta" min="0" max="100" step="5" value="20">
+          <span class="pct-valor" id="pct-meta-val">20%</span>
+        </div>
+        <div class="full" style="margin-top:14px;">
+          <button id="btn-salvar" class="btn btn-primary btn-lg btn-full">💾 Salvar Plano</button>
         </div>
         <p id="msg-salvo" style="font-size:.78rem;color:var(--text-muted);margin-top:8px;min-height:16px;text-align:center;"></p>
       </div>
@@ -185,26 +215,23 @@
       <div class="resultados-grid">
         <div class="resultado-card empate">
           <div class="rc-label">Pra empatar (ponto de equilíbrio)</div>
-          <div id="res-empate">
-            <div class="rc-vazio">Preencha o ticket médio e o custo variável acima pra ver o resultado.</div>
-          </div>
+          <div id="res-empate"><div class="rc-vazio">Cadastre produtos no Cardápio ou Estoque pra ver o resultado.</div></div>
         </div>
         <div class="resultado-card meta">
-          <div class="rc-label">Pra bater sua meta de lucro</div>
-          <div id="res-meta">
-            <div class="rc-vazio">Defina uma meta de lucro mensal acima pra ver o resultado.</div>
-          </div>
+          <div class="rc-label">Vendendo acima do equilíbrio</div>
+          <div id="res-meta"><div class="rc-vazio">Cadastre produtos no Cardápio ou Estoque pra ver o resultado.</div></div>
         </div>
       </div>
 
-      <div class="payback-card">
-        <div class="pc-left">
-          <div class="pc-label">⏳ Payback</div>
-          <div class="pc-desc" id="payback-desc">Quantos meses até o lucro recuperar o que você investiu no início.</div>
-        </div>
-        <div style="text-align:right;flex-shrink:0;">
-          <div class="pc-num" id="payback-num">—</div>
-          <div class="pc-sub" id="payback-sub">meses</div>
+      <!-- GRÁFICO -->
+      <div class="chart-card">
+        <div class="form-card-title" style="margin-bottom:4px;">📈 Receita x Custo</div>
+        <div class="form-card-desc">Onde a linha de receita cruza a de custo total é o seu ponto de equilíbrio.</div>
+        <canvas id="grafico-equilibrio" height="220"></canvas>
+        <div class="chart-legendas">
+          <span><i style="background:#059669;"></i> Receita</span>
+          <span><i style="background:#DC2626;"></i> Custo total</span>
+          <span><i style="background:#F59E0B;"></i> Custo fixo (mínimo pra ficar aberto)</span>
         </div>
       </div>
 
@@ -229,9 +256,10 @@
 
 <script type="module">
 import { db, auth } from './firebase.js';
-import { docIn } from './db-paths.js';
-import { getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { col, docIn } from './db-paths.js';
+import { getDoc, getDocs, setDoc, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+const $ = id => document.getElementById(id);
 function toast(msg, type='') {
   const el = document.createElement('div');
   el.className = `toast ${type}`; el.textContent = msg;
@@ -239,116 +267,301 @@ function toast(msg, type='') {
   setTimeout(() => el.remove(), 3000);
 }
 
-const $ = id => document.getElementById(id);
-const num = id => parseFloat($(id).value) || 0;
-const fmt = v => `R$ ${v.toFixed(2)}`;
+// ══════════════════════════════════════════════
+// MÁSCARA DE MOEDA — formata em R$ enquanto digita
+// (29000 vira "29.000,00" na hora, sem ambiguidade de zero)
+// ══════════════════════════════════════════════
+function aplicarMascaraMoeda(input) {
+  input.dataset.valor = input.dataset.valor || '0';
+  input.addEventListener('input', () => {
+    const digitos = input.value.replace(/\D/g, '');
+    const val = digitos ? parseInt(digitos, 10) / 100 : 0;
+    input.dataset.valor = String(val);
+    input.value = val === 0 ? '' : val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    calcular();
+  });
+}
+function setValorMoeda(input, val) {
+  const v = parseFloat(val) || 0;
+  input.dataset.valor = String(v);
+  input.value = v === 0 ? '' : v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function moeda(input) { return parseFloat(input.dataset.valor || '0') || 0; }
+function fmt(v) { return `R$ ${(v||0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; }
 
-const CAMPOS = [
-  'inv-reforma','inv-estoque','inv-outros',
-  'cf-aluguel','cf-funcionarios','cf-contas','cf-outros',
-  've-ticket','ve-custovar',
-  'meta-lucro','meta-dias'
-];
+const CAMPOS_INVEST = ['inv-reforma','inv-estoque','inv-outros'];
+const CAMPOS_CUSTO_FIXO = ['cf-aluguel','cf-agua','cf-luz','cf-internet','cf-funcionarios','cf-outros'];
+[...CAMPOS_INVEST, ...CAMPOS_CUSTO_FIXO].forEach(id => aplicarMascaraMoeda($(id)));
 
+// ══════════════════════════════════════════════
+// MEDIANA — usada em vez da média simples, pra não deixar
+// um item caro isolado (ex: bolo inteiro) puxar o resultado
+// pra cima e gerar um ticket médio irreal.
+// ══════════════════════════════════════════════
+function mediana(valores) {
+  if (!valores.length) return 0;
+  const s = [...valores].sort((a,b) => a-b);
+  const meio = Math.floor(s.length / 2);
+  return s.length % 2 !== 0 ? s[meio] : (s[meio-1] + s[meio]) / 2;
+}
+
+// ══════════════════════════════════════════════
+// DIAS DA SEMANA
+// ══════════════════════════════════════════════
+const DIAS = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+let diasSelecionados = [1,1,1,1,1,1,1]; // todos ativos por padrão
+
+function renderDias() {
+  $('dias-chips').innerHTML = DIAS.map((d, i) => `
+    <div class="dia-chip${diasSelecionados[i] ? ' ativo' : ''}" data-i="${i}">${d}</div>
+  `).join('');
+  document.querySelectorAll('.dia-chip').forEach(chip => {
+    chip.onclick = () => {
+      const i = parseInt(chip.dataset.i);
+      diasSelecionados[i] = diasSelecionados[i] ? 0 : 1;
+      renderDias();
+      calcular();
+    };
+  });
+}
+renderDias();
+
+$('hr-abertura').addEventListener('input', calcular);
+$('hr-fechamento').addEventListener('input', calcular);
+
+function horasFuncionamento() {
+  const [hA, mA] = $('hr-abertura').value.split(':').map(Number);
+  const [hF, mF] = $('hr-fechamento').value.split(':').map(Number);
+  if (isNaN(hA) || isNaN(hF)) return 0;
+  let minutos = (hF * 60 + mF) - (hA * 60 + mA);
+  if (minutos <= 0) minutos += 24 * 60; // fechamento depois da meia-noite
+  return minutos / 60;
+}
+
+function diasPorMes() {
+  const diasAtivos = diasSelecionados.reduce((a,b) => a+b, 0);
+  return diasAtivos * 4.345; // média de semanas por mês
+}
+
+// ══════════════════════════════════════════════
+// PERCENTUAL ACIMA DO EQUILÍBRIO
+// ══════════════════════════════════════════════
+$('pct-meta').addEventListener('input', () => {
+  $('pct-meta-val').textContent = `${$('pct-meta').value}%`;
+  calcular();
+});
+
+// ══════════════════════════════════════════════
+// VENDAS ESPERADAS — automático (mediana), a partir de Cardápio + Estoque
+// ══════════════════════════════════════════════
+const CMV_FALLBACK_PCT = 0.4; // mesma convenção já usada em financeiro.html
+let ticketMedioAuto = 0;
+let custoVariavelAuto = 0;
+let qtdProdutosBase = 0;
+
+async function carregarVendasEsperadas(uid) {
+  const [cardapioSnap, estoqueSnap] = await Promise.all([
+    getDocs(col(uid, 'cardapio')),
+    getDocs(query(col(uid, 'estoque'), where('vendeSalao', '==', true)))
+  ]);
+
+  const precos = [];
+  const custos = [];
+  cardapioSnap.forEach(d => {
+    const p = d.data();
+    if (p.preco > 0) { precos.push(p.preco); custos.push(p.preco * CMV_FALLBACK_PCT); }
+  });
+  estoqueSnap.forEach(d => {
+    const p = d.data();
+    if (p.preco > 0) { precos.push(p.preco); custos.push(p.custo > 0 ? p.custo : p.preco * CMV_FALLBACK_PCT); }
+  });
+
+  qtdProdutosBase = precos.length;
+
+  const box = $('auto-vendas');
+  if (precos.length === 0) {
+    ticketMedioAuto = 0;
+    custoVariavelAuto = 0;
+    box.className = 'auto-box vazio';
+    box.innerHTML = `<p>Você ainda não tem produtos cadastrados. Cadastre pelo menos um no <a href="produtos.html">Cardápio</a> ou no <a href="estoque.html">Estoque</a> (marcado pra vender no Salão) pra calcular automaticamente.</p>`;
+    return;
+  }
+
+  // Mediana em vez de média — um bolo caro isolado não distorce mais o resultado
+  ticketMedioAuto = mediana(precos);
+  custoVariavelAuto = mediana(custos);
+  const margemRS = ticketMedioAuto - custoVariavelAuto;
+  const margemPct = ticketMedioAuto > 0 ? (margemRS / ticketMedioAuto) * 100 : 0;
+
+  box.className = 'auto-box';
+  box.innerHTML = `
+    <div class="ab-fonte">Mediana de ${precos.length} produto${precos.length>1?'s':''} cadastrado${precos.length>1?'s':''} no seu Cardápio/Estoque — um item isolado caro ou barato não distorce o resultado</div>
+    <div class="ab-linha"><span class="ab-desc">Ticket médio (mediana)</span><span class="ab-val">${fmt(ticketMedioAuto)}</span></div>
+    <div class="ab-linha"><span class="ab-desc">Custo variável (mediana)</span><span class="ab-val">${fmt(custoVariavelAuto)}</span></div>
+    <div class="ab-linha"><span class="ab-desc">Margem de contribuição</span><span class="ab-val">${fmt(margemRS)} (${margemPct.toFixed(0)}%)</span></div>
+  `;
+
+  const avisoDiv = document.createElement('div');
+  avisoDiv.className = `aviso-margem${margemRS <= 0 ? ' show' : ''}`;
+  avisoDiv.textContent = '⚠️ O custo dos seus produtos está igual ou maior que o preço de venda. Revise os preços ou custos cadastrados antes de continuar.';
+  box.appendChild(avisoDiv);
+}
+
+// ══════════════════════════════════════════════
+// GRÁFICO
+// ══════════════════════════════════════════════
+let chart = null;
+function atualizarGrafico(custoFixoMensal, vendasEmpate, vendasMeta) {
+  const maxX = Math.max(vendasMeta, vendasEmpate, 10) * 1.4;
+  const passos = 12;
+  const labels = [];
+  const receita = [];
+  const custoTotal = [];
+  const custoFixoLinha = [];
+
+  for (let i = 0; i <= passos; i++) {
+    const vendas = (maxX / passos) * i;
+    labels.push(Math.round(vendas));
+    receita.push(vendas * ticketMedioAuto);
+    custoTotal.push(custoFixoMensal + vendas * custoVariavelAuto);
+    custoFixoLinha.push(custoFixoMensal);
+  }
+
+  if (chart) chart.destroy();
+  chart = new Chart($('grafico-equilibrio').getContext('2d'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Receita', data: receita, borderColor: '#059669', backgroundColor: 'transparent', tension: .2, pointRadius: 0 },
+        { label: 'Custo total', data: custoTotal, borderColor: '#DC2626', backgroundColor: 'transparent', tension: .2, pointRadius: 0 },
+        { label: 'Custo fixo', data: custoFixoLinha, borderColor: '#F59E0B', borderDash: [6,4], backgroundColor: 'transparent', pointRadius: 0 },
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => `${c.dataset.label}: ${fmt(c.parsed.y)}` } }
+      },
+      scales: {
+        x: { title: { display: true, text: 'Vendas no mês', font:{size:10} }, ticks:{font:{size:9}} },
+        y: { beginAtZero: true, ticks: { font:{size:9}, callback: v => 'R$'+v } }
+      }
+    }
+  });
+}
+
+// ══════════════════════════════════════════════
+// CÁLCULO PRINCIPAL
+// ══════════════════════════════════════════════
 function calcular() {
-  const investimentoInicial = num('inv-reforma') + num('inv-estoque') + num('inv-outros');
-  const custoFixoMensal     = num('cf-aluguel') + num('cf-funcionarios') + num('cf-contas') + num('cf-outros');
-  const ticketMedio  = num('ve-ticket');
-  const custoVariavel = num('ve-custovar');
-  const lucroDesejado = num('meta-lucro');
-  const diasFunc = num('meta-dias') || 26;
+  const investimentoInicial = CAMPOS_INVEST.reduce((s,id) => s + moeda($(id)), 0);
+  const custoFixoMensal = CAMPOS_CUSTO_FIXO.reduce((s,id) => s + moeda($(id)), 0);
 
   $('sub-investimento').textContent = fmt(investimentoInicial);
-  $('sub-custofixo').textContent    = fmt(custoFixoMensal);
+  $('sub-custofixo').textContent = fmt(custoFixoMensal);
 
-  const margemRS  = ticketMedio - custoVariavel;
-  const margemPct = ticketMedio > 0 ? (margemRS / ticketMedio) * 100 : 0;
-  $('sub-margem').textContent = `${fmt(margemRS)} (${margemPct.toFixed(0)}%)`;
-
-  const margemInvalida = ticketMedio > 0 && margemRS <= 0;
-  $('aviso-margem').classList.toggle('show', margemInvalida);
+  const horas = horasFuncionamento();
+  const dias = diasPorMes();
+  $('funcionamento-info').innerHTML = `
+    <span>📅 <b>${dias.toFixed(1)}</b> dias/mês</span>
+    <span>🕐 <b>${horas.toFixed(1)}</b> horas/dia</span>
+    <span>⏱️ <b>${(horas*dias).toFixed(0)}</b> horas/mês</span>
+  `;
 
   const resEmpateEl = $('res-empate');
   const resMetaEl   = $('res-meta');
-  const paybackNum  = $('payback-num');
-  const paybackSub  = $('payback-sub');
-  const paybackDesc = $('payback-desc');
 
-  if (ticketMedio <= 0) {
-    resEmpateEl.innerHTML = '<div class="rc-vazio">Preencha o ticket médio e o custo variável acima pra ver o resultado.</div>';
-    resMetaEl.innerHTML   = '<div class="rc-vazio">Defina uma meta de lucro mensal acima pra ver o resultado.</div>';
-    paybackNum.textContent = '—';
-    paybackDesc.textContent = 'Preencha o ticket médio pra calcular o payback.';
+  if (ticketMedioAuto <= 0 || qtdProdutosBase === 0) {
+    resEmpateEl.innerHTML = '<div class="rc-vazio">Cadastre produtos no Cardápio ou Estoque pra ver o resultado.</div>';
+    resMetaEl.innerHTML   = '<div class="rc-vazio">Cadastre produtos no Cardápio ou Estoque pra ver o resultado.</div>';
+    atualizarGrafico(custoFixoMensal, 0, 0);
     return;
   }
 
-  if (margemInvalida) {
-    resEmpateEl.innerHTML = '<div class="rc-vazio">Corrija a margem de contribuição acima — com custo variável maior que o ticket médio, não existe quantidade de vendas que cubra os custos.</div>';
-    resMetaEl.innerHTML   = '<div class="rc-vazio">Corrija a margem de contribuição acima antes de calcular a meta.</div>';
-    paybackNum.textContent = '—';
-    paybackDesc.textContent = 'Corrija a margem de contribuição pra calcular o payback.';
+  const margemRS = ticketMedioAuto - custoVariavelAuto;
+  if (margemRS <= 0) {
+    resEmpateEl.innerHTML = '<div class="rc-vazio">Corrija a margem acima — com o custo maior que o preço, nenhuma venda gera lucro.</div>';
+    resMetaEl.innerHTML   = '<div class="rc-vazio">Corrija a margem acima antes de calcular a meta.</div>';
+    atualizarGrafico(custoFixoMensal, 0, 0);
     return;
   }
 
-  // ── PONTO DE EQUILÍBRIO (empate) ──────────────────────────────
-  const fatMesEmpate = custoFixoMensal / (margemPct / 100);
-  const vendasMesEmpate = fatMesEmpate / ticketMedio;
-  const vendasDiaEmpate = vendasMesEmpate / diasFunc;
-  const fatDiaEmpate = fatMesEmpate / diasFunc;
+  // ── PONTO DE EQUILÍBRIO ────────────────────────────────────────
+  const vendasMesEmpate = custoFixoMensal / margemRS;
+  const fatMesEmpate = vendasMesEmpate * ticketMedioAuto;
+  const vendasDiaEmpate = dias > 0 ? vendasMesEmpate / dias : 0;
+  const fatDiaEmpate = dias > 0 ? fatMesEmpate / dias : 0;
+  const clientesHoraEmpate = horas > 0 ? vendasDiaEmpate / horas : 0;
 
   resEmpateEl.innerHTML = `
     <div class="rc-linha"><span class="rl-desc">Faturamento necessário / mês</span><span class="rl-val">${fmt(fatMesEmpate)}</span></div>
     <div class="rc-linha"><span class="rl-desc">Faturamento necessário / dia</span><span class="rl-val">${fmt(fatDiaEmpate)}</span></div>
     <div class="rc-linha"><span class="rl-desc">Vendas necessárias / mês</span><span class="rl-val">${Math.ceil(vendasMesEmpate)}</span></div>
     <div class="rc-linha"><span class="rl-desc">Vendas necessárias / dia</span><span class="rl-val">${Math.ceil(vendasDiaEmpate)}</span></div>
+    <div class="rc-linha destaque"><span class="rl-desc">Clientes necessários / hora</span><span class="rl-val">${clientesHoraEmpate.toFixed(1)}</span></div>
   `;
 
-  // ── META DE LUCRO ──────────────────────────────────────────────
-  if (lucroDesejado > 0) {
-    const fatMesMeta = (custoFixoMensal + lucroDesejado) / (margemPct / 100);
-    const vendasMesMeta = fatMesMeta / ticketMedio;
-    const vendasDiaMeta = vendasMesMeta / diasFunc;
-    const fatDiaMeta = fatMesMeta / diasFunc;
+  // ── VENDENDO ACIMA DO EQUILÍBRIO (lucro calculado, não chutado) ─
+  const pct = parseInt($('pct-meta').value) / 100;
+  const vendasMesMeta = vendasMesEmpate * (1 + pct);
+  const fatMesMeta = vendasMesMeta * ticketMedioAuto;
+  const lucroMensal = (vendasMesMeta - vendasMesEmpate) * margemRS;
+  const vendasDiaMeta = dias > 0 ? vendasMesMeta / dias : 0;
+  const fatDiaMeta = dias > 0 ? fatMesMeta / dias : 0;
+  const clientesHoraMeta = horas > 0 ? vendasDiaMeta / horas : 0;
 
-    resMetaEl.innerHTML = `
-      <div class="rc-linha"><span class="rl-desc">Faturamento necessário / mês</span><span class="rl-val">${fmt(fatMesMeta)}</span></div>
-      <div class="rc-linha"><span class="rl-desc">Faturamento necessário / dia</span><span class="rl-val">${fmt(fatDiaMeta)}</span></div>
-      <div class="rc-linha"><span class="rl-desc">Vendas necessárias / mês</span><span class="rl-val">${Math.ceil(vendasMesMeta)}</span></div>
-      <div class="rc-linha"><span class="rl-desc">Vendas necessárias / dia</span><span class="rl-val">${Math.ceil(vendasDiaMeta)}</span></div>
-    `;
-
-    // ── PAYBACK — só existe se há lucro de verdade sobrando ────
-    if (investimentoInicial > 0) {
-      const meses = investimentoInicial / lucroDesejado;
-      paybackNum.textContent = meses.toFixed(1);
-      paybackSub.textContent = 'meses';
-      paybackDesc.textContent = `Com um lucro de ${fmt(lucroDesejado)}/mês, esse é o tempo pra recuperar os ${fmt(investimentoInicial)} investidos.`;
-    } else {
-      paybackNum.textContent = '—';
-      paybackDesc.textContent = 'Preencha o investimento inicial acima pra calcular o payback.';
-    }
-  } else {
-    resMetaEl.innerHTML = '<div class="rc-vazio">Defina uma meta de lucro mensal acima pra ver o resultado.</div>';
-    paybackNum.textContent = '—';
-    paybackDesc.textContent = 'No ponto de equilíbrio o lucro é zero — defina uma meta de lucro acima pra calcular quanto tempo leva pra recuperar o investimento.';
+  let paybackHtml = '';
+  if (investimentoInicial > 0 && lucroMensal > 0) {
+    const meses = investimentoInicial / lucroMensal;
+    paybackHtml = `<div class="rc-linha"><span class="rl-desc">Payback do investimento</span><span class="rl-val">${meses.toFixed(1)} meses</span></div>`;
   }
+
+  resMetaEl.innerHTML = `
+    <div class="rc-linha"><span class="rl-desc">Faturamento previsto / mês</span><span class="rl-val">${fmt(fatMesMeta)}</span></div>
+    <div class="rc-linha"><span class="rl-desc">Vendas previstas / mês</span><span class="rl-val">${Math.ceil(vendasMesMeta)}</span></div>
+    <div class="rc-linha"><span class="rl-desc">Vendas previstas / dia</span><span class="rl-val">${Math.ceil(vendasDiaMeta)}</span></div>
+    <div class="rc-linha destaque"><span class="rl-desc">Clientes previstos / hora</span><span class="rl-val">${clientesHoraMeta.toFixed(1)}</span></div>
+    <div class="rc-linha"><span class="rl-desc">Lucro mensal esperado</span><span class="rl-val">${fmt(lucroMensal)}</span></div>
+    ${paybackHtml}
+  `;
+
+  atualizarGrafico(custoFixoMensal, vendasMesEmpate, vendasMesMeta);
 }
 
-CAMPOS.forEach(id => $(id).addEventListener('input', calcular));
-
+// ══════════════════════════════════════════════
+// FIREBASE — carregar e salvar
+// ══════════════════════════════════════════════
 auth.onAuthStateChanged(async user => {
   if (!user) { location.href = 'index.html'; return; }
 
-  const planoRef = docIn(user.uid, 'config', 'planoNegocio');
+  await carregarVendasEsperadas(user.uid);
 
+  const planoRef = docIn(user.uid, 'config', 'planoNegocio');
   try {
     const snap = await getDoc(planoRef);
     if (snap.exists()) {
       const d = snap.data();
-      CAMPOS.forEach(id => {
-        const chave = id.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
-        if (d[chave] !== undefined) $(id).value = d[chave];
-      });
+      setValorMoeda($('inv-reforma'), d.investReforma);
+      setValorMoeda($('inv-estoque'), d.investEstoque);
+      setValorMoeda($('inv-outros'), d.investOutros);
+      setValorMoeda($('cf-aluguel'), d.cfAluguel);
+      setValorMoeda($('cf-agua'), d.cfAgua);
+      setValorMoeda($('cf-luz'), d.cfLuz);
+      setValorMoeda($('cf-internet'), d.cfInternet);
+      setValorMoeda($('cf-funcionarios'), d.cfFuncionarios);
+      setValorMoeda($('cf-outros'), d.cfOutros);
+      if (Array.isArray(d.diasSelecionados)) {
+        diasSelecionados = d.diasSelecionados;
+        renderDias();
+      }
+      if (d.horarioAbertura) $('hr-abertura').value = d.horarioAbertura;
+      if (d.horarioFechamento) $('hr-fechamento').value = d.horarioFechamento;
+      if (d.pctMeta !== undefined) {
+        $('pct-meta').value = d.pctMeta;
+        $('pct-meta-val').textContent = `${d.pctMeta}%`;
+      }
     }
   } catch (e) { /* primeira vez usando — sem plano salvo ainda */ }
 
@@ -357,23 +570,29 @@ auth.onAuthStateChanged(async user => {
   $('btn-salvar').onclick = async () => {
     const btn = $('btn-salvar');
     btn.disabled = true;
-    const dados = {};
-    CAMPOS.forEach(id => {
-      const chave = id.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
-      dados[chave] = num(id);
-    });
-    dados.updatedAt = serverTimestamp();
-
     try {
-      await setDoc(planoRef, dados);
+      await setDoc(planoRef, {
+        investReforma: moeda($('inv-reforma')),
+        investEstoque: moeda($('inv-estoque')),
+        investOutros: moeda($('inv-outros')),
+        cfAluguel: moeda($('cf-aluguel')),
+        cfAgua: moeda($('cf-agua')),
+        cfLuz: moeda($('cf-luz')),
+        cfInternet: moeda($('cf-internet')),
+        cfFuncionarios: moeda($('cf-funcionarios')),
+        cfOutros: moeda($('cf-outros')),
+        diasSelecionados,
+        horarioAbertura: $('hr-abertura').value,
+        horarioFechamento: $('hr-fechamento').value,
+        pctMeta: parseInt($('pct-meta').value),
+        updatedAt: serverTimestamp()
+      });
       toast('✅ Plano salvo!', 'success');
       $('msg-salvo').textContent = 'Salvo — seus números ficam guardados pra próxima vez.';
     } catch (e) {
       toast('Erro ao salvar.', 'error');
       $('msg-salvo').textContent = `❌ ${e.message}`;
-    } finally {
-      btn.disabled = false;
-    }
+    } finally { btn.disabled = false; }
   };
 });
 </script>
